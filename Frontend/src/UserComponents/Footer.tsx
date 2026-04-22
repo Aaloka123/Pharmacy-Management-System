@@ -7,18 +7,18 @@ const Footer = () => {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:pr-8">
-            <h3 className="text-xl font-semibold tracking-tight text-slate-900">
+            <h3 className="text-3xl font-semibold tracking-tight text-slate-900">
               Med<span className="text-teal-700">Nexus</span>
             </h3>
-            <p className="mt-4 max-w-xs text-sm leading-6 text-slate-600">
+            <p className="mt-4 max-w-xs text-[14px] leading-6 text-slate-600">
               A modern pharmacy management platform built for safer workflows, faster operations, and better care
               outcomes.
             </p>
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Quick Links</h4>
-            <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
+            <h4 className="text-[16px] font-semibold text-slate-500">Quick Links</h4>
+            <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
                 <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-semibold text-slate-900' : ''}`} end to="/">
                   Home
@@ -43,8 +43,8 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Company</h4>
-            <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
+            <h4 className="text-[16px] font-semibold text-slate-500">Company</h4>
+            <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
                 <a className="transition hover:text-teal-700" href="#">
                   About Us
@@ -69,8 +69,8 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Support</h4>
-            <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
+            <h4 className="text-[16px] font-semibold text-slate-500">Support</h4>
+            <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
                 <a className="transition hover:text-teal-700" href="#">
                   Help Center
