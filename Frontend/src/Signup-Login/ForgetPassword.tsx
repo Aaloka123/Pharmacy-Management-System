@@ -2,17 +2,15 @@ import React from 'react'
 import Header from '../UserComponents/Header'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
-import Hero from '../UserComponents/Hero'
 
-const Home = () => {
+const ForgetPassword = () => {
   return (
     <div>
         <Header />
-        <Hero />
         <Footer />
-        <Copyright />
+        <Copyright />   
     </div>
   )
 }
 
-export default Home
+export default ForgetPassword
