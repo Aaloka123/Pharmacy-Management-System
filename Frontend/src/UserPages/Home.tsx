@@ -1,9 +1,12 @@
-import React from 'react'
+
 import Header from '../UserComponents/Header'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Hero from '../UserComponents/Hero'
 import TopProduct from '../UserComponents/TopProduct'
+import ProductSuggestion from '../UserComponents/ProductSuggestion'
+import CTA from '../UserComponents/CTA'
+import FAQ from '../UserComponents/FAQ'
 
 const Home = () => {
   return (
@@ -11,6 +14,9 @@ const Home = () => {
         <Header />
         <Hero />
         <TopProduct />
+        <ProductSuggestion />
+        <CTA />
+        <FAQ />
         <Footer />
         <Copyright />
     </div>

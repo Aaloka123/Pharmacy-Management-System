@@ -1,26 +1,30 @@
 import { Link } from 'react-router-dom'
+import ParacetamolImage from '../assets/Paracetamol.jpg'
+import BrufinImage from '../assets/Brufin.jpg'
+import MetforminImage from '../assets/Metformin.webp'
+import AlbuterolImage from '../assets/Albuterol.jpg'
 
 const TopProduct = () => {
   const products = [
     {
       name: 'Paracetamol 500mg',
       price: 'NRP 45',
-      image: '',
+      image: ParacetamolImage,
     },
     {
       name: 'Vitamin C Tablets',
       price: 'NRP 120',
-      image: '',
+      image: BrufinImage,
     },
     {
       name: 'Hand Sanitizer 250ml',
       price: 'NRP 99',
-      image: '',
+      image: MetforminImage,
     },
     {
       name: 'Digital Thermometer',
       price: 'NRP 299',
-      image: '',
+      image: AlbuterolImage,
     },
   ]
 
@@ -44,7 +48,7 @@ const TopProduct = () => {
               to="/productsdetail"
             >
               {product.image ? (
-                <img alt={product.name} className="h-48 w-full object-cover" src={product.image} />
+                <img alt={product.name} className="h-48 w-full bg-white p-2 object-contain" src={product.image} />
               ) : (
                 <div className="flex h-48 w-full items-center justify-center bg-slate-100 text-sm font-medium text-slate-400">
                   
