@@ -20,7 +20,7 @@ const ProductsDetail = () => {
     <div className="bg-slate-50">
       <Header />
       <main className="px-[80px] py-8">
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <section className="p-1 md:p-2">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4">
               <img alt={product.name} className="h-80 w-full object-contain" src={product.image} />

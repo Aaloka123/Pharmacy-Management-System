@@ -3,9 +3,8 @@ import { NavLink } from 'react-router-dom'
 const Footer = () => {
   return (
     <footer className="border-t border-slate-200 bg-white">
-      <div className="py-12 pl-[80px] pr-[80px]">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="py-12 pl-[90px] pr-[90px]">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:pr-8">
             <h3 className="text-3xl font-semibold tracking-tight text-slate-900">
               Med<span className="text-teal-700">Nexus</span>
@@ -92,7 +91,6 @@ const Footer = () => {
                 </a>
               </li>
             </ul>
-          </div>
           </div>
         </div>
 
