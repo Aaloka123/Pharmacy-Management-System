@@ -234,7 +234,7 @@ const Products = () => {
                     </div>
                   </div>
                   <button
-                    className="mt-2 flex w-full items-center justify-center rounded-full bg-teal-100 px-4 py-2.5 text-xs font-semibold text-teal-800 transition duration-200 hover:bg-teal-200 group-hover:bg-teal-200"
+                    className="mt-2 flex w-full items-center justify-center rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"
                     onClick={(event) => event.stopPropagation()}
                     type="button"
                   >
