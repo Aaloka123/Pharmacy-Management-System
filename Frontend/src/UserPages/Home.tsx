@@ -7,6 +7,7 @@ import TopProduct from '../UserComponents/TopProduct'
 import ProductSuggestion from '../UserComponents/ProductSuggestion'
 import CTA from '../UserComponents/CTA'
 import FAQ from '../UserComponents/FAQ'
+import New from '../UserComponents/New'
 
 const Home = () => {
   return (
@@ -16,6 +17,7 @@ const Home = () => {
         <TopProduct />
         <ProductSuggestion />
         <CTA />
+        <New/>
         <FAQ />
         <Footer />
         <Copyright />
