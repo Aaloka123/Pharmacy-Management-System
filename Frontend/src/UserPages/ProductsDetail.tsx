@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
+import { addToCart } from '../lib/cartStorage'
 import AmoxicillinImage from '../assets/Amoxicillin.jpg'
 import AlbuterolImage from '../assets/Albuterol.jpg'
 import LisinoprilImage from '../assets/Lisinopril.jpg'
@@ -146,6 +147,18 @@ const ProductsDetail = () => {
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <button
                   className="rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"
+                  onClick={() =>
+                    addToCart({
+                      id: product.name,
+                      name: product.name,
+                      subtitle: product.subtitle,
+                      strength: product.strength,
+                      form: product.form,
+                      pack: product.quantity,
+                      unitPrice: product.price,
+                      image: product.image,
+                    })
+                  }
                   type="button"
                 >
                   Add to Cart

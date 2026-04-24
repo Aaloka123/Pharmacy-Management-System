@@ -38,6 +38,12 @@ const Header = () => {
           >
             Contacts
           </NavLink>
+          <NavLink
+            className={({ isActive }) => `${baseLinkClass} ${isActive ? activeLinkClass : ''}`}
+            to="/cart"
+          >
+            Cart
+          </NavLink>
         </div>
         <div className="flex flex-1 items-center justify-end gap-3">
           <div className="relative hidden md:block">

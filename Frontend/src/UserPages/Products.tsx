@@ -3,6 +3,7 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { addToCart } from '../lib/cartStorage'
 import AlbuterolImage from '../assets/Albuterol.jpg'
 import AmoxicillinImage from '../assets/Amoxicillin.jpg'
 import LisinoprilImage from '../assets/Lisinopril.jpg'
@@ -235,7 +236,19 @@ const Products = () => {
                   </div>
                   <button
                     className="mt-2 flex w-full items-center justify-center rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"
-                    onClick={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      addToCart({
+                        id: product.name,
+                        name: product.name,
+                        subtitle: product.subtitle,
+                        strength: product.strength,
+                        form: product.form,
+                        pack: product.quantity,
+                        unitPrice: product.price,
+                        image: product.image,
+                      })
+                    }}
                     type="button"
                   >
                     Add to Cart
