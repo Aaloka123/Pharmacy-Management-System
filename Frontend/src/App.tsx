@@ -31,6 +31,7 @@ const AppContent = () => {
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/cart" element={<Cart />} />
+        
 
         {/* Signup-Login */}
         <Route path="/login" element={<Login />} />

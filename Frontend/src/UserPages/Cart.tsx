@@ -1,54 +1,79 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
-import { type CartLine, loadCart, saveCart } from '../lib/cartStorage'
+import AmoxicillinImage from '../assets/Amoxicillin.jpg'
+import LisinoprilImage from '../assets/Lisinopril.jpg'
+
+type CartLine = {
+  id: string
+  name: string
+  subtitle: string
+  strength: string
+  form: string
+  pack: string
+  unitPrice: number
+  image: string
+  qty: number
+}
+
+const initialCartLines: CartLine[] = [
+  {
+    id: 'Amoxicillin',
+    name: 'Amoxicillin',
+    subtitle: 'Antibiotics · Penicillin Type',
+    strength: '500mg',
+    form: 'Capsules',
+    pack: '30 ct',
+    unitPrice: 425,
+    image: AmoxicillinImage,
+    qty: 1,
+  },
+  {
+    id: 'Lisinopril',
+    name: 'Lisinopril',
+    subtitle: 'Cardiovascular · ACE Inhibitor',
+    strength: '10mg',
+    form: 'Tablets',
+    pack: '90 ct',
+    unitPrice: 280,
+    image: LisinoprilImage,
+    qty: 1,
+  },
+]
 
 const Cart = () => {
-  const [lines, setLines] = useState<CartLine[]>([])
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-
-  useEffect(() => {
-    const initialLines = loadCart()
-    setLines(initialLines)
-    setSelectedIds(initialLines.map((line) => line.id))
-  }, [])
+  const [lines, setLines] = useState<CartLine[]>(initialCartLines)
+  const [selectedIds, setSelectedIds] = useState<string[]>(initialCartLines[0] ? [initialCartLines[0].id] : [])
 
   useEffect(() => {
     const lineIds = new Set(lines.map((line) => line.id))
     setSelectedIds((prev) => {
-      const kept = prev.filter((id) => lineIds.has(id))
-      const newIds = lines.map((line) => line.id).filter((id) => !kept.includes(id))
-      return [...kept, ...newIds]
+      return prev.filter((id) => lineIds.has(id))
     })
   }, [lines])
 
-  const persist = useCallback((next: CartLine[]) => {
-    saveCart(next)
-    setLines(next)
-  }, [])
-
   const selectedLines = useMemo(() => lines.filter((line) => selectedIds.includes(line.id)), [lines, selectedIds])
+  const selectedProductNames = useMemo(() => selectedLines.map((line) => line.name), [selectedLines])
   const subtotal = useMemo(() => selectedLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0), [selectedLines])
-  const itemCount = useMemo(() => selectedLines.reduce((n, line) => n + line.qty, 0), [selectedLines])
+  const tax = useMemo(() => subtotal * 0.13, [subtotal])
+  const total = useMemo(() => subtotal + tax, [subtotal, tax])
+  const itemCount = useMemo(() => selectedLines.length, [selectedLines])
   const allSelected = lines.length > 0 && selectedIds.length === lines.length
 
   const updateQty = (id: string, qty: number) => {
-    if (qty < 1) {
-      persist(lines.filter((line) => line.id !== id))
-      return
-    }
-    persist(lines.map((line) => (line.id === id ? { ...line, qty } : line)))
+    if (qty < 1) return
+    setLines(lines.map((line) => (line.id === id ? { ...line, qty } : line)))
   }
 
   const removeLine = (id: string) => {
-    persist(lines.filter((line) => line.id !== id))
+    setLines(lines.filter((line) => line.id !== id))
   }
 
   const removeSelected = () => {
     if (selectedIds.length === 0) return
-    persist(lines.filter((line) => !selectedIds.includes(line.id)))
+    setLines(lines.filter((line) => !selectedIds.includes(line.id)))
   }
 
   const toggleSelect = (id: string) => {
@@ -70,8 +95,8 @@ const Cart = () => {
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Your cart</h1>
-            <p className="mt-2 max-w-xl text-sm text-slate-600">
-              Review items before checkout. Prescription items may require verification at pickup or delivery.
+            <p className="mt-2 text-sm text-slate-600">
+              Review your items before checkout. Prescription products may need verification.
             </p>
           </div>
         </div>
@@ -157,7 +182,7 @@ const Cart = () => {
                   <div className="min-w-0 flex-1">
                     <h2 className="text-lg font-bold text-slate-900">{line.name}</h2>
                     <p className="mt-0.5 text-xs text-slate-500">{line.subtitle}</p>
-                    <p className="mt-2 text-sm font-semibold text-teal-700">NRP {line.unitPrice.toLocaleString()} each</p>
+                    <p className="mt-2 text-sm font-semibold text-teal-700">NRP {(line.unitPrice * line.qty).toLocaleString()}</p>
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-600">
                       <span>
                         <span className="text-slate-400">Strength</span> <span className="font-medium">{line.strength}</span>
@@ -170,13 +195,14 @@ const Cart = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-[1fr_auto] items-center gap-4 border-t border-slate-100 pt-4 sm:min-w-[180px] sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
-                    <div className="rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm">
+                  <div className="flex items-center justify-center gap-6 border-t border-slate-100 pt-4 sm:min-w-[180px] sm:self-center sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+                    <div>
                       <p className="px-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">Quantity</p>
                       <div className="mt-1 flex items-center justify-between rounded-lg bg-slate-50">
                         <button
                           aria-label="Decrease quantity"
-                          className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900"
+                          className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+                          disabled={line.qty <= 1}
                           onClick={() => updateQty(line.id, line.qty - 1)}
                           type="button"
                         >
@@ -209,10 +235,6 @@ const Cart = () => {
                         />
                       </svg>
                     </button>
-                    <div className="col-span-2 rounded-lg bg-slate-50 px-3 py-2 text-right sm:text-center">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Line total</p>
-                      <p className="text-base font-bold text-slate-900">NRP {(line.unitPrice * line.qty).toLocaleString()}</p>
-                    </div>
                   </div>
                 </article>
               ))}
@@ -221,30 +243,47 @@ const Cart = () => {
             <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-24">
               <h2 className="text-lg font-bold text-slate-900">Order summary</h2>
               <dl className="mt-5 space-y-3 text-sm">
+                <div className="text-slate-600">
+                  <dt>
+                    <div className="flex items-center justify-between">
+                      <p>Items</p>
+                      <p className="text-slate-900">{itemCount} selected</p>
+                    </div>
+                    {selectedProductNames.length > 0 ? (
+                      <div className="mt-1.5 space-y-0.5 text-xs text-teal-700">
+                        {selectedProductNames.map((name) => (
+                          <p key={name}>{name}</p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500">No product selected</p>
+                    )}
+                  </dt>
+                </div>
                 <div className="flex justify-between text-slate-600">
-                  <dt>Items ({itemCount})</dt>
+                  <dt>Subtotal</dt>
                   <dd className="font-medium text-slate-900">NRP {subtotal.toLocaleString()}</dd>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <dt>Estimated handling</dt>
-                  <dd className="font-medium text-slate-900">Included</dd>
+                  <dt>Tax (13%)</dt>
+                  <dd className="font-medium text-slate-900">NRP {tax.toLocaleString()}</dd>
+                </div>
+                <div className="flex justify-between border-t border-slate-100 pt-3 text-slate-800">
+                  <dt className="font-semibold">Total</dt>
+                  <dd className="text-base font-bold text-teal-700">NRP {total.toLocaleString()}</dd>
                 </div>
               </dl>
-              <div className="mt-5 border-t border-slate-100 pt-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-semibold text-slate-800">Subtotal</span>
-                  <span className="text-xl font-bold text-teal-700">NRP {subtotal.toLocaleString()}</span>
-                </div>
-                <p className="mt-2 text-xs text-slate-500">Taxes and shipping are calculated at checkout when available.</p>
-              </div>
               <button
                 className="mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={selectedLines.length === 0}
                 type="button"
               >
-                Proceed to checkout ({selectedLines.length})
+                Proceed to checkout
               </button>
-              <Link className="mt-3 block text-center text-sm font-semibold text-teal-700 hover:text-teal-800" to="/products">
+              <Link
+                className="mt-3 block w-full rounded-lg border border-teal-700 bg-white py-2.5 text-center text-sm font-semibold text-teal-700"
+                to="/products"
+              >
                 Continue shopping
               </Link>
             </aside>

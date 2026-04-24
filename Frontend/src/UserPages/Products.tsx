@@ -116,10 +116,8 @@ const Products = () => {
         <section className="w-full p-2 md:p-4">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="mt-2 text-[30px] font-bold leading-tight tracking-tight text-slate-900">Product Catalog</h1>
-              <p className="mt-3 max-w-2xl text-sm text-slate-600 md:text-base">
-                Manage and discover precision medications. Access our high quality inventory with verified pharmacological data.
-              </p>
+              <h1 className="mt-2 text-[30px] font-bold leading-tight tracking-tight text-slate-900">Product</h1>
+              <p className="mt-3 text-sm text-slate-600 md:text-base">Browse trusted medicines.</p>
             </div>
             <button className="inline-flex items-center justify-center rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white">
             New Prescription
