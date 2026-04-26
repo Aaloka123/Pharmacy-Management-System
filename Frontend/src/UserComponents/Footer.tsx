@@ -16,25 +16,25 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-[16px] font-semibold text-slate-500">Quick Links</h4>
+            <h4 className="text-[16px] font-[600] text-teal-700">Quick Links</h4>
             <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
-                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-semibold text-slate-900' : ''}`} end to="/">
+                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`} end to="/">
                   Home
                 </NavLink>
               </li>
               <li>
-                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-semibold text-slate-900' : ''}`} to="/products">
+                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`} to="/products">
                   Product
                 </NavLink>
               </li>
               <li>
-                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-semibold text-slate-900' : ''}`} to="/about">
+                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`} to="/about">
                   About
                 </NavLink>
               </li>
               <li>
-                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-semibold text-slate-900' : ''}`} to="/contacts">
+                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`} to="/contacts">
                   Contacts
                 </NavLink>
               </li>
@@ -42,7 +42,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-[16px] font-semibold text-slate-500">Company</h4>
+            <h4 className="text-[16px] font-[600] text-teal-700">Company</h4>
             <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
                 <a className="transition hover:text-teal-700" href="#">
@@ -68,7 +68,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-[16px] font-semibold text-slate-500">Support</h4>
+            <h4 className="text-[16px] font-[600] text-teal-700">Support</h4>
             <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
                 <a className="transition hover:text-teal-700" href="#">

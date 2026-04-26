@@ -51,10 +51,10 @@ const Aboutuscontent = () => {
       </section>
 
       <section className="mt-14 pb-4">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900">What Makes Us Different</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">What Makes Us Different</h2>
         <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h3 className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <h3 className="inline-flex items-center gap-2 text-lg font-bold text-slate-900">
               <HiOutlineBuildingStorefront aria-hidden="true" className="h-7 w-7 text-teal-700" />
               Multi-Vendor Network
             </h3>
@@ -64,7 +64,7 @@ const Aboutuscontent = () => {
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h3 className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <h3 className="inline-flex items-center gap-2 text-lg font-bold text-slate-900">
               <HiOutlineCheckCircle aria-hidden="true" className="h-7 w-7 text-teal-700" />
               Verified Quality
             </h3>
@@ -73,7 +73,7 @@ const Aboutuscontent = () => {
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h3 className="inline-flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <h3 className="inline-flex items-center gap-2 text-lg font-bold text-slate-900">
               <FiClock aria-hidden="true" className="h-7 w-7 text-teal-700" />
               Faster Access
             </h3>
@@ -103,7 +103,7 @@ const Aboutuscontent = () => {
       </section>
 
       <section className="mt-12 pb-6">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900">Our Commitment to Better Care Access</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Our Commitment to Better Care Access</h2>
         <p className="mt-4 w-full text-[14px] leading-7 text-slate-600">
           We believe access to essential medicines should be simple, transparent, and dependable. That is why we continue to strengthen our
           multi-vendor ecosystem, improve product availability, and support pharmacies with tools that help them serve customers faster.

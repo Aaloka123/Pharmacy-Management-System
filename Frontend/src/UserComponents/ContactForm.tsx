@@ -3,7 +3,7 @@ import { FiMail, FiPhone } from 'react-icons/fi'
 const ContactForm = () => {
   return (
     <form className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight text-slate-900">Get in Touch</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-slate-900">Get in Touch</h2>
 
       <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
         <input

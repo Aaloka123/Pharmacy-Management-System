@@ -94,7 +94,7 @@ const Cart = () => {
       <main className="px-[80px] pb-12 pt-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Your cart</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Your cart</h1>
             <p className="mt-2 text-sm text-slate-600">
               Review your items before checkout. Prescription products may need verification.
             </p>

@@ -9,21 +9,33 @@ const New = () => {
     {
       name: 'Paracetamol 500mg',
       price: 'NRP 45',
+      strength: '500mg',
+      form: 'Tablets',
+      quantity: '20 ct',
       image: ParacetamolImage,
     },
     {
       name: 'Vitamin C Tablets',
       price: 'NRP 120',
+      strength: '1000mg',
+      form: 'Tablets',
+      quantity: '30 ct',
       image: BrufinImage,
     },
     {
       name: 'Hand Sanitizer 250ml',
       price: 'NRP 99',
+      strength: '70% alcohol',
+      form: 'Liquid',
+      quantity: '250 ml',
       image: MetforminImage,
     },
     {
       name: 'Digital Thermometer',
       price: 'NRP 299',
+      strength: 'N/A',
+      form: 'Device',
+      quantity: '1 unit',
       image: AlbuterolImage,
     },
   ]
@@ -33,7 +45,7 @@ const New = () => {
       <div className="mx-auto max-w-[1200px]">
         <div className="mb-8 flex items-end justify-between">
           <div>
-            <h2 className="mt-2 text-3xl font-bold text-slate-900">New Arrivals</h2>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900">New Arrivals</h2>
           </div>
           <Link className="text-sm font-semibold italic text-slate-900 underline underline-offset-2 transition hover:text-teal-700" to="/products">
             View All
@@ -55,8 +67,22 @@ const New = () => {
                 </div>
               )}
               <div className="p-4">
-                <h3 className="text-base font-semibold text-slate-900">{product.name}</h3>
+                <h3 className="text-base font-bold text-slate-900">{product.name}</h3>
                 <p className="mt-2 text-lg font-bold text-teal-700">{product.price}</p>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+                  <div>
+                    <p className="uppercase tracking-wide text-slate-400">Strength</p>
+                    <p className="mt-1 text-xs font-bold text-slate-700">{product.strength}</p>
+                  </div>
+                  <div>
+                    <p className="uppercase tracking-wide text-slate-400">Form</p>
+                    <p className="mt-1 text-xs font-bold text-slate-700">{product.form}</p>
+                  </div>
+                  <div>
+                    <p className="uppercase tracking-wide text-slate-400">Quantity</p>
+                    <p className="mt-1 text-xs font-bold text-slate-700">{product.quantity}</p>
+                  </div>
+                </div>
               </div>
             </Link>
           ))}

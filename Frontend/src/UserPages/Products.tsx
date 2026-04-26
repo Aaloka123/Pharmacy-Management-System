@@ -209,7 +209,10 @@ const Products = () => {
               >
                 <div className="relative h-56 w-full bg-slate-50">
                   {product.image ? <img alt={product.name} className="h-full w-full object-contain bg-white p-2" src={product.image} /> : null}
-                  <span className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase ${product.stockTone}`}>
+                  <span
+                    className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] uppercase ${product.stockTone}`}
+                    style={{ fontWeight: 600 }}
+                  >
                     {product.stock}
                   </span>
                 </div>

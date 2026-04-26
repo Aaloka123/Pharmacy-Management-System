@@ -119,11 +119,11 @@ const ProductsDetail = () => {
             </div>
 
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">{product.name}</h1>
+              <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
               <p className="mt-2 text-sm text-slate-600">{product.subtitle}</p>
               <p className="mt-3 text-2xl font-bold text-teal-700">NRP {product.price.toLocaleString()}</p>
               <span className={`mt-2 inline-flex text-xs ${product.stockTone}`}>
-                Stock: <span className="px-1">20</span> units available
+                Stock: <span className="px-1 font-bold">20</span> units available
               </span>
               <p className="mt-3 max-w-xl text-[14px] leading-7 text-slate-600">
                 Amoxicillin is a commonly used antibiotic for bacterial infections. It helps treat conditions like respiratory, skin, and
@@ -222,7 +222,7 @@ const ProductsDetail = () => {
             </div>
           </section>
 
-          <h3 className="mt-10 text-2xl font-bold text-slate-900">Customer Reviews</h3>
+          <h3 className="mt-10 text-2xl font-bold text-slate-900">Reviews</h3>
           <section className="mt-3">
             <form className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6" onSubmit={handleSubmitReview}>
               <div className="mt-4">

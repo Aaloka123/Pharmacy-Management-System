@@ -12,7 +12,7 @@ const Contacts = () => {
         <section className="p-2 md:p-4">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.1fr]">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900">Contact Us</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Contact Us</h1>
               <p className="mt-3 max-w-md text-[15px] leading-7 text-slate-600">
                 For orders, products, or vendor partnerships, contact our team anytime.
               </p>

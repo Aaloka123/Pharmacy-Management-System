@@ -15,3 +15,9 @@ body {
   min-height: 100vh;
   background-color: #FFFFFF;
 }
+
+/* Keep typography mostly normal; reserve bold for key highlights. */
+.font-medium,
+.font-semibold {
+  font-weight: 400;
+}

@@ -7,7 +7,7 @@ const CTA = () => {
         <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">Need help fast?</p>
-            <h2 className="mt-3 text-3xl font-bold leading-tight md:text-4xl">Get trusted medicines delivered to your doorstep.</h2>
+            <h2 className="mt-3 text-2xl font-bold leading-tight md:text-3xl">Get trusted medicines delivered to your doorstep.</h2>
             <p className="mt-4 text-base text-white/90 md:text-lg">
               Browse products, compare options, and place your order in minutes with our easy and secure pharmacy platform.
             </p>
