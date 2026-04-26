@@ -23,7 +23,7 @@ const faqs = [
 
 const FAQ = () => {
   return (
-    <section className="bg-slate-50 px-6 py-14 md:px-8">
+    <section className="bg-white px-6 py-14 md:px-8">
       <div className="mx-auto max-w-[1200px]">
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold text-slate-900">Frequently Asked Questions</h2>

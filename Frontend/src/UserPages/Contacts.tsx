@@ -6,7 +6,7 @@ import { FiMail, FiMapPin, FiPhoneCall } from 'react-icons/fi'
 
 const Contacts = () => {
   return (
-    <div className="bg-slate-50">
+    <div className="bg-white">
       <Header />
       <main className="px-[80px] py-12">
         <section className="p-2 md:p-4">

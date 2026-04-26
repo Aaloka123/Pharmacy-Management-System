@@ -110,7 +110,7 @@ const Products = () => {
   }, [maxPrice, selectedCategory, sortBy])
 
   return (
-    <div className="bg-slate-50">
+    <div className="bg-white">
       <Header />
       <main className="px-[80px] pb-10 pt-4">
         <section className="w-full p-2 md:p-4">

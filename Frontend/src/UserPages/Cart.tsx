@@ -89,7 +89,7 @@ const Cart = () => {
   }
 
   return (
-    <div className="bg-slate-50">
+    <div className="bg-white">
       <Header />
       <main className="px-[80px] pb-12 pt-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">

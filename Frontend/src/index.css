@@ -5,6 +5,13 @@
   font-family: "Geist", sans-serif;
 }
 
+html,
 body {
   font-family: "Geist", sans-serif;
+  background-color: #FFFFFF;
+}
+
+#root {
+  min-height: 100vh;
+  background-color: #FFFFFF;
 }

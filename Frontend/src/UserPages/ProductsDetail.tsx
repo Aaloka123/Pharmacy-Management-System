@@ -3,6 +3,7 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { addToCart } from '../lib/cartStorage'
+import { FaStar } from 'react-icons/fa'
 import AmoxicillinImage from '../assets/Amoxicillin.jpg'
 import AlbuterolImage from '../assets/Albuterol.jpg'
 import LisinoprilImage from '../assets/Lisinopril.jpg'
@@ -85,7 +86,7 @@ const ProductsDetail = () => {
   }
 
   return (
-    <div className="bg-slate-50">
+    <div className="bg-white">
       <Header />
       <main className="px-[100px] py-8">
         <div className="mb-5 text-[14px] text-slate-500">
@@ -222,8 +223,8 @@ const ProductsDetail = () => {
           </section>
 
           <h3 className="mt-10 text-2xl font-bold text-slate-900">Customer Reviews</h3>
-          <section className="mt-3 rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-            <form className="border-b border-slate-100 pb-6" onSubmit={handleSubmitReview}>
+          <section className="mt-3">
+            <form className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6" onSubmit={handleSubmitReview}>
               <div className="mt-4">
                 <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Rating</p>
                 <div className="mt-2 flex items-center gap-1">
@@ -231,14 +232,12 @@ const ProductsDetail = () => {
                     <button
                       aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                       aria-pressed={reviewRating === star}
-                      className={`text-4xl leading-none transition ${
-                        star <= reviewRating ? 'text-amber-400' : 'text-slate-300'
-                      }`}
+                      className={`leading-none transition ${star <= reviewRating ? 'text-amber-400' : 'text-slate-300'}`}
                       key={star}
                       onClick={() => setReviewRating(star)}
                       type="button"
                     >
-                      ★
+                      <FaStar className="h-6 w-6" />
                     </button>
                   ))}
                 </div>
@@ -261,7 +260,7 @@ const ProductsDetail = () => {
               </button>
             </form>
 
-            <div className="pt-6">
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
               <p className="text-sm font-semibold text-slate-800">
                 {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
               </p>
@@ -275,10 +274,14 @@ const ProductsDetail = () => {
                       <div className="min-w-0 flex-1">
                         <p className="text-[15px] font-semibold text-slate-900">{r.author}</p>
                         <div className="mt-0.5 flex items-center gap-2">
-                          <p aria-label={`${r.rating} out of 5 stars`} className="text-base text-amber-400">
-                            {'★'.repeat(r.rating)}
-                            <span className="text-slate-300">{'★'.repeat(5 - r.rating)}</span>
-                          </p>
+                          <div aria-label={`${r.rating} out of 5 stars`} className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <FaStar
+                                className={`h-3.5 w-3.5 ${star <= r.rating ? 'text-amber-400' : 'text-slate-300'}`}
+                                key={`${r.id}-star-${star}`}
+                              />
+                            ))}
+                          </div>
                           <span className="text-xs text-slate-500">{r.createdAt}</span>
                         </div>
                         <p className="mt-2.5 text-[15px] leading-7 text-slate-700">{r.body}</p>

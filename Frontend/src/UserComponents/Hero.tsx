@@ -42,7 +42,7 @@ const Hero = () => {
   }
 
   return (
-    <section className="bg-slate-50">
+    <section className="bg-white">
       <div>
         <div className="relative overflow-hidden bg-linear-to-br from-slate-900 via-slate-800 to-teal-900 text-white shadow-xl">
           <button

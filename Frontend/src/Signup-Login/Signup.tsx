@@ -12,7 +12,7 @@ const Signup = () => {
   return (
     <>
       <Header />
-      <main className="flex min-h-[calc(100vh-80px)] items-center justify-center bg-slate-100 px-4 py-10">
+      <main className="flex min-h-[calc(100vh-80px)] items-center justify-center bg-white px-4 py-10">
         <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
           <h1 className="text-center text-2xl font-bold text-slate-900">Create Account</h1>
           <p className="mt-2 text-center text-sm text-slate-500">

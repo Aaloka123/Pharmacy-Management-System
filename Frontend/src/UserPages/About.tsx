@@ -5,7 +5,7 @@ import Aboutuscontent from '../UserComponents/Aboutuscontent'
 
 const About = () => {
   return (
-    <div className="bg-slate-50">
+    <div className="bg-white">
       <Header />
       <Aboutuscontent />
       <Footer />
