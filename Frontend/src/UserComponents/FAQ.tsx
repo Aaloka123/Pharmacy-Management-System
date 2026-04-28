@@ -33,13 +33,13 @@ const FAQ = () => {
           {faqs.map((faq) => (
             <details
               key={faq.question}
-              className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition open:shadow-md"
+              className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition open:shadow-md"
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-base font-semibold text-slate-900">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-left text-[15px] font-semibold text-slate-900">
                 <span>{faq.question}</span>
                 <svg
                   aria-hidden="true"
-                  className="h-5 w-5 text-teal-700 transition-transform duration-200 group-open:rotate-180"
+                  className="h-4 w-4 text-teal-700 transition-transform duration-200 group-open:rotate-180"
                   fill="none"
                   viewBox="0 0 24 24"
                   xmlns="http://www.w3.org/2000/svg"

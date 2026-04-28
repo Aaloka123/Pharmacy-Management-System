@@ -63,10 +63,7 @@ const Hero = () => {
           </button>
           <div className="mx-auto grid min-h-[calc(100vh-80px)] max-w-[1400px] grid-cols-1 items-center gap-10 px-6 py-12 md:px-12 lg:grid-cols-2 lg:px-16">
             <div>
-              <span className="inline-block rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-teal-100">
-                {slides[currentSlide].badge}
-              </span>
-              <h1 className="mt-4 text-4xl font-bold leading-tight md:text-6xl">{slides[currentSlide].title}</h1>
+              <h1 className="text-4xl font-bold leading-tight md:text-6xl">{slides[currentSlide].title}</h1>
               <p className="mt-5 max-w-2xl text-base leading-8 text-slate-200 md:text-lg">{slides[currentSlide].description}</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
