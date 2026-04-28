@@ -14,6 +14,12 @@ import ProductsDetail from './UserPages/ProductsDetail'
 import Profile from './UserPages/Profile'
 import Cart from './UserPages/Cart'
 import Dashboard from './VendorPages/Dashboard'
+import Message from './VendorPages/Message'
+import Product from './VendorPages/Product'
+import Order from './VendorPages/Order'
+import Bills from './VendorPages/Bills'
+import Setting from './VendorPages/Setting'
+import Review from './VendorPages/Review'
 
 const AppContent = () => {
   const { pathname } = useLocation()
@@ -50,6 +56,12 @@ const AppContent = () => {
 
         {/* Vendor Pages */}
         <Route path="/vendordashboard" element={<Dashboard />} />
+        <Route path="/vendormessage" element={<Message />} />
+        <Route path="/vendorproduct" element={<Product />} />
+        <Route path="/vendororder" element={<Order />} />
+        <Route path="/vendorreview" element={<Review />} />
+        <Route path="/vendorbills" element={<Bills />} />
+        <Route path="/vendorsetting" element={<Setting />} />
 
       </Routes>
 
