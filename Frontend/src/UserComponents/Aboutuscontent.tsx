@@ -1,7 +1,6 @@
 import DoctorsImage from '../assets/Doctors.webp'
 import { HiOutlineBuildingStorefront, HiOutlineCheckCircle } from 'react-icons/hi2'
 import { FiClock } from 'react-icons/fi'
-import { NavLink } from 'react-router-dom'
 
 const Aboutuscontent = () => {
   return (
@@ -84,35 +83,6 @@ const Aboutuscontent = () => {
         </div>
       </section>
 
-      <section className="mx-[-80px] mt-12 w-auto rounded-none bg-linear-to-r from-teal-700 to-cyan-700 px-[80px] py-12 text-white md:py-14">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight">Partner with 100+ Trusted Pharmacies</h2>
-            <p className="mt-3 max-w-3xl text-[16px] leading-8 text-white/90">
-              Join our multi-vendor network to expand your pharmacy reach, improve medicine accessibility, and deliver better care to more
-              communities.
-            </p>
-          </div>
-          <NavLink
-            className="rounded-full bg-white px-7 py-3 text-[16px] font-semibold text-teal-700 transition hover:bg-slate-100"
-            to="/vendorsignup"
-          >
-            Become a Vendor
-          </NavLink>
-        </div>
-      </section>
-
-      <section className="mt-12 pb-6">
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Our Commitment to Better Care Access</h2>
-        <p className="mt-4 w-full text-[14px] leading-7 text-slate-600">
-          We believe access to essential medicines should be simple, transparent, and dependable. That is why we continue to strengthen our
-          multi-vendor ecosystem, improve product availability, and support pharmacies with tools that help them serve customers faster.
-        </p>
-        <p className="mt-3 w-full text-[14px] leading-7 text-slate-600">
-          As we grow, our focus remains on verified quality, responsible pharmacy practices, and a user-friendly experience for both patients
-          and partner pharmacies. Every improvement we build is aimed at making healthcare access more practical for everyday needs.
-        </p>
-      </section>
     </main>
   )
 }

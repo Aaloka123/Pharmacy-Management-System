@@ -1,9 +1,16 @@
 import { Link } from 'react-router-dom'
+import CtaImage from '../assets/cta.png'
 
 const CTA = () => {
   return (
-    <section className="bg-linear-to-r from-teal-700 via-teal-600 to-cyan-600 px-6 py-14 text-white md:px-12">
-      <div className="mx-auto max-w-[1200px]">
+    <section className="relative overflow-hidden px-6 py-14 text-white md:px-12">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${CtaImage})` }}
+      />
+      <div aria-hidden="true" className="absolute inset-0 bg-slate-900/55" />
+      <div className="relative z-10 mx-auto max-w-[1200px]">
         <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">Need help fast?</p>
