@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import Home from './UserPages/Home'
 import Products from './UserPages/Products'
@@ -16,6 +17,11 @@ import Dashboard from './VendorPages/Dashboard'
 
 const AppContent = () => {
   const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [pathname])
+
   const normalizedPath = pathname.replace(/\/+$/, '') || '/'
   const userRoutes = ['/', '/products', '/productsdetail', '/about', '/contacts', '/profile', '/cart']
   const showChatbot = userRoutes.some((route) => normalizedPath === route || normalizedPath.startsWith(`${route}/`))
