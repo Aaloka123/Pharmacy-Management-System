@@ -35,7 +35,7 @@ const FAQ = () => {
               key={faq.question}
               className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition open:shadow-md"
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-left text-[15px] font-semibold text-slate-900">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-left text-[16px] font-semibold text-slate-900">
                 <span>{faq.question}</span>
                 <svg
                   aria-hidden="true"
@@ -47,7 +47,7 @@ const FAQ = () => {
                   <path d="m6 9 6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                 </svg>
               </summary>
-              <p className="mt-3 text-sm leading-6 text-slate-600">{faq.answer}</p>
+              <p className="mt-3 text-[14px] leading-6 text-slate-600">{faq.answer}</p>
             </details>
           ))}
         </div>

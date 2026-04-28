@@ -8,12 +8,14 @@ import ProductSuggestion from '../UserComponents/ProductSuggestion'
 import CTA from '../UserComponents/CTA'
 import FAQ from '../UserComponents/FAQ'
 import New from '../UserComponents/New'
+import Guarantee from '../UserComponents/Guarantee'
 
 const Home = () => {
   return (
     <div>
         <Header />
         <Hero />
+        <Guarantee />
         <TopProduct />
         <ProductSuggestion />
         <CTA />
