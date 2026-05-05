@@ -20,6 +20,7 @@ import Order from './VendorPages/Order'
 import Bills from './VendorPages/Bills'
 import Setting from './VendorPages/Setting'
 import Review from './VendorPages/Review'
+import AdminDashboard from './AdminPages/AdminDashboard'
 
 const AppContent = () => {
   const { pathname } = useLocation()
@@ -62,6 +63,10 @@ const AppContent = () => {
         <Route path="/vendorreview" element={<Review />} />
         <Route path="/vendorbills" element={<Bills />} />
         <Route path="/vendorsetting" element={<Setting />} />
+
+
+        {/*Admin Pages*/ }
+        <Route path="/admindashboard" element={<AdminDashboard/>} />
 
       </Routes>
 

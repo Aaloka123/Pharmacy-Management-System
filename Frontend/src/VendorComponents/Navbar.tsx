@@ -9,6 +9,7 @@ import {
   LuLogOut,
 } from 'react-icons/lu';
 import { NavLink, useNavigate } from 'react-router-dom';
+import mednexuxLogo from '../assets/Mednexux.png';
 
 const menuItems = [
   { label: 'Dashboard', Icon: LuLayoutDashboard, to: '/vendordashboard' },
@@ -25,8 +26,8 @@ const Navbar = () => {
 
   return (
     <aside className="flex h-screen w-64 min-w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 shadow-sm">
-      <div className="mb-8 text-center text-2xl font-bold tracking-tight text-slate-900">
-        Med<span className="text-teal-700">Nexus</span>
+      <div className="mb-8 flex justify-center">
+        <img alt="MedNexus logo" className="h-12 w-auto object-contain" src={mednexuxLogo} />
       </div>
 
       <nav className="flex flex-col gap-2">
