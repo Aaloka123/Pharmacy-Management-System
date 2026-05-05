@@ -18,7 +18,7 @@ const menuItems = [
   { label: 'Approve Vendor', Icon: LuBadgeCheck, to: '/adminapprovevendor' },
   { label: 'Product', Icon: LuPackage, to: '/adminproducts' },
   { label: 'Review', Icon: LuStar, to: '/adminreviews' },
-  { label: 'Setting', Icon: LuSettings, to: '/adminsetting' },
+  { label: 'Setting', Icon: LuSettings, to: '/adminsettings' },
 ]
 
 const AdminNavbar = () => {

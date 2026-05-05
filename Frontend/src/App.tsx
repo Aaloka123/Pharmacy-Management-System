@@ -21,6 +21,12 @@ import Bills from './VendorPages/Bills'
 import Setting from './VendorPages/Setting'
 import Review from './VendorPages/Review'
 import AdminDashboard from './AdminPages/AdminDashboard'
+import AdminUsers from './AdminPages/AdminUsers'
+import AdminVendors from './AdminPages/AdminVendors'
+import AdminApproveVendor from './AdminPages/AdminApproveVendor'
+import AdminProducts from './AdminPages/AdminProducts'
+import AdminReviews from './AdminPages/AdminReviews'
+import AdminSettings from './AdminPages/AdminSettings'
 
 const AppContent = () => {
   const { pathname } = useLocation()
@@ -67,6 +73,12 @@ const AppContent = () => {
 
         {/*Admin Pages*/ }
         <Route path="/admindashboard" element={<AdminDashboard/>} />
+        <Route path="/adminusers" element={<AdminUsers/>} />
+        <Route path="/adminvendors" element={<AdminVendors/>} />
+        <Route path="/adminapprovevendor" element={<AdminApproveVendor/>} />
+        <Route path="/adminproducts" element={<AdminProducts/>} />
+        <Route path="/adminreviews" element={<AdminReviews/>} />
+        <Route path="/adminsettings" element={<AdminSettings/>} />
 
       </Routes>
 
