@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import mednexuxLogo from '../assets/Mednexux.png'
 
 const Header = () => {
   const baseLinkClass =
@@ -7,10 +8,12 @@ const Header = () => {
     'text-teal-700'
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[#F8FAFC] px-[80px] py-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[#F8FAFC] px-[80px] py-2.5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur">
       <nav className="flex w-full items-center justify-between">
-        <div className="flex-1 text-2xl font-bold tracking-tight text-slate-900">
-          Med<span className="text-teal-700">Nexus</span>
+        <div className="flex-1">
+          <NavLink className="inline-flex items-center" to="/">
+            <img alt="MedNexus logo" className="h-12 w-auto object-contain" src={mednexuxLogo} />
+          </NavLink>
         </div>
         <div className="hidden items-center gap-1.5 md:flex">
           <NavLink

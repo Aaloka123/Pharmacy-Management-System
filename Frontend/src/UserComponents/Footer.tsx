@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import mednexuxLogo from '../assets/Mednexux.png'
 
 const Footer = () => {
   return (
@@ -6,9 +7,7 @@ const Footer = () => {
       <div className="py-12 pl-[90px] pr-[90px]">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:pr-8">
-            <h3 className="text-3xl font-semibold tracking-tight text-slate-900">
-              Med<span className="text-teal-700">Nexus</span>
-            </h3>
+            <img alt="MedNexus logo" className="h-12 w-auto object-contain" src={mednexuxLogo} />
             <p className="mt-4 max-w-xs text-[14px] leading-6 text-slate-600">
               A modern pharmacy management platform built for safer workflows, faster operations, and better care
               outcomes.
