@@ -199,15 +199,15 @@ const ProductsDetail = () => {
                 <h4 className="text-sm font-bold uppercase tracking-[0.14em] text-rose-700">Side Effects</h4>
                 <ul className="mt-3 space-y-3 text-[14px] leading-7 text-slate-700">
                   <li className="flex items-center gap-2">
-                    <span className="inline-block h-0 w-0 shrink-0 border-x-[6px] border-b-10 border-x-transparent border-b-rose-600"></span>
+                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-rose-600"></span>
                     Myalgia and Arthralgia (most common).
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="inline-block h-0 w-0 shrink-0 border-x-[6px] border-b-10 border-x-transparent border-b-rose-600"></span>
+                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-rose-600"></span>
                     Nasopharyngitis or Diarrhea.
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="inline-block h-0 w-0 shrink-0 border-x-[6px] border-b-10 border-x-transparent border-b-rose-600"></span>
+                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-rose-600"></span>
                     Elevated liver enzymes (monitor ALT).
                   </li>
                 </ul>
