@@ -25,7 +25,7 @@ const AdminNavbar = () => {
   const navigate = useNavigate()
 
   return (
-    <aside className="flex h-screen w-64 min-w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 shadow-sm">
+    <aside className="sticky top-0 flex h-screen w-64 min-w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 shadow-sm">
       <div className="mb-8 flex justify-center">
         <img alt="MedNexus logo" className="h-12 w-auto object-contain" src={mednexuxLogo} />
       </div>
