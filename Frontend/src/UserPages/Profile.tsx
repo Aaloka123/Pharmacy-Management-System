@@ -183,14 +183,14 @@ const Profile = () => {
                 <h2 className="text-lg font-bold text-slate-900">Account Setting</h2>
 
                 <div className="mt-5 space-y-4">
-                  <section className="rounded-xl border border-slate-200 bg-white p-5">
+                  <section className="rounded-xl border border-slate-200 bg-white p-4">
                     <button
                       aria-label="Toggle change password section"
                       className="flex w-full items-center justify-between gap-4 text-left"
                       onClick={() => setShowPasswordForm((prev) => !prev)}
                       type="button"
                     >
-                      <h3 className="text-[14px] text-slate-900" style={{ fontWeight: 600 }}>Change Password</h3>
+                      <h3 className="text-[13px] text-slate-900" style={{ fontWeight: 600 }}>Change Password</h3>
                       <span className="inline-flex items-center justify-center text-slate-600 transition hover:text-teal-700">
                         <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                           <path
@@ -311,19 +311,19 @@ const Profile = () => {
                   </section>
 
                   <button
-                    className="flex w-full items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-5 text-left transition hover:bg-rose-100"
+                    className="flex w-full items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-left transition hover:bg-rose-100"
                     onClick={handleDeleteAccount}
                     type="button"
                   >
-                    <h3 className="text-[14px] text-rose-700" style={{ fontWeight: 600 }}>Delete Account</h3>
+                    <h3 className="text-[13px] text-rose-700" style={{ fontWeight: 600 }}>Delete Account</h3>
                   </button>
 
                   <button
-                    className="flex w-full items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-5 text-left transition hover:bg-rose-100"
+                    className="flex w-full items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-left transition hover:bg-rose-100"
                     onClick={handleLogout}
                     type="button"
                   >
-                    <h3 className="text-[14px] text-rose-700" style={{ fontWeight: 600 }}>Logout</h3>
+                    <h3 className="text-[13px] text-rose-700" style={{ fontWeight: 600 }}>Logout</h3>
                   </button>
                 </div>
               </section>

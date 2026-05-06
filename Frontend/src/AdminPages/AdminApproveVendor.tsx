@@ -217,11 +217,14 @@ const AdminApproveVendor = () => {
             <div className="mb-4 flex items-center justify-between gap-3">
               <h3 className="text-lg font-semibold text-slate-900">{selectedCertificate.title}</h3>
               <button
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700"
+                aria-label="Close preview"
+                className="rounded-md border border-slate-300 p-2 text-slate-700"
                 onClick={() => setSelectedCertificate(null)}
                 type="button"
               >
-                Close
+                <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 18 18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             </div>
 

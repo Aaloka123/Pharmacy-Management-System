@@ -27,6 +27,8 @@ import AdminApproveVendor from './AdminPages/AdminApproveVendor'
 import AdminProducts from './AdminPages/AdminProducts'
 import AdminReviews from './AdminPages/AdminReviews'
 import AdminSettings from './AdminPages/AdminSettings'
+import VendorProfile from './UserPages/VendorProfile'
+import Prescription from './UserPages/Prescription'
 
 const AppContent = () => {
   const { pathname } = useLocation()
@@ -50,6 +52,8 @@ const AppContent = () => {
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/vendorprofile" element={<VendorProfile />} />
+        <Route path="/prescription" element={<Prescription />} />
         
 
         {/* Signup-Login */}

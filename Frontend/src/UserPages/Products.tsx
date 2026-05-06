@@ -90,16 +90,13 @@ const productList = [
 
 const Products = () => {
   const navigate = useNavigate()
-  const maxProductPrice = Math.max(...productList.map((product) => product.price))
   const [selectedCategory, setSelectedCategory] = useState('All Medications')
-  const [maxPrice, setMaxPrice] = useState(maxProductPrice)
   const [sortBy, setSortBy] = useState('default')
 
   const filteredProducts = useMemo(() => {
     const filtered = productList.filter((product) => {
       const matchesCategory = selectedCategory === 'All Medications' || product.category === selectedCategory
-      const matchesPrice = product.price <= maxPrice
-      return matchesCategory && matchesPrice
+      return matchesCategory
     })
 
     const sorted = [...filtered]
@@ -107,7 +104,7 @@ const Products = () => {
     if (sortBy === 'price-high-low') sorted.sort((a, b) => b.price - a.price)
     if (sortBy === 'name-a-z') sorted.sort((a, b) => a.name.localeCompare(b.name))
     return sorted
-  }, [maxPrice, selectedCategory, sortBy])
+  }, [selectedCategory, sortBy])
 
   return (
     <div className="bg-white">
@@ -159,21 +156,6 @@ const Products = () => {
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-slate-700">Price Range</p>
-                    <p className="text-sm font-semibold text-teal-700">NRP 0 - {maxPrice.toLocaleString()}</p>
-                  </div>
-                  <input
-                    className="mt-3 w-full accent-teal-700"
-                    max={maxProductPrice}
-                    min={0}
-                    onChange={(event) => setMaxPrice(Number(event.target.value))}
-                    type="range"
-                    value={maxPrice}
-                  />
                 </div>
 
                 <div>
