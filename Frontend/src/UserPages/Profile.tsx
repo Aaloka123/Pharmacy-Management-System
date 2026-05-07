@@ -85,7 +85,7 @@ const Profile = () => {
                   )}
                   <button
                     aria-label="Edit profile picture"
-                    className="absolute bottom-1 right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-teal-500 hover:text-teal-700"
+                    className="absolute bottom-1 right-1 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-teal-500 hover:text-teal-700"
                     onClick={() => fileInputRef.current?.click()}
                     type="button"
                   >
@@ -112,7 +112,7 @@ const Profile = () => {
                   <h2 className="text-lg font-bold text-slate-900">Personal Information</h2>
                   <button
                     aria-label={isEditingProfile ? 'Disable profile editing' : 'Enable profile editing'}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-500 hover:text-teal-700"
+                    className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-teal-500 hover:text-teal-700"
                     onClick={() => setIsEditingProfile((prev) => !prev)}
                     type="button"
                   >
@@ -171,7 +171,7 @@ const Profile = () => {
                 </div>
                 {isEditingProfile ? (
                   <button
-                    className="mt-5 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800"
+                    className="mt-5 cursor-pointer rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800"
                     type="submit"
                   >
                     Save Profile
@@ -186,7 +186,7 @@ const Profile = () => {
                   <section className="rounded-xl border border-slate-200 bg-white p-4">
                     <button
                       aria-label="Toggle change password section"
-                      className="flex w-full items-center justify-between gap-4 text-left"
+                      className="flex w-full cursor-pointer items-center justify-between gap-4 text-left"
                       onClick={() => setShowPasswordForm((prev) => !prev)}
                       type="button"
                     >
@@ -300,7 +300,7 @@ const Profile = () => {
                         </div>
                         {passwordError ? <p className="mt-3 text-sm text-rose-600">{passwordError}</p> : null}
                         <button
-                          className="mt-5 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800"
+                          className="mt-5 cursor-pointer rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed"
                           disabled={Boolean(passwordError)}
                           type="submit"
                         >
@@ -311,7 +311,7 @@ const Profile = () => {
                   </section>
 
                   <button
-                    className="flex w-full items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-left transition hover:bg-rose-100"
+                    className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-left transition hover:bg-rose-100"
                     onClick={handleDeleteAccount}
                     type="button"
                   >
@@ -319,7 +319,7 @@ const Profile = () => {
                   </button>
 
                   <button
-                    className="flex w-full items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-left transition hover:bg-rose-100"
+                    className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-left transition hover:bg-rose-100"
                     onClick={handleLogout}
                     type="button"
                   >

@@ -28,8 +28,12 @@ const AdminUsers = () => {
     <div className="flex min-h-screen bg-slate-50">
       <AdminNavbar />
       <main className="flex-1 p-8">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-slate-900">Admin Users</h1>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Admin Users</h1>
+            <p className="mt-1 text-sm text-slate-600">View registered users and contact details.</p>
+            
+          </div>
           <input
             className="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-teal-600"
             placeholder="Search users..."
@@ -62,7 +66,7 @@ const AdminUsers = () => {
                     <td className="px-5 py-3 text-sm text-slate-700">{user.number}</td>
                     <td className="px-5 py-3">
                       <button
-                        className="rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white"
+                        className="cursor-pointer rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white"
                         type="button"
                       >
                         View Profile

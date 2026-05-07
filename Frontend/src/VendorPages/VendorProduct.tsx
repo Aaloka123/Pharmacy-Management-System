@@ -293,7 +293,7 @@ const VendorProduct = () => {
     <div className="flex min-h-screen bg-slate-50">
       <Navbar />
       <main className="flex-1 overflow-x-hidden p-6">
-        <h1 className="text-3xl font-bold text-slate-900">Product</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Product</h1>
         <p className="mt-1 text-sm text-slate-600">Manage products with ease</p>
 
         <section className="sticky top-4 z-10 mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -493,7 +493,7 @@ const VendorProduct = () => {
                       <img alt={`Product preview ${index + 1}`} className="h-12 w-12 rounded-md border border-slate-200 object-cover" src={image} />
                       <button
                         aria-label={`Remove image ${index + 1}`}
-                        className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white"
+                        className="absolute -right-1 -top-1 inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white"
                         onClick={() => handleRemoveImage(index)}
                         type="button"
                       >
@@ -507,12 +507,12 @@ const VendorProduct = () => {
 
             <div className="md:col-span-2">
               <div className="flex items-center gap-2">
-                <button className="rounded-lg bg-teal-600 px-6 py-2.5 text-sm font-semibold text-white" type="submit">
+                <button className="cursor-pointer rounded-lg bg-teal-600 px-6 py-2.5 text-sm font-semibold text-white" type="submit">
                   {editingId !== null ? 'Update Product' : 'Add Product'}
                 </button>
                 {editingId !== null && (
                   <button
-                    className="rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700"
+                    className="cursor-pointer rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700"
                     onClick={() => {
                       setEditingId(null);
                       setFormData({
@@ -545,18 +545,13 @@ const VendorProduct = () => {
         <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4">
             <h2 className="text-2xl font-semibold text-slate-900">Product List</h2>
-            <div className="flex items-center gap-2">
-              <input
-                className="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search products"
-                type="text"
-                value={searchTerm}
-              />
-              <button className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white" type="button">
-                Search
-              </button>
-            </div>
+            <input
+              className="w-80 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search products"
+              type="text"
+              value={searchTerm}
+            />
           </div>
           <div className="w-full overflow-x-auto">
             <table className="min-w-[1600px] text-left">
@@ -644,14 +639,14 @@ const VendorProduct = () => {
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm">
                       <div className="flex items-center gap-2">
                         <button
-                          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                          className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
                           onClick={() => handleEdit(product)}
                           type="button"
                         >
                           Edit
                         </button>
                         <button
-                          className="rounded-md border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700"
+                          className="cursor-pointer rounded-md border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700"
                           onClick={() => handleDelete(product.id)}
                           type="button"
                         >

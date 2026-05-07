@@ -5,7 +5,8 @@ const Message = () => {
     <div className="flex min-h-screen bg-slate-50">
       <Navbar />
       <main className="flex-1 p-6">
-        <h1 className="text-2xl font-semibold text-slate-900">Message</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Message</h1>
+        <p className="mt-1 text-sm text-slate-600">Inbox for customer and admin messages.</p>
       </main>
     </div>
   );

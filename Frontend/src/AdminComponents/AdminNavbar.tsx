@@ -48,7 +48,7 @@ const AdminNavbar = () => {
       </nav>
 
       <button
-        className="mt-auto flex w-full items-center gap-3 rounded-lg bg-rose-50 px-3 py-2 text-left text-[14px] font-semibold text-rose-700 transition hover:bg-rose-100"
+        className="mt-auto flex w-full cursor-pointer items-center gap-3 rounded-lg bg-rose-50 px-3 py-2 text-left text-[14px] font-semibold text-rose-700 transition hover:bg-rose-100"
         onClick={() => navigate('/login')}
         type="button"
       >

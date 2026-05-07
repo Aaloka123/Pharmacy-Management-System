@@ -30,7 +30,10 @@ const Setting = () => {
     <div className="flex min-h-screen bg-slate-50">
       <Navbar />
       <main className="flex-1 p-6">
-        <h1 className="text-2xl font-bold text-slate-900">Vendor Settings</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Vendor Settings</h1>
+          <p className="mt-1 text-sm text-slate-600">Manage store details and account security.</p>
+        </div>
 
         <section className="mt-6">
           <div className="mt-4 flex items-center justify-center">

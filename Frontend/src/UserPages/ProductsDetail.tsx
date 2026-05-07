@@ -147,7 +147,7 @@ const ProductsDetail = () => {
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <button
-                  className="rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"
+                  className="cursor-pointer rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"
                   onClick={() =>
                     addToCart({
                       id: product.name,
@@ -165,7 +165,7 @@ const ProductsDetail = () => {
                   Add to Cart
                 </button>
                 <button
-                  className="rounded-lg border border-teal-700 bg-transparent px-6 py-2.5 text-sm font-semibold text-teal-700 transition duration-200 hover:bg-teal-50"
+                  className="cursor-pointer rounded-lg border border-teal-700 bg-transparent px-6 py-2.5 text-sm font-semibold text-teal-700 transition duration-200 hover:bg-teal-50"
                   type="button"
                 >
                   Inquiry Now
@@ -253,7 +253,7 @@ const ProductsDetail = () => {
                 />
               </label>
               <button
-                className="mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"
+                className="mt-4 cursor-pointer rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"
                 type="submit"
               >
                 Post review

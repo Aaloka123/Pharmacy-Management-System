@@ -180,7 +180,7 @@ const AdminApproveVendor = () => {
               </div>
 
               <div className="mt-5 flex gap-3">
-                <button className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button">
+                <button className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white" type="button">
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-emerald-600">
                     <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path d="m5 12 5 5L19 8" strokeLinecap="round" strokeLinejoin="round" />
@@ -188,13 +188,13 @@ const AdminApproveVendor = () => {
                   </span>
                   Approve Vendor
                 </button>
-                <button className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-600" type="button">
+                <button className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-600" type="button">
                   <svg className="size-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M8.25 12h7.5m-7.5 4h4.5M6.75 4.5h10.5A2.25 2.25 0 0 1 19.5 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25H6.75a2.25 2.25 0 0 1-2.25-2.25V6.75A2.25 2.25 0 0 1 6.75 4.5Z" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   Request More Detail
                 </button>
-                <button className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-600" type="button">
+                <button className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-600" type="button">
                   <svg className="size-5" fill="none" stroke="currentColor" strokeWidth={2.6} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6 18 18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
