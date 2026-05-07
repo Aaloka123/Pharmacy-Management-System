@@ -300,7 +300,7 @@ const VendorProduct = () => {
           <h2 className="mb-4 text-xl font-semibold text-slate-900">{editingId !== null ? 'Edit Product' : 'Add Product'}</h2>
           <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
             <label className="block text-sm text-slate-700">
-              Product Name
+              Product Name <span className="text-rose-600">*</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 onChange={(event) => setFormData((prev) => ({ ...prev, productName: event.target.value }))}
@@ -312,7 +312,7 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700">
-              SKU
+              SKU <span className="text-rose-600">*</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 onChange={(event) => setFormData((prev) => ({ ...prev, sku: event.target.value }))}
@@ -324,7 +324,7 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700">
-              Category
+              Category <span className="text-rose-600">*</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
@@ -336,19 +336,20 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700">
-              Strength
+              Strength <span className="text-rose-600">*</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+                min="0"
                 onChange={(event) => setFormData((prev) => ({ ...prev, strength: event.target.value }))}
-                placeholder="Enter strength (e.g. 500mg)"
+                placeholder="Enter strength (e.g. 500)"
                 required
-                type="text"
+                type="number"
                 value={formData.strength}
               />
             </label>
 
             <label className="block text-sm text-slate-700">
-              Form
+              Form <span className="text-rose-600">*</span>
               <div className="relative mt-1">
                 <select
                   className="w-full appearance-none rounded-lg border border-slate-300 px-3 py-2 pr-10 text-sm outline-none focus:border-teal-600"
@@ -381,19 +382,20 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700">
-              Quantity
+              Quantity <span className="text-rose-600">*</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
+                min="0"
                 onChange={(event) => setFormData((prev) => ({ ...prev, quantity: event.target.value }))}
-                placeholder="Enter quantity (e.g. 30 ct)"
+                placeholder="Enter quantity (e.g. 30)"
                 required
-                type="text"
+                type="number"
                 value={formData.quantity}
               />
             </label>
 
             <label className="block text-sm text-slate-700">
-              Storage Requirements
+              Storage Requirements <span className="text-rose-600">*</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 onChange={(event) => setFormData((prev) => ({ ...prev, storageRequirements: event.target.value }))}
@@ -405,7 +407,7 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700">
-              Expiry Date
+              Expiry Date <span className="text-rose-600">*</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 onChange={(event) => setFormData((prev) => ({ ...prev, expiryDate: event.target.value }))}
@@ -416,7 +418,7 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700">
-              Price
+              Price <span className="text-rose-600">*</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 min="0"
@@ -429,7 +431,7 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700">
-              Stock
+              Stock <span className="text-rose-600">*</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 min="0"
@@ -442,7 +444,7 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700 md:col-span-2">
-              Product Description
+              Product Description <span className="text-rose-600">*</span>
               <textarea
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 onChange={(event) => setFormData((prev) => ({ ...prev, productDescription: event.target.value }))}
@@ -454,7 +456,7 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700 md:col-span-2">
-              Dosage Instructions (bullet points: one per line)
+              Dosage Instructions (bullet points: one per line) <span className="text-rose-600">*</span>
               <textarea
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 onChange={(event) => setFormData((prev) => ({ ...prev, dosageInstructions: event.target.value }))}
@@ -466,7 +468,7 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700 md:col-span-2">
-              Side Effects (bullet points: one per line)
+              Side Effects (bullet points: one per line) <span className="text-rose-600">*</span>
               <textarea
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
                 onChange={(event) => setFormData((prev) => ({ ...prev, sideEffects: event.target.value }))}
