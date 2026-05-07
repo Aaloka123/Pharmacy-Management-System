@@ -247,7 +247,7 @@ const Bills = () => {
 
         <div className="hide-on-print flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Vendor Bills</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Invoice</h1>
             <p className="mt-1 text-sm text-slate-600">Create and manage invoices for your orders.</p>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto">

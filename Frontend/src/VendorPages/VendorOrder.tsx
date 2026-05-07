@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../VendorComponents/Navbar';
 import AmoxicillinImage from '../assets/Amoxicillin.jpg';
 import LisinoprilImage from '../assets/Lisinopril.jpg';
@@ -102,6 +103,7 @@ const initialUserOrders: VendorOrder[] = [
 ];
 
 const Order = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<VendorOrder[]>(initialUserOrders);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('All');
@@ -151,6 +153,9 @@ const Order = () => {
     }
     return updatableOrderStatuses.slice(currentStatusIndex);
   };
+
+  const canViewInvoice = (status: OrderStatus) =>
+    status === 'Confirmed' || status === 'Shipped' || status === 'Delivered';
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -269,13 +274,24 @@ const Order = () => {
                           </select>
                         </td>
                         <td className="px-5 py-4">
-                          <button
-                            type="button"
-                            onClick={() => setExpandedOrderId((prev) => (prev === order.id ? null : order.id))}
-                            className="rounded-md bg-teal-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-teal-700"
-                          >
-                            {expandedOrderId === order.id ? 'Hide Detail' : 'View Detail'}
-                          </button>
+                          <div className="flex flex-col items-start gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedOrderId((prev) => (prev === order.id ? null : order.id))}
+                              className="w-24 rounded-md bg-teal-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-teal-700"
+                            >
+                              {expandedOrderId === order.id ? 'Hide Detail' : 'View Detail'}
+                            </button>
+                            {canViewInvoice(order.status) ? (
+                              <button
+                                type="button"
+                                onClick={() => navigate('/vendorbills')}
+                                className="w-24 whitespace-nowrap rounded-md border border-teal-600 px-3 py-1.5 text-xs font-medium text-teal-700 transition hover:bg-teal-50"
+                              >
+                                View Invoice
+                              </button>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
                       {expandedOrderId === order.id ? (
