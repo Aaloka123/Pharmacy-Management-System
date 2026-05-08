@@ -1,5 +1,6 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const vendors = [
   {
@@ -41,6 +42,7 @@ const vendors = [
 ]
 
 const AdminVendors = () => {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
 
   const filteredVendors = useMemo(() => {
@@ -100,7 +102,15 @@ const AdminVendors = () => {
                 {filteredVendors.map((vendor, index) => (
                   <tr className="border-t border-slate-200" key={vendor.id}>
                     <td className="px-5 py-3 text-sm text-slate-700">{index + 1}</td>
-                    <td className="px-5 py-3 text-sm text-slate-800">{vendor.shopName}</td>
+                    <td className="px-5 py-3 text-sm text-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => navigate('/adminvendorprofile')}
+                        className="cursor-pointer font-medium text-slate-800 decoration-slate-500 underline-offset-2 hover:underline"
+                      >
+                        {vendor.shopName}
+                      </button>
+                    </td>
                     <td className="px-5 py-3 text-sm text-slate-700">{vendor.ownerName}</td>
                     <td className="px-5 py-3 text-sm text-slate-700">{vendor.location}</td>
                     <td className="px-5 py-3 text-sm text-slate-700">{vendor.email}</td>
@@ -120,7 +130,11 @@ const AdminVendors = () => {
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <button className="cursor-pointer rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white" type="button">
+                      <button
+                        className="cursor-pointer rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white"
+                        type="button"
+                        onClick={() => navigate('/adminvendorprofile')}
+                      >
                         View Profile
                       </button>
                     </td>

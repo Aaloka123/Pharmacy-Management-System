@@ -27,6 +27,7 @@ import AdminApproveVendor from './AdminPages/AdminApproveVendor'
 import AdminProducts from './AdminPages/AdminProducts'
 import AdminReviews from './AdminPages/AdminReviews'
 import AdminSettings from './AdminPages/AdminSettings'
+import AdminVendorProfile from './AdminPages/AdminVendorProfile'
 import VendorProfile from './UserPages/VendorProfile'
 import Prescription from './UserPages/Prescription'
 import VendorUserProfile from './VendorPages/VendorUserProfile'
@@ -85,6 +86,7 @@ const AppContent = () => {
         <Route path="/adminproducts" element={<AdminProducts/>} />
         <Route path="/adminreviews" element={<AdminReviews/>} />
         <Route path="/adminsettings" element={<AdminSettings/>} />
+        <Route path="/adminvendorprofile" element={<AdminVendorProfile/>} />
 
       </Routes>
 
