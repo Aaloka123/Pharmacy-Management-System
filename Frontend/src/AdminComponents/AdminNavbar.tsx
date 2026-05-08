@@ -26,8 +26,9 @@ const AdminNavbar = () => {
 
   return (
     <aside className="sticky top-0 flex h-screen w-[280px] min-w-[280px] shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 shadow-sm">
-      <div className="mb-8 flex justify-center">
+      <div className="mb-8 flex flex-col items-center justify-center">
         <img alt="MedNexus logo" className="h-12 w-auto object-contain" src={mednexuxLogo} />
+        <p className="mt-6 text-center text-xs font-medium text-slate-600">MedNexus Admin</p>
       </div>
 
       <nav className="flex flex-col gap-2">
@@ -48,7 +49,7 @@ const AdminNavbar = () => {
       </nav>
 
       <button
-        className="mt-auto flex w-full cursor-pointer items-center gap-3 rounded-lg bg-rose-50 px-3 py-2 text-left text-[14px] font-semibold text-rose-700 transition hover:bg-rose-100"
+        className="mt-auto flex w-full cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-[14px] font-semibold text-slate-700 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
         onClick={() => navigate('/login')}
         type="button"
       >
