@@ -135,18 +135,21 @@ const AdminVendorProfile = () => {
                 <p className="mt-1 text-sm text-slate-600">Managed by {vendorProfile.ownerName}</p>
                 <p className="mt-1 text-sm text-slate-600">Email: {vendorProfile.email}</p>
                 <p className="mt-1 text-sm text-slate-600">Phone: {vendorProfile.phone}</p>
-                <span
-                  className={`mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
-                    storeStatus === 'Open' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                  }`}
-                >
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-600">Status:</span>
                   <span
-                    className={`h-2 w-2 rounded-full ${
-                      storeStatus === 'Open' ? 'bg-emerald-500' : 'bg-rose-500'
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                      storeStatus === 'Open' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                     }`}
-                  />
-                  {storeStatus}
-                </span>
+                  >
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        storeStatus === 'Open' ? 'bg-emerald-500' : 'bg-rose-500'
+                      }`}
+                    />
+                    {storeStatus}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
