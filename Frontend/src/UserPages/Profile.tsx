@@ -80,7 +80,7 @@ const Profile = () => {
                   {profileImage ? (
                     <img alt="Profile preview" className="h-36 w-36 rounded-full border border-slate-200 object-cover" src={profileImage} />
                   ) : (
-                    <div className="flex h-36 w-36 items-center justify-center rounded-full border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">
+                    <div className="flex h-36 w-36 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-sm text-slate-500">
                       No photo
                     </div>
                   )}

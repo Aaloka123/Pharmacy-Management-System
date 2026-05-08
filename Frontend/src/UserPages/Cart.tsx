@@ -172,7 +172,7 @@ const Cart = () => {
                     />
                     <span className="sm:hidden">Select</span>
                   </label>
-                  <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 sm:h-28 sm:w-28">
+                  <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white sm:h-28 sm:w-28">
                     {line.image ? (
                       <img alt={line.name} className="h-24 w-full max-w-28 object-contain p-2 sm:h-full sm:max-w-none" src={line.image} />
                     ) : (
@@ -198,7 +198,7 @@ const Cart = () => {
                   <div className="flex items-center justify-center gap-6 border-t border-slate-100 pt-4 sm:min-w-[180px] sm:self-center sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
                     <div>
                       <p className="px-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">Quantity</p>
-                      <div className="mt-1 flex items-center justify-between rounded-lg bg-slate-50">
+                      <div className="mt-1 flex items-center justify-between rounded-lg bg-white">
                         <button
                           aria-label="Decrease quantity"
                           className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"

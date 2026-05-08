@@ -109,8 +109,8 @@ const Products = () => {
   return (
     <div className="bg-white">
       <Header />
-      <main className="px-[80px] pb-10 pt-4">
-        <section className="w-full p-2 md:p-4">
+      <main className="bg-white px-[80px] pb-10 pt-4">
+        <section className="w-full bg-white p-2 md:p-4">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="mt-2 text-[30px] font-bold leading-tight tracking-tight text-slate-900">Product</h1>
@@ -189,7 +189,7 @@ const Products = () => {
                 role="button"
                 tabIndex={0}
               >
-                <div className="relative h-56 w-full bg-slate-50">
+                <div className="relative h-56 w-full bg-white">
                   {product.image ? <img alt={product.name} className="h-full w-full object-contain bg-white p-2" src={product.image} /> : null}
                   <span
                     className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] uppercase ${product.stockTone}`}

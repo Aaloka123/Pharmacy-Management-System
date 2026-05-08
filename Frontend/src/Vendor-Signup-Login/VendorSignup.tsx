@@ -97,7 +97,7 @@ const VendorSignup = () => {
                     value={formData.userName}
                     onChange={(event) => updateField('userName', event.target.value)}
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
-                    placeholder="e.g. luckyadmin"
+                    placeholder="Your Name"
                   />
                 </label>
 
@@ -109,7 +109,7 @@ const VendorSignup = () => {
                     value={formData.contactEmail}
                     onChange={(event) => updateField('contactEmail', event.target.value)}
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
-                    placeholder="name@business.com"
+                    placeholder="Your Email"
                   />
                 </label>
 
@@ -121,7 +121,7 @@ const VendorSignup = () => {
                     value={formData.locationPhoneNumber}
                     onChange={(event) => updateField('locationPhoneNumber', event.target.value)}
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
-                    placeholder="+977-98XXXXXXXX"
+                    placeholder="Number"
                   />
                 </label>
 
@@ -133,7 +133,7 @@ const VendorSignup = () => {
                     value={formData.personalLocation}
                     onChange={(event) => updateField('personalLocation', event.target.value)}
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
-                    placeholder="e.g. Kathmandu, Nepal"
+                    placeholder="Your Location"
                   />
                 </label>
               </div>
@@ -151,7 +151,7 @@ const VendorSignup = () => {
                     value={formData.businessPanVatId}
                     onChange={(event) => updateField('businessPanVatId', event.target.value)}
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
-                    placeholder="e.g. 605982486"
+                    placeholder="Business PAN / VAT ID"
                   />
                 </label>
 
@@ -163,7 +163,7 @@ const VendorSignup = () => {
                     value={formData.businessName}
                     onChange={(event) => updateField('businessName', event.target.value)}
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
-                    placeholder="e.g. Lucky Human Resource Pvt. Ltd."
+                    placeholder="Business Name"
                   />
                 </label>
 
@@ -175,7 +175,7 @@ const VendorSignup = () => {
                     value={formData.businessLocation}
                     onChange={(event) => updateField('businessLocation', event.target.value)}
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
-                    placeholder="e.g. Ward No. 07, Mitrapark, Kathmandu"
+                    placeholder="Business Location"
                   />
                 </label>
 
@@ -187,7 +187,7 @@ const VendorSignup = () => {
                     value={formData.pharmacyLicense}
                     onChange={(event) => updateField('pharmacyLicense', event.target.value)}
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
-                    placeholder="e.g. DDA/PHARM/2026/1021"
+                    placeholder="Pharmacy License"
                   />
                 </label>
               </div>
