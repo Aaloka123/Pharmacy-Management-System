@@ -98,7 +98,7 @@ const AdminApproveVendor = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <AdminNavbar />
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Admin Approve Vendor</h1>
