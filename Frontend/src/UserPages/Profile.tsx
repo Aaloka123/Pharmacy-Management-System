@@ -117,7 +117,7 @@ const Profile = () => {
 
   const handleLogout = () => {
     clearStoredUser()
-    toast.info('You have been logged out.')
+    toast.error('You have been logged out.')
     navigate('/login')
   }
 

@@ -1,9 +1,24 @@
+export type Role = 'ADMIN' | 'VENDOR' | 'USER'
+
 export type AuthUser = {
   id: number
   fullName: string
   email: string
   phoneNumber: string
   location: string | null
+  role: Role
+}
+
+export const homePathForRole = (role: Role): string => {
+  switch (role) {
+    case 'ADMIN':
+      return '/admindashboard'
+    case 'VENDOR':
+      return '/vendordashboard'
+    case 'USER':
+    default:
+      return '/'
+  }
 }
 
 const STORAGE_KEY = 'mednexus.user'

@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
-import { setStoredUser, type AuthUser } from '../lib/auth'
+import { homePathForRole, setStoredUser, type AuthUser } from '../lib/auth'
 
 const LOGIN_URL = '/api/users/login'
 
@@ -39,7 +39,7 @@ const Login = () => {
       const user = (await res.json()) as AuthUser
       setStoredUser(user)
       toast.success(`Welcome back, ${user.fullName.split(' ')[0]}!`)
-      navigate('/')
+      navigate(homePathForRole(user.role), { replace: true })
     } catch {
       toast.error('Could not reach the server. Is the backend running on port 8080?')
     } finally {

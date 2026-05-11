@@ -70,6 +70,7 @@ public class UserService {
 				user.getFullName(),
 				user.getEmail(),
 				user.getPhoneNumber(),
-				user.getLocation());
+				user.getLocation(),
+				user.getRole());
 	}
 }

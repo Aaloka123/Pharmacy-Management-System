@@ -2,6 +2,8 @@ package com.mednexus.mednexus.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,6 +31,10 @@ public class User {
 
 	@Column(name = "location", length = 255)
 	private String location;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "role", nullable = false, length = 20)
+	private Role role = Role.USER;
 
 	public User() {
 	}
@@ -86,5 +92,13 @@ public class User {
 
 	public void setLocation(String location) {
 		this.location = location;
+	}
+
+	public Role getRole() {
+		return role;
+	}
+
+	public void setRole(Role role) {
+		this.role = role;
 	}
 }

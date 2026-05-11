@@ -9,7 +9,9 @@ import {
   LuLogOut,
 } from 'react-icons/lu';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import mednexuxLogo from '../assets/Mednexux.png';
+import { clearStoredUser } from '../lib/auth';
 
 const menuItems = [
   { label: 'Dashboard', Icon: LuLayoutDashboard, to: '/vendordashboard' },
@@ -23,6 +25,12 @@ const menuItems = [
 
 const Navbar = () => {
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    clearStoredUser();
+    toast.error('You have been logged out.');
+    navigate('/vendorlogin');
+  };
 
   return (
     <aside className="sticky top-0 flex h-screen w-[280px] min-w-[280px] shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 shadow-sm">
@@ -55,7 +63,7 @@ const Navbar = () => {
 
       <button
         className="mt-auto flex w-full cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-[14px] font-semibold text-slate-700 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
-        onClick={() => navigate('/vendorlogin')}
+        onClick={handleLogout}
         type="button"
       >
         <LuLogOut className="h-[18px] w-[18px] shrink-0" />
