@@ -1,11 +1,21 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { IoPersonCircleOutline } from 'react-icons/io5'
 import mednexuxLogo from '../assets/Mednexux.png'
+import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
 
 const Header = () => {
   const baseLinkClass =
     'rounded-lg px-3.5 py-2 text-[14px] font-medium text-slate-700 transition duration-200 hover:text-teal-700'
   const activeLinkClass =
     'text-teal-700'
+
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser())
+
+  useEffect(() => {
+    const unsubscribe = onAuthChange(() => setUser(getStoredUser()))
+    return unsubscribe
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[#F8FAFC] px-[80px] py-2.5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur">
@@ -59,12 +69,23 @@ const Header = () => {
               type="text"
             />
           </div>
-          <NavLink
-            className="rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-5 py-2 text-[14px] font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"
-            to="/login"
-          >
-            Login
-          </NavLink>
+          {user ? (
+            <NavLink
+              aria-label="Profile"
+              title={user.email}
+              to="/profile"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-black transition duration-200 hover:bg-slate-100"
+            >
+              <IoPersonCircleOutline className="h-7 w-7" />
+            </NavLink>
+          ) : (
+            <NavLink
+              className="rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-5 py-2 text-[14px] font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"
+              to="/login"
+            >
+              Login
+            </NavLink>
+          )}
         </div>
       </nav>
     </header>

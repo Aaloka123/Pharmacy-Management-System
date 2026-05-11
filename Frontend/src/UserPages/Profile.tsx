@@ -1,16 +1,44 @@
-import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
-import AalokaImage from '../assets/aaloka.png'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
+import { clearStoredUser, getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
 
 const Profile = () => {
-  const [fullName, setFullName] = useState('Aaloka Poudel')
-  const [phoneNumber, setPhoneNumber] = useState('+977 9812345678')
-  const [email, setEmail] = useState('aalokapoudel@gmail.com')
-  const [location, setLocation] = useState('Dhapakhel, Lalitpur')
-  const [profileImage, setProfileImage] = useState<string | null>(AalokaImage)
+  const navigate = useNavigate()
+  const storedUser = getStoredUser()
+  const [userId, setUserId] = useState<number | null>(storedUser?.id ?? null)
+  const [fullName, setFullName] = useState(storedUser?.fullName ?? '')
+  const [phoneNumber, setPhoneNumber] = useState(storedUser?.phoneNumber ?? '')
+  const [email, setEmail] = useState(storedUser?.email ?? '')
+  const [location, setLocation] = useState(storedUser?.location ?? '')
+  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+
+  useEffect(() => {
+    if (!getStoredUser()) {
+      navigate('/login', { replace: true })
+      return
+    }
+    const unsubscribe = onAuthChange(() => {
+      const u = getStoredUser()
+      if (!u) {
+        navigate('/login', { replace: true })
+        return
+      }
+      setUserId(u.id)
+      setFullName(u.fullName)
+      setPhoneNumber(u.phoneNumber)
+      setEmail(u.email)
+      setLocation(u.location ?? '')
+    })
+    return unsubscribe
+  }, [navigate])
+
+  const initial = (fullName.trim().charAt(0) || email.trim().charAt(0) || 'U').toUpperCase()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -35,10 +63,40 @@ const Profile = () => {
     setProfileImage(imageUrl)
   }
 
-  const handleProfileSave = (event: FormEvent) => {
+  const handleProfileSave = async (event: FormEvent) => {
     event.preventDefault()
-    setIsEditingProfile(false)
-    window.alert('Profile details updated successfully.')
+    if (!userId) {
+      toast.error('You must be logged in to update your profile.')
+      navigate('/login')
+      return
+    }
+    setIsSavingProfile(true)
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          phoneNumber: phoneNumber.trim(),
+          location: location.trim(),
+        }),
+      })
+      if (!res.ok) {
+        toast.error('Failed to update profile.')
+        return
+      }
+      const updated = (await res.json()) as AuthUser
+      setStoredUser(updated)
+      setFullName(updated.fullName)
+      setPhoneNumber(updated.phoneNumber)
+      setLocation(updated.location ?? '')
+      setIsEditingProfile(false)
+      toast.success('Profile details updated successfully.')
+    } catch {
+      toast.error('Could not reach the server.')
+    } finally {
+      setIsSavingProfile(false)
+    }
   }
 
   const handlePasswordSave = (event: FormEvent) => {
@@ -58,7 +116,9 @@ const Profile = () => {
   }
 
   const handleLogout = () => {
-    window.alert('You have been logged out.')
+    clearStoredUser()
+    toast.info('You have been logged out.')
+    navigate('/login')
   }
 
   return (
@@ -80,8 +140,8 @@ const Profile = () => {
                   {profileImage ? (
                     <img alt="Profile preview" className="h-36 w-36 rounded-full border border-slate-200 object-cover" src={profileImage} />
                   ) : (
-                    <div className="flex h-36 w-36 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-sm text-slate-500">
-                      No photo
+                    <div className="flex h-36 w-36 items-center justify-center rounded-full border border-slate-200 bg-linear-to-br from-teal-600 to-teal-700 text-4xl font-bold text-white">
+                      {initial}
                     </div>
                   )}
                   <button
@@ -103,8 +163,8 @@ const Profile = () => {
                   <input accept="image/*" className="hidden" onChange={handleImageChange} ref={fileInputRef} type="file" />
                 </div>
               </div>
-              <p className="mt-4 text-center text-[16px] font-bold text-slate-900">Aaloka Poudel</p>
-              <p className="mt-1 text-center text-sm text-slate-600">aalokapoudel@gmail.com</p>
+              <p className="mt-4 text-center text-[16px] font-bold text-slate-900">{fullName || '—'}</p>
+              <p className="mt-1 text-center text-sm text-slate-600">{email || '—'}</p>
             </aside>
 
             <div className="space-y-6">
@@ -152,9 +212,9 @@ const Profile = () => {
                   <label className="block">
                     <span className="mb-1.5 block text-sm text-slate-600">Email Address</span>
                     <input
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
-                      disabled={!isEditingProfile}
-                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 outline-none"
+                      disabled
+                      readOnly
                       type="email"
                       value={email}
                     />
@@ -172,10 +232,11 @@ const Profile = () => {
                 </div>
                 {isEditingProfile ? (
                   <button
-                    className="mt-5 cursor-pointer rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800"
+                    className="mt-5 cursor-pointer rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800 disabled:opacity-60"
+                    disabled={isSavingProfile}
                     type="submit"
                   >
-                    Save Profile
+                    {isSavingProfile ? 'Saving…' : 'Save Profile'}
                   </button>
                 ) : null}
               </form>

@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import Home from './UserPages/Home'
 import Products from './UserPages/Products'
 import About from './UserPages/About'
@@ -99,6 +101,7 @@ const App = () => {
   return (
     <BrowserRouter>
       <AppContent />
+      <ToastContainer position="top-right" autoClose={3000} newestOnTop closeOnClick pauseOnFocusLoss={false} theme="colored" />
     </BrowserRouter>
   )
 }

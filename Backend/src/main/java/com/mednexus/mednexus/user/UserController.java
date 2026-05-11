@@ -2,12 +2,16 @@ package com.mednexus.mednexus.user;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mednexus.mednexus.user.dto.LoginRequest;
 import com.mednexus.mednexus.user.dto.SignupRequest;
+import com.mednexus.mednexus.user.dto.UpdateProfileRequest;
 import com.mednexus.mednexus.user.dto.UserResponse;
 
 @RestController
@@ -24,5 +28,15 @@ public class UserController {
 	public ResponseEntity<UserResponse> signup(@RequestBody SignupRequest request) {
 		UserResponse body = userService.register(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(body);
+	}
+
+	@PostMapping("/login")
+	public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request) {
+		return ResponseEntity.ok(userService.login(request));
+	}
+
+	@PutMapping("/{id}")
+	public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody UpdateProfileRequest request) {
+		return ResponseEntity.ok(userService.updateProfile(id, request));
 	}
 }

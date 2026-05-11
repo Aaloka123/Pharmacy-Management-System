@@ -3,11 +3,49 @@ import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
+import { toast } from 'react-toastify'
+import { setStoredUser, type AuthUser } from '../lib/auth'
+
+const LOGIN_URL = '/api/users/login'
 
 const Login = () => {
+  const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const res = await fetch(LOGIN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      })
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast.error('Invalid email or password.')
+        } else {
+          toast.error('Login failed. Please try again.')
+        }
+        return
+      }
+
+      const user = (await res.json()) as AuthUser
+      setStoredUser(user)
+      toast.success(`Welcome back, ${user.fullName.split(' ')[0]}!`)
+      navigate('/')
+    } catch {
+      toast.error('Could not reach the server. Is the backend running on port 8080?')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <>
@@ -22,7 +60,7 @@ const Login = () => {
             </Link>
           </p>
 
-          <form className="mt-8 space-y-6">
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div>
               <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
                 <input
@@ -30,6 +68,10 @@ const Login = () => {
                   id="email"
                   placeholder="Enter your email address"
                   type="email"
+                  value={email}
+                  onChange={(ev) => setEmail(ev.target.value)}
+                  required
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -41,6 +83,10 @@ const Login = () => {
                   id="password"
                   placeholder="Enter your password"
                   type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(ev) => setPassword(ev.target.value)}
+                  required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -58,10 +104,11 @@ const Login = () => {
             </div>
 
             <button
-              className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
-              type="button"
+              className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+              type="submit"
+              disabled={loading}
             >
-              Login
+              {loading ? 'Logging in…' : 'Login'}
             </button>
           </form>
 

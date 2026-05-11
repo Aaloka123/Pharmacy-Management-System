@@ -27,6 +27,9 @@ public class User {
 	@Column(nullable = false, length = 255)
 	private String password;
 
+	@Column(name = "location", length = 255)
+	private String location;
+
 	public User() {
 	}
 
@@ -75,5 +78,13 @@ public class User {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	public String getLocation() {
+		return location;
+	}
+
+	public void setLocation(String location) {
+		this.location = location;
 	}
 }

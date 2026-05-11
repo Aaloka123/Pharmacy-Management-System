@@ -1,9 +1,7 @@
 package com.mednexus.mednexus.user.dto;
 
-public record UserResponse(
-		Long id,
+public record UpdateProfileRequest(
 		String fullName,
-		String email,
 		String phoneNumber,
 		String location) {
 }
