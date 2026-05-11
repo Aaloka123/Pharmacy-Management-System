@@ -6,9 +6,65 @@ import Header from '../UserComponents/Header'
 import { Link } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 
+const SIGNUP_URL = '/api/users/signup'
+
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch(SIGNUP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          email: email.trim(),
+          phoneNumber: phoneNumber.trim(),
+          password,
+        }),
+      })
+
+      if (!res.ok) {
+        if (res.status === 409) {
+          setError('This email is already registered.')
+        } else {
+          const text = await res.text()
+          setError(text || 'Signup failed. Please try again.')
+        }
+        return
+      }
+
+      setSuccess('Account created successfully. You can log in.')
+      setFullName('')
+      setEmail('')
+      setPhoneNumber('')
+      setPassword('')
+      setConfirmPassword('')
+    } catch {
+      setError('Could not reach the server. Is the backend running on port 8080?')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <>
@@ -23,7 +79,18 @@ const Signup = () => {
             </Link>
           </p>
 
-          <form className="mt-8 space-y-6">
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            {error ? (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+                {error}
+              </p>
+            ) : null}
+            {success ? (
+              <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-teal-800" role="status">
+                {success}
+              </p>
+            ) : null}
+
             <div>
               <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
                 <input
@@ -31,6 +98,10 @@ const Signup = () => {
                   id="fullName"
                   placeholder="Enter your full name"
                   type="text"
+                  value={fullName}
+                  onChange={(ev) => setFullName(ev.target.value)}
+                  required
+                  autoComplete="name"
                 />
               </div>
             </div>
@@ -42,6 +113,10 @@ const Signup = () => {
                   id="email"
                   placeholder="Enter your email address"
                   type="email"
+                  value={email}
+                  onChange={(ev) => setEmail(ev.target.value)}
+                  required
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -53,6 +128,10 @@ const Signup = () => {
                   id="phoneNumber"
                   placeholder="Enter your phone number"
                   type="tel"
+                  value={phoneNumber}
+                  onChange={(ev) => setPhoneNumber(ev.target.value)}
+                  required
+                  autoComplete="tel"
                 />
               </div>
             </div>
@@ -64,6 +143,11 @@ const Signup = () => {
                   id="password"
                   placeholder="Enter your password"
                   type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(ev) => setPassword(ev.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
                 />
               </div>
               <button
@@ -82,6 +166,11 @@ const Signup = () => {
                   id="confirmPassword"
                   placeholder="Confirm your password"
                   type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(ev) => setConfirmPassword(ev.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
                 />
               </div>
               <button
@@ -94,10 +183,11 @@ const Signup = () => {
             </div>
 
             <button
-              className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
-              type="button"
+              className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+              type="submit"
+              disabled={loading}
             >
-              Signup
+              {loading ? 'Signing up…' : 'Signup'}
             </button>
           </form>
 
