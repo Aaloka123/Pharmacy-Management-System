@@ -35,7 +35,7 @@ public class UserService {
 		return toResponse(saved);
 	}
 
-	@Transactional(readOnly = true)
+	@Transactional
 	public UserResponse login(LoginRequest request) {
 		if (request == null || request.email() == null || request.password() == null) {
 			throw new InvalidCredentialsException();
@@ -44,6 +44,11 @@ public class UserService {
 				.orElseThrow(InvalidCredentialsException::new);
 		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
 			throw new InvalidCredentialsException();
+		}
+		// Transparently upgrade old (slow) hashes to the current strength so
+		// subsequent logins for this user are fast.
+		if (passwordEncoder.upgradeEncoding(user.getPassword())) {
+			user.setPassword(passwordEncoder.encode(request.password()));
 		}
 		return toResponse(user);
 	}

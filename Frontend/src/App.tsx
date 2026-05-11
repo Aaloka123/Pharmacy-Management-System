@@ -106,7 +106,7 @@ const App = () => {
   return (
     <BrowserRouter>
       <AppContent />
-      <ToastContainer position="top-right" autoClose={3000} newestOnTop closeOnClick pauseOnFocusLoss={false} theme="colored" />
+      <ToastContainer position="top-right" autoClose={1200} hideProgressBar newestOnTop closeOnClick pauseOnFocusLoss={false} draggable={false} theme="colored" />
     </BrowserRouter>
   )
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { IoPersonCircleOutline } from 'react-icons/io5'
+import { IoCartOutline, IoPersonCircleOutline } from 'react-icons/io5'
 import mednexuxLogo from '../assets/Mednexux.png'
 import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
 
@@ -52,7 +52,7 @@ const Header = () => {
             Contacts
           </NavLink>
         </div>
-        <div className="flex flex-1 items-center justify-end gap-3">
+        <div className="flex flex-1 items-center justify-end gap-6">
           <div className="relative hidden md:block">
             <svg
               aria-hidden="true"
@@ -70,14 +70,32 @@ const Header = () => {
             />
           </div>
           {user ? (
-            <NavLink
-              aria-label="Profile"
-              title={user.email}
-              to="/profile"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-black transition duration-200 hover:bg-slate-100"
-            >
-              <IoPersonCircleOutline className="h-7 w-7" />
-            </NavLink>
+            <div className="flex items-center gap-0.5">
+              <NavLink
+                aria-label="Cart"
+                title="Cart"
+                to="/cart"
+                className={({ isActive }) =>
+                  `flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:text-teal-700 ${
+                    isActive ? 'text-teal-700' : 'text-slate-700'
+                  }`
+                }
+              >
+                <IoCartOutline className="h-6 w-6" />
+              </NavLink>
+              <NavLink
+                aria-label="Profile"
+                title={user.email}
+                to="/profile"
+                className={({ isActive }) =>
+                  `flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:text-teal-700 ${
+                    isActive ? 'text-teal-700' : 'text-slate-700'
+                  }`
+                }
+              >
+                <IoPersonCircleOutline className="h-7 w-7" />
+              </NavLink>
+            </div>
           ) : (
             <NavLink
               className="rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-5 py-2 text-[14px] font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"

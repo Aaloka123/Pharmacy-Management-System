@@ -79,7 +79,7 @@ const Signup = () => {
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div>
-              <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
+              <div className="border-b border-slate-300 transition-colors duration-75 focus-within:border-teal-600">
                 <input
                   className="w-full bg-transparent px-0 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
                   id="fullName"
@@ -94,7 +94,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
+              <div className="border-b border-slate-300 transition-colors duration-75 focus-within:border-teal-600">
                 <input
                   className="w-full bg-transparent px-0 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
                   id="email"
@@ -109,7 +109,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
+              <div className="border-b border-slate-300 transition-colors duration-75 focus-within:border-teal-600">
                 <input
                   className="w-full bg-transparent px-0 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
                   id="phoneNumber"
@@ -124,7 +124,7 @@ const Signup = () => {
             </div>
 
             <div className="relative">
-              <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
+              <div className="border-b border-slate-300 transition-colors duration-75 focus-within:border-teal-600">
                 <input
                   className="w-full bg-transparent pl-0 pr-9 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
                   id="password"
@@ -147,7 +147,7 @@ const Signup = () => {
             </div>
 
             <div className="relative">
-              <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
+              <div className="border-b border-slate-300 transition-colors duration-75 focus-within:border-teal-600">
                 <input
                   className="w-full bg-transparent pl-0 pr-9 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
                   id="confirmPassword"
