@@ -48,6 +48,14 @@ public class UserService {
 		return toResponse(user);
 	}
 
+	@Transactional(readOnly = true)
+	public java.util.List<UserResponse> listByRole(Role role) {
+		return userRepository.findAllByRoleOrderByIdAsc(role)
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
 	@Transactional
 	public UserResponse updateProfile(Long id, UpdateProfileRequest request) {
 		User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);

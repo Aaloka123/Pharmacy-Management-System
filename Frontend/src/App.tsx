@@ -33,6 +33,8 @@ import AdminVendorProfile from './AdminPages/AdminVendorProfile'
 import VendorProfile from './UserPages/VendorProfile'
 import Prescription from './UserPages/Prescription'
 import VendorUserProfile from './VendorPages/VendorUserProfile'
+import RequireAuth from './lib/RequireAuth'
+import AdminUserProfile from './AdminPages/AdminUserProfile'
 
 const AppContent = () => {
   const { pathname } = useLocation()
@@ -48,16 +50,18 @@ const AppContent = () => {
   return (
     <>
       <Routes>
-        {/* User Pages */}
+        {/* Public browseable pages */}
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Products />} />
         <Route path="/productsdetail" element={<ProductsDetail />} />
         <Route path="/about" element={<About />} />
         <Route path="/contacts" element={<Contacts />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/cart" element={<Cart />} />
         <Route path="/vendorprofile" element={<VendorProfile />} />
-        <Route path="/prescription" element={<Prescription />} />
+
+        {/* User-account pages (login required) */}
+        <Route path="/profile" element={<RequireAuth roles={['USER']}><Profile /></RequireAuth>} />
+        <Route path="/cart" element={<RequireAuth roles={['USER']}><Cart /></RequireAuth>} />
+        <Route path="/prescription" element={<RequireAuth roles={['USER']}><Prescription /></RequireAuth>} />
         
 
         {/* Signup-Login */}
@@ -69,26 +73,27 @@ const AppContent = () => {
         <Route path="/vendorlogin" element={<Vendorlogin />} />
         <Route path="/vendorsignup" element={<VendorSignup />} />
 
-        {/* Vendor Pages */}
-        <Route path="/vendordashboard" element={<Dashboard />} />
-        <Route path="/vendormessage" element={<Message />} />
-        <Route path="/vendorproduct" element={<Product />} />
-        <Route path="/vendororder" element={<Order />} />
-        <Route path="/vendorreview" element={<Review />} />
-        <Route path="/vendorbills" element={<Bills />} />
-        <Route path="/vendorsetting" element={<Setting />} />
-        <Route path="/vendoruserprofile" element={<VendorUserProfile />} />
+        {/* Vendor Pages (VENDOR only — unauthenticated visits go to /vendorlogin) */}
+        <Route path="/vendordashboard" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Dashboard /></RequireAuth>} />
+        <Route path="/vendormessage" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Message /></RequireAuth>} />
+        <Route path="/vendorproduct" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Product /></RequireAuth>} />
+        <Route path="/vendororder" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Order /></RequireAuth>} />
+        <Route path="/vendorreview" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Review /></RequireAuth>} />
+        <Route path="/vendorbills" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Bills /></RequireAuth>} />
+        <Route path="/vendorsetting" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Setting /></RequireAuth>} />
+        <Route path="/vendoruserprofile" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><VendorUserProfile /></RequireAuth>} />
 
 
-        {/*Admin Pages*/ }
-        <Route path="/admindashboard" element={<AdminDashboard/>} />
-        <Route path="/adminusers" element={<AdminUsers/>} />
-        <Route path="/adminvendors" element={<AdminVendors/>} />
-        <Route path="/adminapprovevendor" element={<AdminApproveVendor/>} />
-        <Route path="/adminproducts" element={<AdminProducts/>} />
-        <Route path="/adminreviews" element={<AdminReviews/>} />
-        <Route path="/adminsettings" element={<AdminSettings/>} />
-        <Route path="/adminvendorprofile" element={<AdminVendorProfile/>} />
+        {/* Admin Pages (ADMIN only) */}
+        <Route path="/admindashboard" element={<RequireAuth roles={['ADMIN']}><AdminDashboard /></RequireAuth>} />
+        <Route path="/adminusers" element={<RequireAuth roles={['ADMIN']}><AdminUsers /></RequireAuth>} />
+        <Route path="/adminvendors" element={<RequireAuth roles={['ADMIN']}><AdminVendors /></RequireAuth>} />
+        <Route path="/adminapprovevendor" element={<RequireAuth roles={['ADMIN']}><AdminApproveVendor /></RequireAuth>} />
+        <Route path="/adminproducts" element={<RequireAuth roles={['ADMIN']}><AdminProducts /></RequireAuth>} />
+        <Route path="/adminreviews" element={<RequireAuth roles={['ADMIN']}><AdminReviews /></RequireAuth>} />
+        <Route path="/adminsettings" element={<RequireAuth roles={['ADMIN']}><AdminSettings /></RequireAuth>} />
+        <Route path="/adminvendorprofile" element={<RequireAuth roles={['ADMIN']}><AdminVendorProfile /></RequireAuth>} />
+        <Route path="/adminuserprofile" element={<RequireAuth roles={['ADMIN']}><AdminUserProfile /></RequireAuth>} />
 
       </Routes>
 

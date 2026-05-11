@@ -1,28 +1,58 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'react-toastify'
 
-const users = [
-  { id: 1, name: 'Aarav Sharma', email: 'aarav.sharma@gmail.com', location: 'Kathmandu', number: '+977-9812345678' },
-  { id: 2, name: 'Sita Karki', email: 'sita.karki@gmail.com', location: 'Pokhara', number: '+977-9823456789' },
-  { id: 3, name: 'Rohan Thapa', email: 'rohan.thapa@gmail.com', location: 'Lalitpur', number: '+977-9845671234' },
-  { id: 4, name: 'Nisha Adhikari', email: 'nisha.adhikari@gmail.com', location: 'Bhaktapur', number: '+977-9865432109' },
-]
+type UserRow = {
+  id: number
+  fullName: string
+  email: string
+  phoneNumber: string
+  location: string | null
+  role: 'ADMIN' | 'VENDOR' | 'USER'
+}
 
 const AdminUsers = () => {
+  const [users, setUsers] = useState<UserRow[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch('/api/users?role=USER')
+        if (!res.ok) {
+          throw new Error(`Request failed with ${res.status}`)
+        }
+        const data = (await res.json()) as UserRow[]
+        if (!cancelled) setUsers(data)
+      } catch (err) {
+        if (!cancelled) {
+          setError('Could not load users. Is the backend running?')
+          toast.error('Failed to load users.')
+          console.error(err)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const filteredUsers = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase()
-
-    if (!normalizedQuery) {
-      return users
-    }
-
+    if (!normalizedQuery) return users
     return users.filter((user) => {
-      const searchableValues = [user.name, user.email, user.location, user.number]
-      return searchableValues.some((value) => value.toLowerCase().includes(normalizedQuery))
+      const haystack = [user.fullName, user.email, user.location ?? '', user.phoneNumber]
+      return haystack.some((value) => value.toLowerCase().includes(normalizedQuery))
     })
-  }, [searchQuery])
+  }, [users, searchQuery])
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -31,8 +61,12 @@ const AdminUsers = () => {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Admin Users</h1>
-            <p className="mt-1 text-sm text-slate-600">View registered users and contact details.</p>
-            
+            <p className="mt-1 text-sm text-slate-600">
+              View registered users and contact details.
+              {!loading && !error ? (
+                <span className="ml-2 text-slate-500">({users.length} total)</span>
+              ) : null}
+            </p>
           </div>
           <input
             className="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-teal-600"
@@ -57,29 +91,42 @@ const AdminUsers = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user, index) => (
-                  <tr className="border-t border-slate-200" key={user.id}>
-                    <td className="px-5 py-3 text-sm text-slate-700">{index + 1}</td>
-                    <td className="px-5 py-3 text-sm text-slate-800">{user.name}</td>
-                    <td className="px-5 py-3 text-sm text-slate-700">{user.email}</td>
-                    <td className="px-5 py-3 text-sm text-slate-700">{user.location}</td>
-                    <td className="px-5 py-3 text-sm text-slate-700">{user.number}</td>
-                    <td className="px-5 py-3">
-                      <button
-                        className="cursor-pointer rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white"
-                        type="button"
-                      >
-                        View Profile
-                      </button>
+                {loading ? (
+                  <tr className="border-t border-slate-200">
+                    <td className="px-5 py-4 text-sm text-slate-500" colSpan={6}>
+                      Loading users…
                     </td>
                   </tr>
-                ))}
-                {filteredUsers.length === 0 && (
+                ) : error ? (
+                  <tr className="border-t border-slate-200">
+                    <td className="px-5 py-4 text-sm text-rose-600" colSpan={6}>
+                      {error}
+                    </td>
+                  </tr>
+                ) : filteredUsers.length === 0 ? (
                   <tr className="border-t border-slate-200">
                     <td className="px-5 py-4 text-sm text-slate-500" colSpan={6}>
                       No users found.
                     </td>
                   </tr>
+                ) : (
+                  filteredUsers.map((user, index) => (
+                    <tr className="border-t border-slate-200" key={user.id}>
+                      <td className="px-5 py-3 text-sm text-slate-700">{index + 1}</td>
+                      <td className="px-5 py-3 text-sm text-slate-800">{user.fullName}</td>
+                      <td className="px-5 py-3 text-sm text-slate-700">{user.email}</td>
+                      <td className="px-5 py-3 text-sm text-slate-700">{user.location?.trim() || '—'}</td>
+                      <td className="px-5 py-3 text-sm text-slate-700">{user.phoneNumber}</td>
+                      <td className="px-5 py-3">
+                        <button
+                          className="cursor-pointer rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-teal-700"
+                          type="button"
+                        >
+                          View Profile
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>

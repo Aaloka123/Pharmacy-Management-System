@@ -24,9 +24,13 @@ export const homePathForRole = (role: Role): string => {
 const STORAGE_KEY = 'mednexus.user'
 const AUTH_EVENT = 'mednexus:auth-changed'
 
+// Tab-scoped session: stored in `sessionStorage` so each new tab is its own
+// session. Opening the app in a new tab logs you out for that tab.
+const store: Storage | null = typeof window !== 'undefined' ? window.sessionStorage : null
+
 export const getStoredUser = (): AuthUser | null => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = store?.getItem(STORAGE_KEY) ?? null
     return raw ? (JSON.parse(raw) as AuthUser) : null
   } catch {
     return null
@@ -34,20 +38,18 @@ export const getStoredUser = (): AuthUser | null => {
 }
 
 export const setStoredUser = (user: AuthUser) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+  store?.setItem(STORAGE_KEY, JSON.stringify(user))
   window.dispatchEvent(new Event(AUTH_EVENT))
 }
 
 export const clearStoredUser = () => {
-  localStorage.removeItem(STORAGE_KEY)
+  store?.removeItem(STORAGE_KEY)
   window.dispatchEvent(new Event(AUTH_EVENT))
 }
 
 export const onAuthChange = (handler: () => void) => {
   window.addEventListener(AUTH_EVENT, handler)
-  window.addEventListener('storage', handler)
   return () => {
     window.removeEventListener(AUTH_EVENT, handler)
-    window.removeEventListener('storage', handler)
   }
 }

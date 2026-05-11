@@ -1,12 +1,16 @@
 package com.mednexus.mednexus.user;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mednexus.mednexus.user.dto.LoginRequest;
@@ -38,5 +42,11 @@ public class UserController {
 	@PutMapping("/{id}")
 	public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody UpdateProfileRequest request) {
 		return ResponseEntity.ok(userService.updateProfile(id, request));
+	}
+
+	@GetMapping
+	public ResponseEntity<List<UserResponse>> list(@RequestParam(name = "role", required = false) Role role) {
+		Role target = role != null ? role : Role.USER;
+		return ResponseEntity.ok(userService.listByRole(target));
 	}
 }
