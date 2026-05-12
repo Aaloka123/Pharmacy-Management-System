@@ -1,12 +1,128 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
-import { useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
+import { getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
 
 const AdminSettings = () => {
+  const navigate = useNavigate()
   const [isProfileEditing, setIsProfileEditing] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const stored = getStoredUser()
+  const [adminId, setAdminId] = useState<number | null>(stored?.id ?? null)
+  const [adminName, setAdminName] = useState(stored?.fullName ?? '')
+  const [adminEmail, setAdminEmail] = useState(stored?.email ?? '')
+  const [adminPhone, setAdminPhone] = useState(stored?.phoneNumber ?? '')
+
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isSavingPassword, setIsSavingPassword] = useState(false)
+
+  useEffect(() => {
+    if (!getStoredUser()) {
+      navigate('/login', { replace: true })
+      return
+    }
+    const unsubscribe = onAuthChange(() => {
+      const u = getStoredUser()
+      if (!u) {
+        navigate('/login', { replace: true })
+        return
+      }
+      setAdminId(u.id)
+      setAdminName(u.fullName)
+      setAdminEmail(u.email)
+      setAdminPhone(u.phoneNumber)
+    })
+    return unsubscribe
+  }, [navigate])
+
+  const handleProfileSave = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!adminId) {
+      toast.error('Session expired. Please log in again.')
+      navigate('/login')
+      return
+    }
+    setIsSavingProfile(true)
+    try {
+      const res = await fetch(`/api/users/${adminId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: adminName.trim(),
+          phoneNumber: adminPhone.trim(),
+        }),
+      })
+      if (!res.ok) {
+        toast.error('Failed to update profile.')
+        return
+      }
+      const updated = (await res.json()) as AuthUser
+      setStoredUser(updated)
+      setAdminName(updated.fullName)
+      setAdminPhone(updated.phoneNumber)
+      setIsProfileEditing(false)
+      toast.success('Profile updated successfully.')
+    } catch {
+      toast.error('Could not reach the server.')
+    } finally {
+      setIsSavingProfile(false)
+    }
+  }
+
+  const handlePasswordSave = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!adminId) {
+      toast.error('Session expired. Please log in again.')
+      navigate('/login')
+      return
+    }
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Please fill in all password fields.')
+      return
+    }
+    if (newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New password and confirm password must match.')
+      return
+    }
+    setIsSavingPassword(true)
+    try {
+      const res = await fetch(`/api/users/${adminId}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast.error('Current password is incorrect.')
+        } else if (res.status === 400) {
+          toast.error('New password is too short. Use at least 6 characters.')
+        } else {
+          toast.error('Failed to update password.')
+        }
+        return
+      }
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      toast.success('Password updated successfully.')
+    } catch {
+      toast.error('Could not reach the server.')
+    } finally {
+      setIsSavingPassword(false)
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -18,13 +134,16 @@ const AdminSettings = () => {
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <form
+            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+            onSubmit={handleProfileSave}
+          >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Profile Settings</h2>
               <button
                 aria-label="Edit profile settings"
                 className="cursor-pointer rounded-md border border-slate-300 p-2 text-slate-600"
-                onClick={() => setIsProfileEditing(true)}
+                onClick={() => setIsProfileEditing((prev) => !prev)}
                 type="button"
               >
                 <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -41,7 +160,8 @@ const AdminSettings = () => {
                   className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none ${
                     isProfileEditing ? 'focus:border-teal-600' : 'cursor-not-allowed bg-slate-100'
                   }`}
-                  defaultValue="Admin User"
+                  value={adminName}
+                  onChange={(event) => setAdminName(event.target.value)}
                   id="adminName"
                   readOnly={!isProfileEditing}
                   type="text"
@@ -52,12 +172,10 @@ const AdminSettings = () => {
                   Email
                 </label>
                 <input
-                  className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none ${
-                    isProfileEditing ? 'focus:border-teal-600' : 'cursor-not-allowed bg-slate-100'
-                  }`}
-                  defaultValue="admin@mednexus.com"
+                  className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-800 outline-none"
+                  value={adminEmail}
                   id="adminEmail"
-                  readOnly={!isProfileEditing}
+                  readOnly
                   type="email"
                 />
               </div>
@@ -69,27 +187,33 @@ const AdminSettings = () => {
                   className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none ${
                     isProfileEditing ? 'focus:border-teal-600' : 'cursor-not-allowed bg-slate-100'
                   }`}
-                  defaultValue="+977-9800000000"
+                  value={adminPhone}
+                  onChange={(event) => setAdminPhone(event.target.value.replace(/\D/g, '').slice(0, 10))}
                   id="adminPhone"
                   readOnly={!isProfileEditing}
+                  inputMode="numeric"
+                  maxLength={10}
                   type="text"
                 />
               </div>
               {isProfileEditing && (
                 <div className="pt-1">
                   <button
-                    className="cursor-pointer rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white"
-                    onClick={() => setIsProfileEditing(false)}
-                    type="button"
+                    className="cursor-pointer rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                    disabled={isSavingProfile}
+                    type="submit"
                   >
-                    Save Profile
+                    {isSavingProfile ? 'Saving…' : 'Save Profile'}
                   </button>
                 </div>
               )}
             </div>
-          </section>
+          </form>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <form
+            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+            onSubmit={handlePasswordSave}
+          >
             <h2 className="text-lg font-semibold text-slate-900">Security</h2>
             <div className="mt-4 space-y-4">
               <div>
@@ -101,6 +225,8 @@ const AdminSettings = () => {
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 pr-10 text-sm text-slate-800 outline-none focus:border-teal-600"
                     id="currentPassword"
                     placeholder="Enter current password"
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
                     type={showCurrentPassword ? 'text' : 'password'}
                   />
                   <button
@@ -121,7 +247,9 @@ const AdminSettings = () => {
                   <input
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 pr-10 text-sm text-slate-800 outline-none focus:border-teal-600"
                     id="newPassword"
-                    placeholder="Enter new password"
+                    placeholder="Enter new password (min 6 chars)"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
                     type={showNewPassword ? 'text' : 'password'}
                   />
                   <button
@@ -143,6 +271,8 @@ const AdminSettings = () => {
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 pr-10 text-sm text-slate-800 outline-none focus:border-teal-600"
                     id="confirmPassword"
                     placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
                     type={showConfirmPassword ? 'text' : 'password'}
                   />
                   <button
@@ -156,12 +286,16 @@ const AdminSettings = () => {
                 </div>
               </div>
               <div className="pt-1">
-                <button className="cursor-pointer rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white" type="button">
-                  Save Password
+                <button
+                  className="cursor-pointer rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  disabled={isSavingPassword}
+                  type="submit"
+                >
+                  {isSavingPassword ? 'Saving…' : 'Save Password'}
                 </button>
               </div>
             </div>
-          </section>
+          </form>
 
         </div>
 

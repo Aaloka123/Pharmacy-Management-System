@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
+import com.mednexus.mednexus.vendor.dto.VendorChangePasswordRequest;
 import com.mednexus.mednexus.vendor.dto.VendorLoginRequest;
 import com.mednexus.mednexus.vendor.dto.VendorResponse;
 
@@ -95,11 +97,56 @@ public class VendorService {
 	}
 
 	@Transactional(readOnly = true)
+	public VendorResponse getById(Long id) {
+		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		return toResponse(vendor);
+	}
+
+	@Transactional(readOnly = true)
 	public List<VendorResponse> list(VendorStatus status) {
 		List<Vendor> vendors = status == null
 				? vendorRepository.findAllByOrderByCreatedAtDesc()
 				: vendorRepository.findAllByStatusOrderByCreatedAtDesc(status);
 		return vendors.stream().map(this::toResponse).toList();
+	}
+
+	@Transactional
+	public VendorResponse updateProfile(Long id, UpdateVendorProfileRequest request) {
+		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		if (request.name() != null && !request.name().isBlank()) {
+			vendor.setName(request.name().trim());
+		}
+		if (request.phoneNumber() != null && !request.phoneNumber().isBlank()) {
+			vendor.setPhoneNumber(request.phoneNumber().trim());
+		}
+		if (request.location() != null && !request.location().isBlank()) {
+			vendor.setLocation(request.location().trim());
+		}
+		if (request.businessName() != null && !request.businessName().isBlank()) {
+			vendor.setBusinessName(request.businessName().trim());
+		}
+		if (request.businessLocation() != null && !request.businessLocation().isBlank()) {
+			vendor.setBusinessLocation(request.businessLocation().trim());
+		}
+		if (request.pharmacyLicense() != null && !request.pharmacyLicense().isBlank()) {
+			vendor.setPharmacyLicense(request.pharmacyLicense().trim());
+		}
+		return toResponse(vendor);
+	}
+
+	@Transactional
+	public void changePassword(Long id, VendorChangePasswordRequest request) {
+		if (request == null || request.currentPassword() == null || request.newPassword() == null) {
+			throw new InvalidVendorCredentialsException();
+		}
+		if (request.newPassword().length() < 6) {
+			throw new InvalidVendorStateException("New password must be at least 6 characters");
+		}
+		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		if (!passwordEncoder.matches(request.currentPassword(), vendor.getPassword())) {
+			throw new InvalidVendorCredentialsException();
+		}
+		vendor.setPassword(passwordEncoder.encode(request.newPassword()));
 	}
 
 	@Transactional

@@ -8,12 +8,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
+import com.mednexus.mednexus.vendor.dto.VendorChangePasswordRequest;
 import com.mednexus.mednexus.vendor.dto.VendorLoginRequest;
 import com.mednexus.mednexus.vendor.dto.VendorResponse;
 
@@ -65,6 +68,26 @@ public class VendorController {
 	public ResponseEntity<List<VendorResponse>> list(
 			@RequestParam(name = "status", required = false) VendorStatus status) {
 		return ResponseEntity.ok(vendorService.list(status));
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<VendorResponse> getOne(@PathVariable Long id) {
+		return ResponseEntity.ok(vendorService.getById(id));
+	}
+
+	@PutMapping("/{id}")
+	public ResponseEntity<VendorResponse> updateProfile(
+			@PathVariable Long id,
+			@RequestBody UpdateVendorProfileRequest request) {
+		return ResponseEntity.ok(vendorService.updateProfile(id, request));
+	}
+
+	@PutMapping("/{id}/password")
+	public ResponseEntity<Void> changePassword(
+			@PathVariable Long id,
+			@RequestBody VendorChangePasswordRequest request) {
+		vendorService.changePassword(id, request);
+		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/{id}/approve")

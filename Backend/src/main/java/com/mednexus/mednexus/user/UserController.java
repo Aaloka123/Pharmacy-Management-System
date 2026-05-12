@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mednexus.mednexus.user.dto.ChangePasswordRequest;
 import com.mednexus.mednexus.user.dto.LoginRequest;
 import com.mednexus.mednexus.user.dto.SignupRequest;
 import com.mednexus.mednexus.user.dto.UpdateProfileRequest;
@@ -42,6 +43,12 @@ public class UserController {
 	@PutMapping("/{id}")
 	public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody UpdateProfileRequest request) {
 		return ResponseEntity.ok(userService.updateProfile(id, request));
+	}
+
+	@PutMapping("/{id}/password")
+	public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestBody ChangePasswordRequest request) {
+		userService.changePassword(id, request);
+		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping

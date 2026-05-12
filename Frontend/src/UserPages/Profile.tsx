@@ -17,6 +17,7 @@ const Profile = () => {
   const [location, setLocation] = useState(storedUser?.location ?? '')
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [isSavingPassword, setIsSavingPassword] = useState(false)
 
   useEffect(() => {
     if (!getStoredUser()) {
@@ -51,7 +52,7 @@ const Profile = () => {
 
   const passwordError = useMemo(() => {
     if (!currentPassword && !newPassword && !confirmPassword) return ''
-    if (newPassword.length > 0 && newPassword.length < 8) return 'New password must be at least 8 characters.'
+    if (newPassword.length > 0 && newPassword.length < 6) return 'New password must be at least 6 characters.'
     if (newPassword !== confirmPassword) return 'New password and confirm password must match.'
     return ''
   }, [currentPassword, newPassword, confirmPassword])
@@ -99,14 +100,42 @@ const Profile = () => {
     }
   }
 
-  const handlePasswordSave = (event: FormEvent) => {
+  const handlePasswordSave = async (event: FormEvent) => {
     event.preventDefault()
     if (passwordError) return
     if (!currentPassword || !newPassword || !confirmPassword) return
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
-    window.alert('Password updated successfully.')
+    if (!userId) {
+      toast.error('You must be logged in to change your password.')
+      navigate('/login')
+      return
+    }
+    setIsSavingPassword(true)
+    try {
+      const res = await fetch(`/api/users/${userId}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast.error('Current password is incorrect.')
+        } else if (res.status === 400) {
+          toast.error('New password is too short. Use at least 6 characters.')
+        } else {
+          toast.error('Failed to update password. Please try again.')
+        }
+        return
+      }
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setShowPasswordForm(false)
+      toast.success('Password updated successfully.')
+    } catch {
+      toast.error('Could not reach the server.')
+    } finally {
+      setIsSavingPassword(false)
+    }
   }
 
   const handleDeleteAccount = () => {
@@ -329,11 +358,11 @@ const Profile = () => {
                         </div>
                         {passwordError ? <p className="mt-3 text-sm text-rose-600">{passwordError}</p> : null}
                         <button
-                          className="mt-5 cursor-pointer rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed"
-                          disabled={Boolean(passwordError)}
+                          className="mt-5 cursor-pointer rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={Boolean(passwordError) || isSavingPassword}
                           type="submit"
                         >
-                          Update Password
+                          {isSavingPassword ? 'Updating…' : 'Update Password'}
                         </button>
                       </form>
                     ) : null}

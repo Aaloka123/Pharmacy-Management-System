@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mednexus.mednexus.user.dto.ChangePasswordRequest;
 import com.mednexus.mednexus.user.dto.LoginRequest;
 import com.mednexus.mednexus.user.dto.SignupRequest;
 import com.mednexus.mednexus.user.dto.UpdateProfileRequest;
@@ -59,6 +60,21 @@ public class UserService {
 				.stream()
 				.map(this::toResponse)
 				.toList();
+	}
+
+	@Transactional
+	public void changePassword(Long id, ChangePasswordRequest request) {
+		if (request == null || request.currentPassword() == null || request.newPassword() == null) {
+			throw new InvalidCredentialsException();
+		}
+		if (request.newPassword().length() < 6) {
+			throw new IllegalArgumentException("New password must be at least 6 characters");
+		}
+		User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+		if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+			throw new InvalidCredentialsException();
+		}
+		user.setPassword(passwordEncoder.encode(request.newPassword()));
 	}
 
 	@Transactional
