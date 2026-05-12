@@ -90,13 +90,21 @@ public class VendorController {
 		return ResponseEntity.noContent().build();
 	}
 
+	@PostMapping(value = "/{id}/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<VendorResponse> uploadProfileImage(
+			@PathVariable Long id,
+			@RequestParam("image") MultipartFile image) {
+		return ResponseEntity.ok(vendorService.updateProfileImage(id, image));
+	}
+
 	@PostMapping("/{id}/approve")
 	public ResponseEntity<VendorResponse> approve(@PathVariable Long id) {
 		return ResponseEntity.ok(vendorService.approve(id));
 	}
 
 	@PostMapping("/{id}/reject")
-	public ResponseEntity<VendorResponse> reject(@PathVariable Long id) {
-		return ResponseEntity.ok(vendorService.reject(id));
+	public ResponseEntity<Void> reject(@PathVariable Long id) {
+		vendorService.reject(id);
+		return ResponseEntity.noContent().build();
 	}
 }

@@ -6,6 +6,7 @@ export type AuthUser = {
   email: string
   phoneNumber: string
   location: string | null
+  profileImage?: string | null
   role: Role
 }
 

@@ -22,6 +22,7 @@ type Vendor = {
 }
 
 const PENDING_VENDORS_URL = '/api/vendors?status=PENDING'
+const PENDING_VENDORS_EVENT = 'mednexus:pending-vendors-changed'
 
 const formatSubmittedAgo = (iso: string): string => {
   const submittedAt = new Date(iso).getTime()
@@ -54,6 +55,7 @@ const AdminApproveVendor = () => {
       }
       const data = (await res.json()) as Vendor[]
       setVendors(data)
+      window.dispatchEvent(new Event(PENDING_VENDORS_EVENT))
     } catch (err) {
       setError('Could not load vendor requests. Is the backend running?')
       toast.error('Failed to load vendor requests.')
@@ -94,6 +96,7 @@ const AdminApproveVendor = () => {
         throw new Error(`Request failed with ${res.status}`)
       }
       setVendors((prev) => prev.filter((v) => v.id !== vendor.id))
+      window.dispatchEvent(new Event(PENDING_VENDORS_EVENT))
       toast.success(
         decision === 'approve'
           ? `${vendor.businessName} approved.`

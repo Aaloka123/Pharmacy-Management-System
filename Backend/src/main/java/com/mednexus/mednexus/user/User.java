@@ -32,6 +32,9 @@ public class User {
 	@Column(name = "location", length = 255)
 	private String location;
 
+	@Column(name = "profile_image", length = 500)
+	private String profileImage;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "role", nullable = false, length = 20)
 	private Role role = Role.USER;
@@ -92,6 +95,14 @@ public class User {
 
 	public void setLocation(String location) {
 		this.location = location;
+	}
+
+	public String getProfileImage() {
+		return profileImage;
+	}
+
+	public void setProfileImage(String profileImage) {
+		this.profileImage = profileImage;
 	}
 
 	public Role getRole() {

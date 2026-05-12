@@ -86,8 +86,7 @@ public class VendorService {
 		switch (vendor.getStatus()) {
 			case PENDING -> throw new VendorNotApprovedException(
 					"Your vendor account is awaiting admin approval.");
-			case REJECTED -> throw new VendorNotApprovedException(
-					"Your vendor application has been rejected.");
+			case REJECTED -> throw new InvalidVendorCredentialsException();
 			case APPROVED -> { /* allowed */ }
 		}
 		if (passwordEncoder.upgradeEncoding(vendor.getPassword())) {
@@ -135,6 +134,14 @@ public class VendorService {
 	}
 
 	@Transactional
+	public VendorResponse updateProfileImage(Long id, MultipartFile image) {
+		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		String url = fileStorage.storeProfileImage(image, id);
+		vendor.setProfileImage(url);
+		return toResponse(vendor);
+	}
+
+	@Transactional
 	public void changePassword(Long id, VendorChangePasswordRequest request) {
 		if (request == null || request.currentPassword() == null || request.newPassword() == null) {
 			throw new InvalidVendorCredentialsException();
@@ -161,14 +168,15 @@ public class VendorService {
 	}
 
 	@Transactional
-	public VendorResponse reject(Long id) {
+	public void reject(Long id) {
 		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
 		if (vendor.getStatus() != VendorStatus.PENDING) {
 			throw new InvalidVendorStateException("Vendor is not pending approval");
 		}
-		vendor.setStatus(VendorStatus.REJECTED);
-		vendor.setDecidedAt(Instant.now());
-		return toResponse(vendor);
+		fileStorage.deleteByPublicUrl(vendor.getPharmacyManagementCertificate());
+		fileStorage.deleteByPublicUrl(vendor.getPanVatCertificate());
+		fileStorage.deleteByPublicUrl(vendor.getProfileImage());
+		vendorRepository.delete(vendor);
 	}
 
 	private static String requireNonBlank(String value, String message) {
@@ -191,6 +199,7 @@ public class VendorService {
 				vendor.getPharmacyLicense(),
 				vendor.getPharmacyManagementCertificate(),
 				vendor.getPanVatCertificate(),
+				vendor.getProfileImage(),
 				vendor.getStatus(),
 				vendor.getCreatedAt(),
 				vendor.getDecidedAt());

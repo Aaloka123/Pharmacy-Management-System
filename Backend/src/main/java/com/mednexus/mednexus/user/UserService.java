@@ -3,6 +3,7 @@ package com.mednexus.mednexus.user;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.mednexus.mednexus.user.dto.ChangePasswordRequest;
 import com.mednexus.mednexus.user.dto.LoginRequest;
@@ -15,10 +16,14 @@ public class UserService {
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final UserFileStorage fileStorage;
 
-	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+	public UserService(UserRepository userRepository,
+			PasswordEncoder passwordEncoder,
+			UserFileStorage fileStorage) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.fileStorage = fileStorage;
 	}
 
 	@Transactional
@@ -78,6 +83,14 @@ public class UserService {
 	}
 
 	@Transactional
+	public UserResponse updateProfileImage(Long id, MultipartFile image) {
+		User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+		String url = fileStorage.storeProfileImage(image, id);
+		user.setProfileImage(url);
+		return toResponse(user);
+	}
+
+	@Transactional
 	public UserResponse updateProfile(Long id, UpdateProfileRequest request) {
 		User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
 		if (request.fullName() != null && !request.fullName().isBlank()) {
@@ -100,6 +113,7 @@ public class UserService {
 				user.getEmail(),
 				user.getPhoneNumber(),
 				user.getLocation(),
+				user.getProfileImage(),
 				user.getRole());
 	}
 }

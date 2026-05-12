@@ -8,10 +8,14 @@ import {
   LuStore,
   LuUsers,
 } from 'react-icons/lu'
+import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import mednexuxLogo from '../assets/Mednexux.png'
 import { clearStoredUser } from '../lib/auth'
+
+const PENDING_VENDORS_EVENT = 'mednexus:pending-vendors-changed'
+const PENDING_VENDORS_URL = '/api/vendors?status=PENDING'
 
 const menuItems = [
   { label: 'Dashboard', Icon: LuLayoutDashboard, to: '/admindashboard' },
@@ -25,6 +29,33 @@ const menuItems = [
 
 const AdminNavbar = () => {
   const navigate = useNavigate()
+  const [pendingVendors, setPendingVendors] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchCount = async () => {
+      try {
+        const res = await fetch(PENDING_VENDORS_URL)
+        if (!res.ok) return
+        const data = (await res.json()) as unknown[]
+        if (!cancelled) setPendingVendors(data.length)
+      } catch {
+        // ignore — keep last known count
+      }
+    }
+
+    fetchCount()
+    const interval = window.setInterval(fetchCount, 30000)
+    const handleRefresh = () => fetchCount()
+    window.addEventListener(PENDING_VENDORS_EVENT, handleRefresh)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+      window.removeEventListener(PENDING_VENDORS_EVENT, handleRefresh)
+    }
+  }, [])
 
   const handleLogout = () => {
     clearStoredUser()
@@ -40,20 +71,31 @@ const AdminNavbar = () => {
       </div>
 
       <nav className="flex flex-col gap-2">
-        {menuItems.map(({ label, Icon, to }) => (
-          <NavLink
-            key={label}
-            to={to}
-            className={({ isActive }) =>
-              `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[14px] font-medium transition ${
-                isActive ? 'bg-teal-50 text-teal-700' : 'text-slate-700 hover:bg-teal-50 hover:text-teal-700'
-              }`
-            }
-          >
-            <Icon className="h-[18px] w-[18px] shrink-0" />
-            <span className="truncate">{label}</span>
-          </NavLink>
-        ))}
+        {menuItems.map(({ label, Icon, to }) => {
+          const showBadge = label === 'Approve Vendor' && pendingVendors > 0
+          return (
+            <NavLink
+              key={label}
+              to={to}
+              className={({ isActive }) =>
+                `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[14px] font-medium transition ${
+                  isActive ? 'bg-teal-50 text-teal-700' : 'text-slate-700 hover:bg-teal-50 hover:text-teal-700'
+                }`
+              }
+            >
+              <Icon className="h-[18px] w-[18px] shrink-0" />
+              <span className="truncate">{label}</span>
+              {showBadge ? (
+                <span
+                  aria-label={`${pendingVendors} pending vendor requests`}
+                  className="ml-auto inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-semibold text-white"
+                >
+                  {pendingVendors > 99 ? '99+' : pendingVendors}
+                </span>
+              ) : null}
+            </NavLink>
+          )
+        })}
       </nav>
 
       <button

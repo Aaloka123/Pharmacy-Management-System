@@ -15,9 +15,10 @@ const Profile = () => {
   const [phoneNumber, setPhoneNumber] = useState(storedUser?.phoneNumber ?? '')
   const [email, setEmail] = useState(storedUser?.email ?? '')
   const [location, setLocation] = useState(storedUser?.location ?? '')
-  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [profileImage, setProfileImage] = useState<string | null>(storedUser?.profileImage ?? null)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [isSavingPassword, setIsSavingPassword] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   useEffect(() => {
     if (!getStoredUser()) {
@@ -35,6 +36,7 @@ const Profile = () => {
       setPhoneNumber(u.phoneNumber)
       setEmail(u.email)
       setLocation(u.location ?? '')
+      setProfileImage(u.profileImage ?? null)
     })
     return unsubscribe
   }, [navigate])
@@ -57,11 +59,40 @@ const Profile = () => {
     return ''
   }, [currentPassword, newPassword, confirmPassword])
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-    const imageUrl = URL.createObjectURL(file)
-    setProfileImage(imageUrl)
+    if (!userId) {
+      toast.error('You must be logged in to update your profile picture.')
+      navigate('/login')
+      return
+    }
+    const previewUrl = URL.createObjectURL(file)
+    setProfileImage(previewUrl)
+    setIsUploadingImage(true)
+    try {
+      const payload = new FormData()
+      payload.append('image', file)
+      const res = await fetch(`/api/users/${userId}/profile-image`, {
+        method: 'POST',
+        body: payload,
+      })
+      if (!res.ok) {
+        toast.error('Failed to upload profile picture.')
+        setProfileImage(getStoredUser()?.profileImage ?? null)
+        return
+      }
+      const updated = (await res.json()) as AuthUser
+      setStoredUser(updated)
+      setProfileImage(updated.profileImage ?? null)
+      toast.success('Profile picture updated.')
+    } catch {
+      toast.error('Could not reach the server.')
+      setProfileImage(getStoredUser()?.profileImage ?? null)
+    } finally {
+      setIsUploadingImage(false)
+      if (event.target) event.target.value = ''
+    }
   }
 
   const handleProfileSave = async (event: FormEvent) => {
@@ -175,9 +206,10 @@ const Profile = () => {
                   )}
                   <button
                     aria-label="Edit profile picture"
-                    className="absolute bottom-1 right-1 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-teal-500 hover:text-teal-700"
+                    className="absolute bottom-1 right-1 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-teal-500 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                     onClick={() => fileInputRef.current?.click()}
                     type="button"
+                    disabled={isUploadingImage}
                   >
                     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                       <path

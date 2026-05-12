@@ -22,6 +22,31 @@ public class VendorFileStorage {
 		if (file == null || file.isEmpty()) {
 			throw new InvalidVendorStateException("Required certificate file is missing");
 		}
+		return writeFile(file, prefix);
+	}
+
+	public String storeProfileImage(MultipartFile file, Long vendorId) {
+		if (file == null || file.isEmpty()) {
+			throw new InvalidVendorStateException("Profile image file is required");
+		}
+		return writeFile(file, "vendor-" + vendorId + "-profile");
+	}
+
+	public void deleteByPublicUrl(String publicUrl) {
+		if (publicUrl == null || publicUrl.isBlank() || !publicUrl.startsWith(PUBLIC_URL_PREFIX)) {
+			return;
+		}
+		try {
+			String filename = publicUrl.substring(PUBLIC_URL_PREFIX.length());
+			Path target = Paths.get(UPLOAD_ROOT, VENDOR_SUBDIR, filename).toAbsolutePath();
+			Files.deleteIfExists(target);
+		} catch (IOException ex) {
+			// Best-effort cleanup — log and continue so DB deletion isn't blocked.
+			System.err.println("Failed to delete vendor file " + publicUrl + ": " + ex.getMessage());
+		}
+	}
+
+	private String writeFile(MultipartFile file, String prefix) {
 		try {
 			Path directory = Paths.get(UPLOAD_ROOT, VENDOR_SUBDIR).toAbsolutePath();
 			Files.createDirectories(directory);

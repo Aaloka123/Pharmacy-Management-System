@@ -17,6 +17,7 @@ type VendorRecord = {
   pharmacyLicense: string;
   pharmacyManagementCertificate: string;
   panVatCertificate: string;
+  profileImage: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
 };
 
@@ -44,6 +45,7 @@ const Setting = () => {
 
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -58,6 +60,7 @@ const Setting = () => {
     setName(data.name);
     setPhoneNumber(data.phoneNumber);
     setLocation(data.location);
+    setProfileImage(data.profileImage ?? null);
   };
 
   useEffect(() => {
@@ -106,11 +109,38 @@ const Setting = () => {
     };
   }, [navigate]);
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-    const imageUrl = URL.createObjectURL(file);
-    setProfileImage(imageUrl);
+    if (!file || !vendor) return;
+    const previewUrl = URL.createObjectURL(file);
+    setProfileImage(previewUrl);
+    setIsUploadingImage(true);
+    try {
+      const payload = new FormData();
+      payload.append('image', file);
+      const res = await fetch(`/api/vendors/${vendor.id}/profile-image`, {
+        method: 'POST',
+        body: payload,
+      });
+      if (!res.ok) {
+        toast.error('Failed to upload profile picture.');
+        setProfileImage(vendor.profileImage ?? null);
+        return;
+      }
+      const data = (await res.json()) as VendorRecord;
+      applyVendor(data);
+      const current = getStoredUser();
+      if (current) {
+        setStoredUser({ ...current, profileImage: data.profileImage ?? null });
+      }
+      toast.success('Profile picture updated.');
+    } catch {
+      toast.error('Could not reach the server.');
+      setProfileImage(vendor.profileImage ?? null);
+    } finally {
+      setIsUploadingImage(false);
+      if (event.target) event.target.value = '';
+    }
   };
 
   const handleStoreStatusChange = (nextStatus: 'Open' | 'Close') => {
@@ -275,9 +305,10 @@ const Setting = () => {
                     )}
                     <button
                       aria-label="Change profile picture"
-                      className="absolute -bottom-1 -right-1 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600 shadow-sm"
+                      className="absolute -bottom-1 -right-1 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
                       onClick={() => fileInputRef.current?.click()}
                       type="button"
+                      disabled={isUploadingImage}
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                         <path

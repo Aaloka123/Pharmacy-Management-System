@@ -16,6 +16,7 @@ public record VendorResponse(
 		String pharmacyLicense,
 		String pharmacyManagementCertificate,
 		String panVatCertificate,
+		String profileImage,
 		VendorStatus status,
 		Instant createdAt,
 		Instant decidedAt) {

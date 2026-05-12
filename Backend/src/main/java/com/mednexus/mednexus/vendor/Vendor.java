@@ -52,6 +52,9 @@ public class Vendor {
 	@Column(name = "pan_vat_certificate", nullable = false, length = 500)
 	private String panVatCertificate;
 
+	@Column(name = "profile_image", length = 500)
+	private String profileImage;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
 	private VendorStatus status = VendorStatus.PENDING;
@@ -159,6 +162,14 @@ public class Vendor {
 
 	public void setPanVatCertificate(String panVatCertificate) {
 		this.panVatCertificate = panVatCertificate;
+	}
+
+	public String getProfileImage() {
+		return profileImage;
+	}
+
+	public void setProfileImage(String profileImage) {
+		this.profileImage = profileImage;
 	}
 
 	public VendorStatus getStatus() {

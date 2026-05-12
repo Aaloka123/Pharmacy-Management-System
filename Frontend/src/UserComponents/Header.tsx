@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { IoCartOutline, IoPersonCircleOutline } from 'react-icons/io5'
+import { IoCartOutline } from 'react-icons/io5'
 import mednexuxLogo from '../assets/Mednexux.png'
 import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
 
@@ -70,7 +70,7 @@ const Header = () => {
             />
           </div>
           {user ? (
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-2">
               <NavLink
                 aria-label="Cart"
                 title="Cart"
@@ -88,12 +88,18 @@ const Header = () => {
                 title={user.email}
                 to="/profile"
                 className={({ isActive }) =>
-                  `flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:text-teal-700 ${
-                    isActive ? 'text-teal-700' : 'text-slate-700'
+                  `flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border text-xs font-bold transition duration-200 ${
+                    isActive
+                      ? 'border-teal-700 bg-linear-to-br from-teal-600 to-teal-700 text-white'
+                      : 'border-slate-200 bg-linear-to-br from-teal-600 to-teal-700 text-white hover:from-teal-700 hover:to-teal-800'
                   }`
                 }
               >
-                <IoPersonCircleOutline className="h-7 w-7" />
+                {user.profileImage ? (
+                  <img alt="Profile" className="h-full w-full object-cover" src={user.profileImage} />
+                ) : (
+                  (user.fullName.trim().charAt(0) || user.email.trim().charAt(0) || 'U').toUpperCase()
+                )}
               </NavLink>
             </div>
           ) : (
