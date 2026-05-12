@@ -113,11 +113,16 @@ const Signup = () => {
                 <input
                   className="w-full bg-transparent px-0 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
                   id="phoneNumber"
-                  placeholder="Enter your phone number"
+                  placeholder="Phone number"
                   type="tel"
                   value={phoneNumber}
-                  onChange={(ev) => setPhoneNumber(ev.target.value)}
+                  onChange={(ev) => setPhoneNumber(ev.target.value.replace(/\D/g, '').slice(0, 10))}
                   required
+                  inputMode="numeric"
+                  pattern="\d{10}"
+                  minLength={10}
+                  maxLength={10}
+                  title="Phone number must be exactly 10 digits"
                   autoComplete="tel"
                 />
               </div>

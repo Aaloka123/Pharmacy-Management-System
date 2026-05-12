@@ -1,12 +1,73 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import Header from '../UserComponents/Header'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
+import { toast } from 'react-toastify'
+import { homePathForRole, setStoredUser, type AuthUser } from '../lib/auth'
+
+const VENDOR_LOGIN_URL = '/api/vendors/login'
+
+type VendorLoginResponse = {
+  id: number
+  name: string
+  email: string
+  phoneNumber: string
+  location: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+}
 
 const Vendorlogin = () => {
+  const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setLoading(true)
+    try {
+      const res = await fetch(VENDOR_LOGIN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      })
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast.error('Invalid email or password.')
+        } else if (res.status === 403) {
+          const message = await res
+            .json()
+            .then((body: { message?: string }) => body?.message)
+            .catch(() => undefined)
+          toast.error(message ?? 'Your vendor account is not approved yet.')
+        } else {
+          toast.error('Login failed. Please try again.')
+        }
+        return
+      }
+
+      const vendor = (await res.json()) as VendorLoginResponse
+      const authUser: AuthUser = {
+        id: vendor.id,
+        fullName: vendor.name,
+        email: vendor.email,
+        phoneNumber: vendor.phoneNumber,
+        location: vendor.location,
+        role: 'VENDOR',
+      }
+      setStoredUser(authUser)
+      toast.success(`Welcome back, ${vendor.name.split(' ')[0]}!`)
+      navigate(homePathForRole('VENDOR'), { replace: true })
+    } catch {
+      toast.error('Could not reach the server. Is the backend running on port 8080?')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="bg-slate-50">
@@ -24,13 +85,17 @@ const Vendorlogin = () => {
               Manage your products, track orders, and access payouts from one dashboard.
             </p>
 
-            <form className="mt-6 space-y-5">
+            <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
               <label className="block">
                 <span className="mb-2 block text-sm font-semibold text-slate-700">Email</span>
                 <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
                   <input
                     type="email"
+                    required
+                    autoComplete="email"
                     placeholder="Enter your email address"
+                    value={email}
+                    onChange={(ev) => setEmail(ev.target.value)}
                     className="w-full bg-transparent px-0 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
                   />
                 </div>
@@ -41,7 +106,11 @@ const Vendorlogin = () => {
                 <div className="relative border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
                     placeholder="Enter your password"
+                    value={password}
+                    onChange={(ev) => setPassword(ev.target.value)}
                     className="w-full bg-transparent pl-0 pr-9 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
                   />
                   <button
@@ -55,12 +124,19 @@ const Vendorlogin = () => {
                 </div>
               </label>
 
+              <p className="text-right text-sm">
+                <Link className="text-slate-600 hover:text-teal-700 hover:underline" to="/forgetpassword">
+                  Forgot Password?
+                </Link>
+              </p>
+
               <div className="pt-2">
                 <button
-                  type="button"
-                  className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
                 >
-                  Continue
+                  {loading ? 'Logging in…' : 'Continue'}
                 </button>
               </div>
             </form>

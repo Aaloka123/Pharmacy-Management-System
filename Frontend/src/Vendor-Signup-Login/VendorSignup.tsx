@@ -176,10 +176,17 @@ const VendorSignup = () => {
                   <input
                     type="tel"
                     required
+                    inputMode="numeric"
+                    pattern="\d{10}"
+                    maxLength={10}
+                    minLength={10}
+                    title="Phone number must be exactly 10 digits"
                     value={formData.locationPhoneNumber}
-                    onChange={(event) => updateField('locationPhoneNumber', event.target.value)}
+                    onChange={(event) =>
+                      updateField('locationPhoneNumber', event.target.value.replace(/\D/g, '').slice(0, 10))
+                    }
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
-                    placeholder="Number"
+                    placeholder="10 digit number"
                   />
                 </label>
 
@@ -206,8 +213,13 @@ const VendorSignup = () => {
                   <input
                     type="text"
                     required
+                    inputMode="numeric"
+                    pattern="\d+"
+                    title="Business PAN / VAT ID must contain digits only"
                     value={formData.businessPanVatId}
-                    onChange={(event) => updateField('businessPanVatId', event.target.value)}
+                    onChange={(event) =>
+                      updateField('businessPanVatId', event.target.value.replace(/\D/g, ''))
+                    }
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
                     placeholder="Business PAN / VAT ID"
                   />
@@ -260,12 +272,12 @@ const VendorSignup = () => {
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      minLength={8}
+                      minLength={6}
                       required
                       value={formData.password}
                       onChange={(event) => updateField('password', event.target.value)}
                       className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 pr-8 text-sm outline-none focus:border-teal-600"
-                      placeholder="Minimum 8 characters"
+                      placeholder="Minimum 6 characters"
                     />
                     <button
                       type="button"
@@ -283,7 +295,7 @@ const VendorSignup = () => {
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
-                      minLength={8}
+                      minLength={6}
                       required
                       value={formData.confirmPassword}
                       onChange={(event) => updateField('confirmPassword', event.target.value)}

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mednexus.mednexus.vendor.dto.VendorLoginRequest;
 import com.mednexus.mednexus.vendor.dto.VendorResponse;
 
 @Service
@@ -68,6 +69,29 @@ public class VendorService {
 
 		Vendor saved = vendorRepository.save(vendor);
 		return toResponse(saved);
+	}
+
+	@Transactional
+	public VendorResponse login(VendorLoginRequest request) {
+		if (request == null || request.email() == null || request.password() == null) {
+			throw new InvalidVendorCredentialsException();
+		}
+		Vendor vendor = vendorRepository.findByEmailIgnoreCase(request.email().trim())
+				.orElseThrow(InvalidVendorCredentialsException::new);
+		if (!passwordEncoder.matches(request.password(), vendor.getPassword())) {
+			throw new InvalidVendorCredentialsException();
+		}
+		switch (vendor.getStatus()) {
+			case PENDING -> throw new VendorNotApprovedException(
+					"Your vendor account is awaiting admin approval.");
+			case REJECTED -> throw new VendorNotApprovedException(
+					"Your vendor application has been rejected.");
+			case APPROVED -> { /* allowed */ }
+		}
+		if (passwordEncoder.upgradeEncoding(vendor.getPassword())) {
+			vendor.setPassword(passwordEncoder.encode(request.password()));
+		}
+		return toResponse(vendor);
 	}
 
 	@Transactional(readOnly = true)
