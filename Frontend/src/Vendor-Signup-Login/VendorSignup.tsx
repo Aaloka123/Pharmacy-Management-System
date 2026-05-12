@@ -2,9 +2,12 @@ import { useState, type FormEvent } from 'react'
 import Header from '../UserComponents/Header'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import medicineBackground from '../assets/medicineBG.png'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
+import { toast } from 'react-toastify'
+
+const VENDOR_SIGNUP_URL = '/api/vendors/signup'
 
 type VendorSignupForm = {
   businessPanVatId: string
@@ -17,11 +20,12 @@ type VendorSignupForm = {
   userName: string
   password: string
   confirmPassword: string
-  businessRegistrationCertificate: File | null
+  pharmacyManagementCertificate: File | null
   panVatCertificate: File | null
 }
 
 const VendorSignup = () => {
+  const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState<VendorSignupForm>({
@@ -35,31 +39,85 @@ const VendorSignup = () => {
     userName: '',
     password: '',
     confirmPassword: '',
-    businessRegistrationCertificate: null,
+    pharmacyManagementCertificate: null,
     panVatCertificate: null,
   })
   const [formError, setFormError] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const updateField = (key: keyof VendorSignupForm, value: string | File | null) => {
     setFormData((prev) => ({ ...prev, [key]: value }))
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError('')
+    setIsSubmitted(false)
 
     if (formData.password !== formData.confirmPassword) {
       setFormError('Password and confirm password do not match.')
       return
     }
 
-    if (!formData.businessRegistrationCertificate || !formData.panVatCertificate) {
+    if (!formData.pharmacyManagementCertificate || !formData.panVatCertificate) {
       setFormError('Please upload both required certificates.')
       return
     }
 
-    setIsSubmitted(true)
+    const payload = new FormData()
+    payload.append('name', formData.userName.trim())
+    payload.append('email', formData.contactEmail.trim())
+    payload.append('phoneNumber', formData.locationPhoneNumber.trim())
+    payload.append('location', formData.personalLocation.trim())
+    payload.append('businessPanVatId', formData.businessPanVatId.trim())
+    payload.append('businessName', formData.businessName.trim())
+    payload.append('businessLocation', formData.businessLocation.trim())
+    payload.append('pharmacyLicense', formData.pharmacyLicense.trim())
+    payload.append('password', formData.password)
+    payload.append('pharmacyManagementCertificate', formData.pharmacyManagementCertificate)
+    payload.append('panVatCertificate', formData.panVatCertificate)
+
+    setLoading(true)
+    try {
+      const res = await fetch(VENDOR_SIGNUP_URL, {
+        method: 'POST',
+        body: payload,
+      })
+
+      if (!res.ok) {
+        if (res.status === 409) {
+          setFormError('A vendor with this email or PAN/VAT ID is already registered.')
+        } else if (res.status === 400) {
+          setFormError('Please fill all required fields and try again.')
+        } else {
+          setFormError('Signup failed. Please try again.')
+        }
+        return
+      }
+
+      toast.success('Signup request submitted. Awaiting admin approval.')
+      setIsSubmitted(true)
+      setFormData({
+        businessPanVatId: '',
+        businessName: '',
+        businessLocation: '',
+        pharmacyLicense: '',
+        personalLocation: '',
+        contactEmail: '',
+        locationPhoneNumber: '',
+        userName: '',
+        password: '',
+        confirmPassword: '',
+        pharmacyManagementCertificate: null,
+        panVatCertificate: null,
+      })
+      setTimeout(() => navigate('/vendorlogin'), 1500)
+    } catch {
+      setFormError('Could not reach the server. Is the backend running on port 8080?')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -250,17 +308,17 @@ const VendorSignup = () => {
               <p className="mt-1 text-xs text-slate-500">Upload valid documents to confirm legal registration and PAN/VAT.</p>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <label className="rounded-lg border border-slate-200 bg-white p-3">
-                  <span className="text-xs font-semibold text-slate-800">Business Registration Certificate</span>
+                  <span className="text-xs font-semibold text-slate-800">Pharmacy Management Certificate</span>
                   <input
                     type="file"
                     required
                     accept="image/*,.pdf"
                     className="mt-2 block w-full rounded-xl border border-slate-300 bg-white p-2 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-teal-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-teal-700"
-                    onChange={(event) => updateField('businessRegistrationCertificate', event.target.files?.[0] ?? null)}
+                    onChange={(event) => updateField('pharmacyManagementCertificate', event.target.files?.[0] ?? null)}
                   />
                   <p className="mt-1 text-[11px] text-slate-500">
-                    {formData.businessRegistrationCertificate
-                      ? `Selected: ${formData.businessRegistrationCertificate.name}`
+                    {formData.pharmacyManagementCertificate
+                      ? `Selected: ${formData.pharmacyManagementCertificate.name}`
                       : 'Upload clear certificate image or PDF'}
                   </p>
                 </label>
@@ -298,9 +356,10 @@ const VendorSignup = () => {
             <div className="space-y-4 pt-1">
               <button
                 type="submit"
-                className="w-full rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
+                disabled={loading}
+                className="w-full rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
               >
-                Submit Application
+                {loading ? 'Submitting…' : 'Submit Application'}
               </button>
 
               <p className="text-center text-sm text-slate-600">
