@@ -15,8 +15,6 @@ public class AppConfig {
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {
-		// Strength 4 is the fastest BCrypt setting (~5 ms per hash/verify).
-		// Default of 10 is ~100-300 ms which makes signup/login feel slow in dev.
 		return new BCryptPasswordEncoder(4);
 	}
 

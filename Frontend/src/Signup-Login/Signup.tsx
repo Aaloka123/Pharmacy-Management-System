@@ -6,6 +6,7 @@ import Header from '../UserComponents/Header'
 import { Link, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
+import { resolveBackendUrl } from '../lib/api'
 
 const SIGNUP_URL = '/api/users/signup'
 
@@ -30,7 +31,7 @@ const Signup = () => {
 
     setLoading(true)
     try {
-      const res = await fetch(SIGNUP_URL, {
+      const res = await fetch(resolveBackendUrl(SIGNUP_URL), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

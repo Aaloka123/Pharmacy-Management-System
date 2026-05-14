@@ -28,6 +28,21 @@ public class UserService {
 
 	@Transactional
 	public UserResponse register(SignupRequest request) {
+		if (request == null) {
+			throw new IllegalArgumentException("Request body is required");
+		}
+		if (request.fullName() == null || request.fullName().isBlank()) {
+			throw new IllegalArgumentException("Full name is required");
+		}
+		if (request.email() == null || request.email().isBlank()) {
+			throw new IllegalArgumentException("Email is required");
+		}
+		if (request.phoneNumber() == null || request.phoneNumber().isBlank()) {
+			throw new IllegalArgumentException("Phone number is required");
+		}
+		if (request.password() == null || request.password().length() < 6) {
+			throw new IllegalArgumentException("Password must be at least 6 characters");
+		}
 		String email = request.email().trim();
 		if (userRepository.existsByEmailIgnoreCase(email)) {
 			throw new DuplicateEmailException();
@@ -39,6 +54,12 @@ public class UserService {
 				passwordEncoder.encode(request.password()));
 		User saved = userRepository.save(user);
 		return toResponse(saved);
+	}
+
+	@Transactional(readOnly = true)
+	public UserResponse getProfileById(Long id) {
+		User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+		return toResponse(user);
 	}
 
 	@Transactional
