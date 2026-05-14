@@ -18,7 +18,7 @@ const vendorProfile = {
   establishedYear: '2018',
   status: 'Open',
   openingHours: '8:00 AM - 9:00 PM',
-}
+} as const
 
 const vendorProducts = [
   { id: 1, sku: 'MED-PARA-500', name: 'Paracetamol 500mg', category: 'Tablet', stock: 120, price: 60, sold: 420, expiryDate: '2027-06-30', image: medicineImage },

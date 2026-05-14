@@ -23,6 +23,7 @@ export const homePathForRole = (role: Role): string => {
 }
 
 const STORAGE_KEY = 'mednexus.user'
+const ACCESS_TOKEN_KEY = 'mednexus.accessToken'
 const AUTH_EVENT = 'mednexus:auth-changed'
 
 // Tab-scoped session: stored in `sessionStorage` so each new tab is its own
@@ -43,9 +44,31 @@ export const setStoredUser = (user: AuthUser) => {
   window.dispatchEvent(new Event(AUTH_EVENT))
 }
 
+export const getAccessToken = (): string | null => store?.getItem(ACCESS_TOKEN_KEY) ?? null
+
+export const setAccessToken = (token: string | null) => {
+  if (token) {
+    store?.setItem(ACCESS_TOKEN_KEY, token)
+  } else {
+    store?.removeItem(ACCESS_TOKEN_KEY)
+  }
+}
+
+/** Persist user and JWT (e.g. after {@code /api/auth/login}). */
+export const setAuthSession = (user: AuthUser, accessToken: string) => {
+  setAccessToken(accessToken)
+  setStoredUser(user)
+}
+
 export const clearStoredUser = () => {
   store?.removeItem(STORAGE_KEY)
+  store?.removeItem(ACCESS_TOKEN_KEY)
   window.dispatchEvent(new Event(AUTH_EVENT))
+}
+
+/** Clear user, token, and notify listeners (logout). */
+export const clearAuthSession = () => {
+  clearStoredUser()
 }
 
 export const onAuthChange = (handler: () => void) => {

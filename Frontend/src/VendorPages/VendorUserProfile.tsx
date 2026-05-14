@@ -1,5 +1,3 @@
-import React from 'react'
-
 const VendorUserProfile = () => {
   return (
     <div>VendorUserProfile</div>

@@ -5,7 +5,8 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
-import { clearStoredUser, getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
+import { clearAuthSession, getAccessToken, getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
+import { api } from '../lib/api'
 
 const Profile = () => {
   const navigate = useNavigate()
@@ -21,13 +22,30 @@ const Profile = () => {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   useEffect(() => {
-    if (!getStoredUser()) {
+    if (!getAccessToken() || !getStoredUser()) {
       navigate('/login', { replace: true })
       return
     }
+    const syncFromServer = async () => {
+      try {
+        const id = getStoredUser()?.id
+        if (id == null) return
+        const { data } = await api.get<AuthUser>(`/api/users/${id}`)
+        setStoredUser(data)
+        setUserId(data.id)
+        setFullName(data.fullName)
+        setPhoneNumber(data.phoneNumber)
+        setEmail(data.email)
+        setLocation(data.location ?? '')
+        setProfileImage(data.profileImage ?? null)
+      } catch {
+        /* keep local snapshot */
+      }
+    }
+    void syncFromServer()
     const unsubscribe = onAuthChange(() => {
       const u = getStoredUser()
-      if (!u) {
+      if (!getAccessToken() || !u) {
         navigate('/login', { replace: true })
         return
       }
@@ -73,21 +91,12 @@ const Profile = () => {
     try {
       const payload = new FormData()
       payload.append('image', file)
-      const res = await fetch(`/api/users/${userId}/profile-image`, {
-        method: 'POST',
-        body: payload,
-      })
-      if (!res.ok) {
-        toast.error('Failed to upload profile picture.')
-        setProfileImage(getStoredUser()?.profileImage ?? null)
-        return
-      }
-      const updated = (await res.json()) as AuthUser
+      const { data: updated } = await api.post<AuthUser>(`/api/users/${userId}/profile-image`, payload)
       setStoredUser(updated)
       setProfileImage(updated.profileImage ?? null)
       toast.success('Profile picture updated.')
     } catch {
-      toast.error('Could not reach the server.')
+      toast.error('Failed to upload profile picture.')
       setProfileImage(getStoredUser()?.profileImage ?? null)
     } finally {
       setIsUploadingImage(false)
@@ -104,20 +113,11 @@ const Profile = () => {
     }
     setIsSavingProfile(true)
     try {
-      const res = await fetch(`/api/users/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: fullName.trim(),
-          phoneNumber: phoneNumber.trim(),
-          location: location.trim(),
-        }),
+      const { data: updated } = await api.put<AuthUser>(`/api/users/${userId}`, {
+        fullName: fullName.trim(),
+        phoneNumber: phoneNumber.trim(),
+        location: location.trim(),
       })
-      if (!res.ok) {
-        toast.error('Failed to update profile.')
-        return
-      }
-      const updated = (await res.json()) as AuthUser
       setStoredUser(updated)
       setFullName(updated.fullName)
       setPhoneNumber(updated.phoneNumber)
@@ -125,7 +125,7 @@ const Profile = () => {
       setIsEditingProfile(false)
       toast.success('Profile details updated successfully.')
     } catch {
-      toast.error('Could not reach the server.')
+      toast.error('Failed to update profile.')
     } finally {
       setIsSavingProfile(false)
     }
@@ -142,28 +142,21 @@ const Profile = () => {
     }
     setIsSavingPassword(true)
     try {
-      const res = await fetch(`/api/users/${userId}/password`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      })
-      if (!res.ok) {
-        if (res.status === 401) {
-          toast.error('Current password is incorrect.')
-        } else if (res.status === 400) {
-          toast.error('New password is too short. Use at least 6 characters.')
-        } else {
-          toast.error('Failed to update password. Please try again.')
-        }
-        return
-      }
+      await api.put(`/api/users/${userId}/password`, { currentPassword, newPassword })
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setShowPasswordForm(false)
       toast.success('Password updated successfully.')
-    } catch {
-      toast.error('Could not reach the server.')
+    } catch (err: unknown) {
+      const status = err && typeof err === 'object' && 'response' in err ? (err as { response?: { status?: number } }).response?.status : undefined
+      if (status === 401) {
+        toast.error('Current password is incorrect.')
+      } else if (status === 400) {
+        toast.error('New password is too short. Use at least 6 characters.')
+      } else {
+        toast.error('Failed to update password. Please try again.')
+      }
     } finally {
       setIsSavingPassword(false)
     }
@@ -176,7 +169,7 @@ const Profile = () => {
   }
 
   const handleLogout = () => {
-    clearStoredUser()
+    clearAuthSession()
     toast.error('You have been logged out.')
     navigate('/login')
   }

@@ -6,9 +6,12 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
-import { homePathForRole, setStoredUser, type AuthUser } from '../lib/auth'
+import { resolveBackendUrl } from '../lib/api'
+import { homePathForRole, setAuthSession, type AuthUser } from '../lib/auth'
 
-const LOGIN_URL = '/api/users/login'
+const LOGIN_URL = '/api/auth/login'
+
+type AuthLoginResponse = { token: string; user: AuthUser }
 
 const Login = () => {
   const navigate = useNavigate()
@@ -21,7 +24,7 @@ const Login = () => {
     e.preventDefault()
     setLoading(true)
     try {
-      const res = await fetch(LOGIN_URL, {
+      const res = await fetch(resolveBackendUrl(LOGIN_URL), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password }),
@@ -36,8 +39,9 @@ const Login = () => {
         return
       }
 
-      const user = (await res.json()) as AuthUser
-      setStoredUser(user)
+      const body = (await res.json()) as AuthLoginResponse
+      setAuthSession(body.user, body.token)
+      const user = body.user
       toast.success(`Welcome back, ${user.fullName.split(' ')[0]}!`)
       navigate(homePathForRole(user.role), { replace: true })
     } catch {
