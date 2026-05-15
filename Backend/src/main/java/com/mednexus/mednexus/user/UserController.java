@@ -32,7 +32,7 @@ public class UserController {
 	}
 
 	/**
-	 * Profile for the authenticated platform user (JWT from {@code /api/auth/login} or {@code /api/auth/register}).
+	 * Profile for the authenticated platform user (JWT from {@code /api/auth/login}).
 	 * Vendor JWTs must use {@code GET /api/vendors/me}.
 	 */
 	@GetMapping("/me")

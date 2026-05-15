@@ -86,13 +86,9 @@ public class AuthController {
 	}
 
 	@PostMapping("/register")
-	public ResponseEntity<AuthResponse> register(@RequestBody SignupRequest request) {
+	public ResponseEntity<UserResponse> register(@RequestBody SignupRequest request) {
 		UserResponse created = userService.register(request);
-		User user = userRepository.findById(created.id())
-				.orElseThrow();
-		String access = jwtService.generateAccessTokenForUser(user);
-		String refresh = refreshTokenService.issueForUser(user);
-		return ResponseEntity.status(HttpStatus.CREATED).body(new AuthResponse(access, refresh, created));
+		return ResponseEntity.status(HttpStatus.CREATED).body(created);
 	}
 
 	@PostMapping("/vendor/login")

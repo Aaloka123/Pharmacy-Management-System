@@ -2,8 +2,8 @@ import googleLogo from '../assets/Google.png'
 import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
 import { resolveBackendUrl } from '../lib/api'
@@ -15,10 +15,19 @@ type AuthLoginResponse = { accessToken: string; refreshToken: string; user: Auth
 
 const Login = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const fromSignup = location.state as { email?: string } | undefined
+    if (fromSignup?.email) {
+      setEmail(fromSignup.email)
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.pathname, location.state, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
