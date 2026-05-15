@@ -5,18 +5,12 @@ import Copyright from '../UserComponents/Copyright'
 import { Link, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
-import { homePathForRole, setStoredUser, type AuthUser } from '../lib/auth'
+import { resolveBackendUrl } from '../lib/api'
+import { homePathForRole, setAuthSession, type AuthUser } from '../lib/auth'
 
-const VENDOR_LOGIN_URL = '/api/vendors/login'
+const VENDOR_LOGIN_URL = '/api/auth/vendor/login'
 
-type VendorLoginResponse = {
-  id: number
-  name: string
-  email: string
-  phoneNumber: string
-  location: string
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
-}
+type VendorAuthResponse = { accessToken: string; refreshToken: string; user: AuthUser }
 
 const Vendorlogin = () => {
   const navigate = useNavigate()
@@ -29,7 +23,7 @@ const Vendorlogin = () => {
     event.preventDefault()
     setLoading(true)
     try {
-      const res = await fetch(VENDOR_LOGIN_URL, {
+      const res = await fetch(resolveBackendUrl(VENDOR_LOGIN_URL), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password }),
@@ -50,17 +44,10 @@ const Vendorlogin = () => {
         return
       }
 
-      const vendor = (await res.json()) as VendorLoginResponse
-      const authUser: AuthUser = {
-        id: vendor.id,
-        fullName: vendor.name,
-        email: vendor.email,
-        phoneNumber: vendor.phoneNumber,
-        location: vendor.location,
-        role: 'VENDOR',
-      }
-      setStoredUser(authUser)
-      toast.success(`Welcome back, ${vendor.name.split(' ')[0]}!`)
+      const body = (await res.json()) as VendorAuthResponse
+      setAuthSession(body.user, body.accessToken, body.refreshToken)
+      const vendor = body.user
+      toast.success(`Welcome back, ${vendor.fullName.split(' ')[0]}!`)
       navigate(homePathForRole('VENDOR'), { replace: true })
     } catch {
       toast.error('Could not reach the server. Is the backend running on port 8080?')

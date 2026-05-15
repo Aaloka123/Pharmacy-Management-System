@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
+import com.mednexus.mednexus.auth.RefreshTokenService;
 import com.mednexus.mednexus.vendor.dto.VendorChangePasswordRequest;
 import com.mednexus.mednexus.vendor.dto.VendorLoginRequest;
 import com.mednexus.mednexus.vendor.dto.VendorResponse;
@@ -19,13 +20,16 @@ public class VendorService {
 	private final VendorRepository vendorRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final VendorFileStorage fileStorage;
+	private final RefreshTokenService refreshTokenService;
 
 	public VendorService(VendorRepository vendorRepository,
 			PasswordEncoder passwordEncoder,
-			VendorFileStorage fileStorage) {
+			VendorFileStorage fileStorage,
+			RefreshTokenService refreshTokenService) {
 		this.vendorRepository = vendorRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.fileStorage = fileStorage;
+		this.refreshTokenService = refreshTokenService;
 	}
 
 	@Transactional
@@ -154,6 +158,7 @@ public class VendorService {
 			throw new InvalidVendorCredentialsException();
 		}
 		vendor.setPassword(passwordEncoder.encode(request.newPassword()));
+		refreshTokenService.revokeAllForVendor(id);
 	}
 
 	@Transactional

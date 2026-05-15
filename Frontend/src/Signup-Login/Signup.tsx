@@ -7,8 +7,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
 import { resolveBackendUrl } from '../lib/api'
+import { homePathForRole, setAuthSession, type AuthUser } from '../lib/auth'
 
-const SIGNUP_URL = '/api/users/signup'
+const SIGNUP_URL = '/api/auth/register'
 
 const Signup = () => {
   const navigate = useNavigate()
@@ -51,13 +52,15 @@ const Signup = () => {
         return
       }
 
-      toast.success('Account created! Please log in.')
+      const body = (await res.json()) as { accessToken: string; refreshToken: string; user: AuthUser }
+      setAuthSession(body.user, body.accessToken, body.refreshToken)
+      toast.success(`Welcome, ${body.user.fullName.split(' ')[0]}!`)
       setFullName('')
       setEmail('')
       setPhoneNumber('')
       setPassword('')
       setConfirmPassword('')
-      navigate('/login')
+      navigate(homePathForRole(body.user.role), { replace: true })
     } catch {
       toast.error('Could not reach the server. Is the backend running on port 8080?')
     } finally {

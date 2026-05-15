@@ -1,4 +1,4 @@
-import { getAccessToken } from './auth'
+import { clearAuthSession, getAccessToken, getRefreshToken, setAuthSession, type AuthUser } from './auth'
 
 const envApiBase =
   typeof import.meta.env.VITE_API_BASE_URL === 'string'
@@ -39,7 +39,47 @@ export class ApiRequestError extends Error {
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown, isFormData?: boolean): Promise<{ data: T }> {
+type AuthTokensPayload = {
+  accessToken: string
+  refreshToken: string
+  user: AuthUser
+}
+
+let refreshInFlight: Promise<boolean> | null = null
+
+async function refreshAccessToken(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const rt = getRefreshToken()
+        if (!rt) return false
+        const url = resolveBackendUrl('/api/auth/refresh')
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: rt }),
+        })
+        if (!res.ok) return false
+        const body = (await res.json()) as AuthTokensPayload
+        setAuthSession(body.user, body.accessToken, body.refreshToken)
+        return true
+      } catch {
+        return false
+      } finally {
+        refreshInFlight = null
+      }
+    })()
+  }
+  return refreshInFlight
+}
+
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  isFormData?: boolean,
+  skipRefreshRetry?: boolean,
+): Promise<{ data: T }> {
   const url = resolveBackendUrl(path)
   const headers: Record<string, string> = {}
   const token = getAccessToken()
@@ -55,6 +95,14 @@ async function request<T>(method: string, path: string, body?: unknown, isFormDa
     headers,
     body: body == null ? undefined : isFormData ? (body as BodyInit) : JSON.stringify(body),
   })
+
+  if (res.status === 401 && !skipRefreshRetry && getRefreshToken()) {
+    const refreshed = await refreshAccessToken()
+    if (refreshed) {
+      return request<T>(method, path, body, isFormData, true)
+    }
+    clearAuthSession()
+  }
 
   if (!res.ok) {
     throw new ApiRequestError(res.status)
@@ -72,10 +120,39 @@ async function request<T>(method: string, path: string, body?: unknown, isFormDa
 }
 
 /**
- * Minimal axios-like client for authenticated JSON APIs (Bearer from session).
+ * Minimal axios-like client for authenticated JSON APIs (Bearer + automatic refresh on 401).
  */
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body, body instanceof FormData),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body, false),
+}
+
+/**
+ * Authenticated fetch with the same Bearer + refresh behaviour as {@link api}.
+ * Use when you need the raw {@link Response} (e.g. custom error handling).
+ */
+export async function authFetch(input: string, init?: RequestInit): Promise<Response> {
+  const url = resolveBackendUrl(input)
+  const headers = new Headers(init?.headers)
+  const token = getAccessToken()
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+  let res = await fetch(url, { ...init, headers })
+
+  if (res.status === 401 && getRefreshToken()) {
+    const refreshed = await refreshAccessToken()
+    if (refreshed) {
+      const h2 = new Headers(init?.headers)
+      const t2 = getAccessToken()
+      if (t2) {
+        h2.set('Authorization', `Bearer ${t2}`)
+      }
+      res = await fetch(url, { ...init, headers: h2 })
+    } else {
+      clearAuthSession()
+    }
+  }
+  return res
 }

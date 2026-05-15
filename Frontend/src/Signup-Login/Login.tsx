@@ -11,7 +11,7 @@ import { homePathForRole, setAuthSession, type AuthUser } from '../lib/auth'
 
 const LOGIN_URL = '/api/auth/login'
 
-type AuthLoginResponse = { token: string; user: AuthUser }
+type AuthLoginResponse = { accessToken: string; refreshToken: string; user: AuthUser }
 
 const Login = () => {
   const navigate = useNavigate()
@@ -40,7 +40,7 @@ const Login = () => {
       }
 
       const body = (await res.json()) as AuthLoginResponse
-      setAuthSession(body.user, body.token)
+      setAuthSession(body.user, body.accessToken, body.refreshToken)
       const user = body.user
       toast.success(`Welcome back, ${user.fullName.split(' ')[0]}!`)
       navigate(homePathForRole(user.role), { replace: true })

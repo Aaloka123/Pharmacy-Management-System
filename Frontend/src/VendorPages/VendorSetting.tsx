@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'r
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
+import { api, ApiRequestError } from '../lib/api';
 import { getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth';
 
 type VendorRecord = {
@@ -70,11 +71,7 @@ const Setting = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/vendors/${vendorId}`);
-        if (!res.ok) {
-          throw new Error(`Request failed with ${res.status}`);
-        }
-        const data = (await res.json()) as VendorRecord;
+        const { data } = await api.get<VendorRecord>(`/api/vendors/${vendorId}`);
         if (!cancelled) applyVendor(data);
       } catch (err) {
         if (!cancelled) {
@@ -118,24 +115,19 @@ const Setting = () => {
     try {
       const payload = new FormData();
       payload.append('image', file);
-      const res = await fetch(`/api/vendors/${vendor.id}/profile-image`, {
-        method: 'POST',
-        body: payload,
-      });
-      if (!res.ok) {
-        toast.error('Failed to upload profile picture.');
-        setProfileImage(vendor.profileImage ?? null);
-        return;
-      }
-      const data = (await res.json()) as VendorRecord;
+      const { data } = await api.post<VendorRecord>(`/api/vendors/${vendor.id}/profile-image`, payload);
       applyVendor(data);
       const current = getStoredUser();
       if (current) {
         setStoredUser({ ...current, profileImage: data.profileImage ?? null });
       }
       toast.success('Profile picture updated.');
-    } catch {
-      toast.error('Could not reach the server.');
+    } catch (e) {
+      if (e instanceof ApiRequestError) {
+        toast.error('Failed to upload profile picture.');
+      } else {
+        toast.error('Could not reach the server.');
+      }
       setProfileImage(vendor.profileImage ?? null);
     } finally {
       setIsUploadingImage(false);
@@ -155,18 +147,17 @@ const Setting = () => {
     onSuccess: (data: VendorRecord) => void,
     successMessage: string,
   ) => {
-    const res = await fetch(`/api/vendors/${vendorId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      toast.error('Failed to save changes.');
-      return;
+    try {
+      const { data } = await api.put<VendorRecord>(`/api/vendors/${vendorId}`, body);
+      onSuccess(data);
+      toast.success(successMessage);
+    } catch (e) {
+      if (e instanceof ApiRequestError) {
+        toast.error('Failed to save changes.');
+      } else {
+        toast.error('Could not reach the server.');
+      }
     }
-    const data = (await res.json()) as VendorRecord;
-    onSuccess(data);
-    toast.success(successMessage);
   };
 
   const handleSaveStore = async (event: FormEvent) => {
@@ -187,8 +178,6 @@ const Setting = () => {
         },
         'Store information updated.',
       );
-    } catch {
-      toast.error('Could not reach the server.');
     } finally {
       setIsSavingStore(false);
     }
@@ -222,8 +211,6 @@ const Setting = () => {
         },
         'Profile details updated.',
       );
-    } catch {
-      toast.error('Could not reach the server.');
     } finally {
       setIsSavingProfile(false);
     }
@@ -246,28 +233,24 @@ const Setting = () => {
     }
     setIsSavingPassword(true);
     try {
-      const res = await fetch(`/api/vendors/${vendor.id}/password`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          toast.error('Current password is incorrect.');
-        } else if (res.status === 400) {
-          toast.error('New password is too short. Use at least 6 characters.');
-        } else {
-          toast.error('Failed to update password.');
-        }
-        return;
-      }
+      await api.put(`/api/vendors/${vendor.id}/password`, { currentPassword, newPassword });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setShowPasswordForm(false);
       toast.success('Password updated successfully.');
-    } catch {
-      toast.error('Could not reach the server.');
+    } catch (e) {
+      if (e instanceof ApiRequestError) {
+        if (e.response.status === 401) {
+          toast.error('Current password is incorrect.');
+        } else if (e.response.status === 400) {
+          toast.error('New password is too short. Use at least 6 characters.');
+        } else {
+          toast.error('Failed to update password.');
+        }
+      } else {
+        toast.error('Could not reach the server.');
+      }
     } finally {
       setIsSavingPassword(false);
     }

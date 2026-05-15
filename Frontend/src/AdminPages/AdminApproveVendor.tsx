@@ -1,6 +1,7 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
+import { api } from '../lib/api'
 
 type VendorStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
@@ -49,11 +50,7 @@ const AdminApproveVendor = () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(PENDING_VENDORS_URL)
-      if (!res.ok) {
-        throw new Error(`Request failed with ${res.status}`)
-      }
-      const data = (await res.json()) as Vendor[]
+      const { data } = await api.get<Vendor[]>(PENDING_VENDORS_URL)
       setVendors(data)
       window.dispatchEvent(new Event(PENDING_VENDORS_EVENT))
     } catch (err) {
@@ -91,10 +88,7 @@ const AdminApproveVendor = () => {
   const handleDecision = async (vendor: Vendor, decision: 'approve' | 'reject') => {
     setActionId(vendor.id)
     try {
-      const res = await fetch(`/api/vendors/${vendor.id}/${decision}`, { method: 'POST' })
-      if (!res.ok) {
-        throw new Error(`Request failed with ${res.status}`)
-      }
+      await api.post(`/api/vendors/${vendor.id}/${decision}`)
       setVendors((prev) => prev.filter((v) => v.id !== vendor.id))
       window.dispatchEvent(new Event(PENDING_VENDORS_EVENT))
       toast.success(

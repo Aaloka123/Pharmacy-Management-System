@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
 import com.mednexus.mednexus.vendor.dto.VendorChangePasswordRequest;
-import com.mednexus.mednexus.vendor.dto.VendorLoginRequest;
 import com.mednexus.mednexus.vendor.dto.VendorResponse;
 
 @RestController
@@ -59,23 +59,21 @@ public class VendorController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(body);
 	}
 
-	@PostMapping("/login")
-	public ResponseEntity<VendorResponse> login(@RequestBody VendorLoginRequest request) {
-		return ResponseEntity.ok(vendorService.login(request));
-	}
-
 	@GetMapping
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<List<VendorResponse>> list(
 			@RequestParam(name = "status", required = false) VendorStatus status) {
 		return ResponseEntity.ok(vendorService.list(status));
 	}
 
 	@GetMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN') or (hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<VendorResponse> getOne(@PathVariable Long id) {
 		return ResponseEntity.ok(vendorService.getById(id));
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN') or (hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<VendorResponse> updateProfile(
 			@PathVariable Long id,
 			@RequestBody UpdateVendorProfileRequest request) {
@@ -83,6 +81,7 @@ public class VendorController {
 	}
 
 	@PutMapping("/{id}/password")
+	@PreAuthorize("hasRole('ADMIN') or (hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<Void> changePassword(
 			@PathVariable Long id,
 			@RequestBody VendorChangePasswordRequest request) {
@@ -91,6 +90,7 @@ public class VendorController {
 	}
 
 	@PostMapping(value = "/{id}/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("hasRole('ADMIN') or (hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<VendorResponse> uploadProfileImage(
 			@PathVariable Long id,
 			@RequestParam("image") MultipartFile image) {
@@ -98,11 +98,13 @@ public class VendorController {
 	}
 
 	@PostMapping("/{id}/approve")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<VendorResponse> approve(@PathVariable Long id) {
 		return ResponseEntity.ok(vendorService.approve(id));
 	}
 
 	@PostMapping("/{id}/reject")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Void> reject(@PathVariable Long id) {
 		vendorService.reject(id);
 		return ResponseEntity.noContent().build();

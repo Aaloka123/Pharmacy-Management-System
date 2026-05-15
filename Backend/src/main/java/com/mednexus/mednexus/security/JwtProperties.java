@@ -10,7 +10,15 @@ public class JwtProperties {
 	 */
 	private String secret = "";
 
-	private long expirationMs = 86400000L;
+	/**
+	 * Access token TTL (short-lived for security).
+	 */
+	private long accessExpirationMs = 900_000L;
+
+	/**
+	 * Refresh token TTL (opaque token stored server-side).
+	 */
+	private long refreshExpirationMs = 604_800_000L;
 
 	public String getSecret() {
 		return secret;
@@ -20,11 +28,35 @@ public class JwtProperties {
 		this.secret = secret;
 	}
 
-	public long getExpirationMs() {
-		return expirationMs;
+	public long getAccessExpirationMs() {
+		return accessExpirationMs;
 	}
 
+	public void setAccessExpirationMs(long accessExpirationMs) {
+		this.accessExpirationMs = accessExpirationMs;
+	}
+
+	/**
+	 * @deprecated use {@link #getAccessExpirationMs()}
+	 */
+	@Deprecated
+	public long getExpirationMs() {
+		return accessExpirationMs;
+	}
+
+	/**
+	 * @deprecated use {@link #setAccessExpirationMs(long)}
+	 */
+	@Deprecated
 	public void setExpirationMs(long expirationMs) {
-		this.expirationMs = expirationMs;
+		this.accessExpirationMs = expirationMs;
+	}
+
+	public long getRefreshExpirationMs() {
+		return refreshExpirationMs;
+	}
+
+	public void setRefreshExpirationMs(long refreshExpirationMs) {
+		this.refreshExpirationMs = refreshExpirationMs;
 	}
 }

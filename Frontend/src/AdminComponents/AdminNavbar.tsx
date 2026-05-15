@@ -12,7 +12,8 @@ import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import mednexuxLogo from '../assets/Mednexux.png'
-import { clearStoredUser } from '../lib/auth'
+import { api } from '../lib/api'
+import { clearAuthSession } from '../lib/auth'
 
 const PENDING_VENDORS_EVENT = 'mednexus:pending-vendors-changed'
 const PENDING_VENDORS_URL = '/api/vendors?status=PENDING'
@@ -36,9 +37,7 @@ const AdminNavbar = () => {
 
     const fetchCount = async () => {
       try {
-        const res = await fetch(PENDING_VENDORS_URL)
-        if (!res.ok) return
-        const data = (await res.json()) as unknown[]
+        const { data } = await api.get<unknown[]>(PENDING_VENDORS_URL)
         if (!cancelled) setPendingVendors(data.length)
       } catch {
         // ignore — keep last known count
@@ -58,8 +57,8 @@ const AdminNavbar = () => {
   }, [])
 
   const handleLogout = () => {
-    clearStoredUser()
-    toast.error('You have been logged out.')
+    clearAuthSession()
+    toast.info('You have been logged out.')
     navigate('/login')
   }
 

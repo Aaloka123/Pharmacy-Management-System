@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
+import { api, ApiRequestError } from '../lib/api'
 import { getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
 
 const AdminSettings = () => {
@@ -52,26 +53,21 @@ const AdminSettings = () => {
     }
     setIsSavingProfile(true)
     try {
-      const res = await fetch(`/api/users/${adminId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: adminName.trim(),
-          phoneNumber: adminPhone.trim(),
-        }),
+      const { data: updated } = await api.put<AuthUser>(`/api/users/${adminId}`, {
+        fullName: adminName.trim(),
+        phoneNumber: adminPhone.trim(),
       })
-      if (!res.ok) {
-        toast.error('Failed to update profile.')
-        return
-      }
-      const updated = (await res.json()) as AuthUser
       setStoredUser(updated)
       setAdminName(updated.fullName)
       setAdminPhone(updated.phoneNumber)
       setIsProfileEditing(false)
       toast.success('Profile updated successfully.')
-    } catch {
-      toast.error('Could not reach the server.')
+    } catch (e) {
+      if (e instanceof ApiRequestError && e.response.status === 401) {
+        toast.error('Session expired. Please log in again.')
+      } else {
+        toast.error('Could not reach the server.')
+      }
     } finally {
       setIsSavingProfile(false)
     }
@@ -98,27 +94,23 @@ const AdminSettings = () => {
     }
     setIsSavingPassword(true)
     try {
-      const res = await fetch(`/api/users/${adminId}/password`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      })
-      if (!res.ok) {
-        if (res.status === 401) {
-          toast.error('Current password is incorrect.')
-        } else if (res.status === 400) {
-          toast.error('New password is too short. Use at least 6 characters.')
-        } else {
-          toast.error('Failed to update password.')
-        }
-        return
-      }
+      await api.put(`/api/users/${adminId}/password`, { currentPassword, newPassword })
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       toast.success('Password updated successfully.')
-    } catch {
-      toast.error('Could not reach the server.')
+    } catch (e) {
+      if (e instanceof ApiRequestError) {
+        if (e.response.status === 401) {
+          toast.error('Current password is incorrect.')
+        } else if (e.response.status === 400) {
+          toast.error('New password is too short. Use at least 6 characters.')
+        } else {
+          toast.error('Failed to update password.')
+        }
+      } else {
+        toast.error('Could not reach the server.')
+      }
     } finally {
       setIsSavingPassword(false)
     }

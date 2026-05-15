@@ -1,6 +1,7 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
+import { api } from '../lib/api'
 
 type UserRow = {
   id: number
@@ -23,11 +24,7 @@ const AdminUsers = () => {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch('/api/users?role=USER')
-        if (!res.ok) {
-          throw new Error(`Request failed with ${res.status}`)
-        }
-        const data = (await res.json()) as UserRow[]
+        const { data } = await api.get<UserRow[]>('/api/users?role=USER')
         if (!cancelled) setUsers(data)
       } catch (err) {
         if (!cancelled) {

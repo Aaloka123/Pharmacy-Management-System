@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mednexus.mednexus.auth.RefreshTokenService;
 import com.mednexus.mednexus.user.dto.ChangePasswordRequest;
-import com.mednexus.mednexus.user.dto.LoginRequest;
 import com.mednexus.mednexus.user.dto.SignupRequest;
 import com.mednexus.mednexus.user.dto.UpdateProfileRequest;
 import com.mednexus.mednexus.user.dto.UserResponse;
@@ -17,13 +17,16 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final UserFileStorage fileStorage;
+	private final RefreshTokenService refreshTokenService;
 
 	public UserService(UserRepository userRepository,
 			PasswordEncoder passwordEncoder,
-			UserFileStorage fileStorage) {
+			UserFileStorage fileStorage,
+			RefreshTokenService refreshTokenService) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.fileStorage = fileStorage;
+		this.refreshTokenService = refreshTokenService;
 	}
 
 	@Transactional
@@ -62,24 +65,6 @@ public class UserService {
 		return toResponse(user);
 	}
 
-	@Transactional
-	public UserResponse login(LoginRequest request) {
-		if (request == null || request.email() == null || request.password() == null) {
-			throw new InvalidCredentialsException();
-		}
-		User user = userRepository.findByEmailIgnoreCase(request.email().trim())
-				.orElseThrow(InvalidCredentialsException::new);
-		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-			throw new InvalidCredentialsException();
-		}
-		// Transparently upgrade old (slow) hashes to the current strength so
-		// subsequent logins for this user are fast.
-		if (passwordEncoder.upgradeEncoding(user.getPassword())) {
-			user.setPassword(passwordEncoder.encode(request.password()));
-		}
-		return toResponse(user);
-	}
-
 	@Transactional(readOnly = true)
 	public java.util.List<UserResponse> listByRole(Role role) {
 		return userRepository.findAllByRoleOrderByIdAsc(role)
@@ -101,6 +86,7 @@ public class UserService {
 			throw new InvalidCredentialsException();
 		}
 		user.setPassword(passwordEncoder.encode(request.newPassword()));
+		refreshTokenService.revokeAllForUser(id);
 	}
 
 	@Transactional
