@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mednexus.mednexus.security.PlatformUser;
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
 import com.mednexus.mednexus.vendor.dto.VendorChangePasswordRequest;
 import com.mednexus.mednexus.vendor.dto.VendorResponse;
@@ -64,6 +66,13 @@ public class VendorController {
 	public ResponseEntity<List<VendorResponse>> list(
 			@RequestParam(name = "status", required = false) VendorStatus status) {
 		return ResponseEntity.ok(vendorService.list(status));
+	}
+
+	/** Profile for the authenticated vendor (JWT from {@code /api/auth/vendor/login}). */
+	@GetMapping("/me")
+	@PreAuthorize("hasRole('VENDOR') and principal.vendorAccount")
+	public ResponseEntity<VendorResponse> currentVendor(@AuthenticationPrincipal PlatformUser principal) {
+		return ResponseEntity.ok(vendorService.getById(principal.getSubjectId()));
 	}
 
 	@GetMapping("/{id}")
