@@ -53,7 +53,7 @@ const AdminSettings = () => {
     }
     setIsSavingProfile(true)
     try {
-      const { data: updated } = await api.put<AuthUser>(`/api/users/${adminId}`, {
+      const { data: updated } = await api.patch<AuthUser>('/api/users/me', {
         fullName: adminName.trim(),
         phoneNumber: adminPhone.trim(),
       })
@@ -94,7 +94,7 @@ const AdminSettings = () => {
     }
     setIsSavingPassword(true)
     try {
-      await api.put(`/api/users/${adminId}/password`, { currentPassword, newPassword })
+      await api.post('/api/users/me/password', { currentPassword, newPassword })
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')

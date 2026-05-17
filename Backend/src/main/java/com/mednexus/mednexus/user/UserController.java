@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,19 +42,44 @@ public class UserController {
 		return ResponseEntity.ok(userService.getProfileById(principal.getSubjectId()));
 	}
 
+	@PatchMapping("/me")
+	@PreAuthorize("isAuthenticated() and !principal.vendorAccount")
+	public ResponseEntity<UserResponse> updateCurrentUserProfile(
+			@AuthenticationPrincipal PlatformUser principal,
+			@RequestBody UpdateProfileRequest request) {
+		return ResponseEntity.ok(userService.updateProfile(principal.getSubjectId(), request));
+	}
+
+	@PostMapping("/me/password")
+	@PreAuthorize("isAuthenticated() and !principal.vendorAccount")
+	public ResponseEntity<Void> changeCurrentUserPassword(
+			@AuthenticationPrincipal PlatformUser principal,
+			@RequestBody ChangePasswordRequest request) {
+		userService.changePassword(principal.getSubjectId(), request);
+		return ResponseEntity.noContent().build();
+	}
+
+	@PostMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("isAuthenticated() and !principal.vendorAccount")
+	public ResponseEntity<UserResponse> uploadCurrentUserProfileImage(
+			@AuthenticationPrincipal PlatformUser principal,
+			@RequestParam("image") MultipartFile image) {
+		return ResponseEntity.ok(userService.updateProfileImage(principal.getSubjectId(), image));
+	}
+
 	@GetMapping("/{id}")
 	@PreAuthorize("hasRole('ADMIN') or (!principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<UserResponse> getById(@PathVariable Long id) {
 		return ResponseEntity.ok(userService.getProfileById(id));
 	}
 
-	@PutMapping("/{id}")
+	@PatchMapping("/{id}")
 	@PreAuthorize("hasRole('ADMIN') or (!principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody UpdateProfileRequest request) {
 		return ResponseEntity.ok(userService.updateProfile(id, request));
 	}
 
-	@PutMapping("/{id}/password")
+	@PostMapping("/{id}/password")
 	@PreAuthorize("hasRole('ADMIN') or (!principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestBody ChangePasswordRequest request) {
 		userService.changePassword(id, request);

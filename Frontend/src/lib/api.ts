@@ -126,6 +126,7 @@ export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body, body instanceof FormData),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body, false),
+  patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body, false),
 }
 
 /**

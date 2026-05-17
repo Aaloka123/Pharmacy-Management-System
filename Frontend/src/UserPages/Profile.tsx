@@ -30,7 +30,7 @@ const Profile = () => {
       try {
         const id = getStoredUser()?.id
         if (id == null) return
-        const { data } = await api.get<AuthUser>(`/api/users/${id}`)
+        const { data } = await api.get<AuthUser>('/api/users/me')
         setStoredUser(data)
         setUserId(data.id)
         setFullName(data.fullName)
@@ -91,7 +91,7 @@ const Profile = () => {
     try {
       const payload = new FormData()
       payload.append('image', file)
-      const { data: updated } = await api.post<AuthUser>(`/api/users/${userId}/profile-image`, payload)
+      const { data: updated } = await api.post<AuthUser>('/api/users/me/profile-image', payload)
       setStoredUser(updated)
       setProfileImage(updated.profileImage ?? null)
       toast.success('Profile picture updated.')
@@ -113,7 +113,7 @@ const Profile = () => {
     }
     setIsSavingProfile(true)
     try {
-      const { data: updated } = await api.put<AuthUser>(`/api/users/${userId}`, {
+      const { data: updated } = await api.patch<AuthUser>('/api/users/me', {
         fullName: fullName.trim(),
         phoneNumber: phoneNumber.trim(),
         location: location.trim(),
@@ -142,7 +142,7 @@ const Profile = () => {
     }
     setIsSavingPassword(true)
     try {
-      await api.put(`/api/users/${userId}/password`, { currentPassword, newPassword })
+      await api.post('/api/users/me/password', { currentPassword, newPassword })
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
