@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ public class RefreshTokenService {
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final com.mednexus.mednexus.security.JwtProperties jwtProperties;
 
+	@Autowired
 	public RefreshTokenService(RefreshTokenRepository refreshTokenRepository,
 			com.mednexus.mednexus.security.JwtProperties jwtProperties) {
 		this.refreshTokenRepository = refreshTokenRepository;

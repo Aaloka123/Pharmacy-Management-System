@@ -5,6 +5,7 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.mednexus.mednexus.user.Role;
@@ -29,6 +30,7 @@ public class JwtService {
 	private volatile SecretKey signingKey;
 	private volatile JwtParser jwtParser;
 
+	@Autowired
 	public JwtService(JwtProperties jwtProperties) {
 		this.jwtProperties = jwtProperties;
 	}

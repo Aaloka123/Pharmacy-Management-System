@@ -1,5 +1,6 @@
 package com.mednexus.mednexus.auth;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,6 +43,7 @@ public class AuthController {
 	private final VendorRepository vendorRepository;
 	private final PasswordEncoder passwordEncoder;
 
+	@Autowired
 	public AuthController(
 			AuthenticationManager authenticationManager,
 			UserRepository userRepository,
@@ -76,7 +78,6 @@ public class AuthController {
 		User user = userRepository.findByEmailIgnoreCase(request.email().trim())
 				.orElseThrow();
 		if (passwordEncoder.upgradeEncoding(user.getPassword())) {
-			user.setPassword(passwordEncoder.encode(request.password()));
 			userRepository.save(user);
 		}
 		String access = jwtService.generateAccessTokenForUser(user);

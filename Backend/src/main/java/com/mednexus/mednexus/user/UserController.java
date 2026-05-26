@@ -2,6 +2,7 @@ package com.mednexus.mednexus.user;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +29,7 @@ public class UserController {
 
 	private final UserService userService;
 
+	@Autowired
 	public UserController(UserService userService) {
 		this.userService = userService;
 	}

@@ -1,5 +1,6 @@
 package com.mednexus.mednexus.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -12,6 +13,7 @@ public class PlatformUserDetailsService implements UserDetailsService {
 
 	private final UserRepository userRepository;
 
+	@Autowired
 	public PlatformUserDetailsService(UserRepository userRepository) {
 		this.userRepository = userRepository;
 	}

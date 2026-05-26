@@ -2,6 +2,7 @@ package com.mednexus.mednexus.security;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +22,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtService jwtService;
 
+	@Autowired
 	public JwtAuthenticationFilter(JwtService jwtService) {
 		this.jwtService = jwtService;
 	}
