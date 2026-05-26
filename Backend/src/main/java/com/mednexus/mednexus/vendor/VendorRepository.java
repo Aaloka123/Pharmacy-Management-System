@@ -13,6 +13,8 @@ public interface VendorRepository extends JpaRepository<Vendor, Long> {
 
 	Optional<Vendor> findByEmailIgnoreCase(String email);
 
+	Optional<Vendor> findByRefreshTokenHash(String refreshTokenHash);
+
 	List<Vendor> findAllByStatusOrderByCreatedAtDesc(VendorStatus status);
 
 	List<Vendor> findAllByOrderByCreatedAtDesc();

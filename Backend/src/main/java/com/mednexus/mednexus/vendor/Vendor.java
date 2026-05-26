@@ -65,6 +65,12 @@ public class Vendor {
 	@Column(name = "decided_at")
 	private Instant decidedAt;
 
+	@Column(name = "refresh_token_hash", unique = true, length = 64)
+	private String refreshTokenHash;
+
+	@Column(name = "refresh_token_expires_at")
+	private Instant refreshTokenExpiresAt;
+
 	public Vendor() {
 	}
 
@@ -194,5 +200,21 @@ public class Vendor {
 
 	public void setDecidedAt(Instant decidedAt) {
 		this.decidedAt = decidedAt;
+	}
+
+	public String getRefreshTokenHash() {
+		return refreshTokenHash;
+	}
+
+	public void setRefreshTokenHash(String refreshTokenHash) {
+		this.refreshTokenHash = refreshTokenHash;
+	}
+
+	public Instant getRefreshTokenExpiresAt() {
+		return refreshTokenExpiresAt;
+	}
+
+	public void setRefreshTokenExpiresAt(Instant refreshTokenExpiresAt) {
+		this.refreshTokenExpiresAt = refreshTokenExpiresAt;
 	}
 }

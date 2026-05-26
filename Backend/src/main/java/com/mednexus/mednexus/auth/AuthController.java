@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mednexus.mednexus.auth.dto.AuthRequest;
 import com.mednexus.mednexus.auth.dto.AuthResponse;
+import com.mednexus.mednexus.auth.dto.GoogleAuthRequest;
 import com.mednexus.mednexus.auth.dto.LogoutRequest;
 import com.mednexus.mednexus.auth.dto.RefreshTokenRequest;
 import com.mednexus.mednexus.security.JwtService;
@@ -42,6 +43,7 @@ public class AuthController {
 	private final VendorService vendorService;
 	private final VendorRepository vendorRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final GoogleAuthService googleAuthService;
 
 	@Autowired
 	public AuthController(
@@ -52,7 +54,8 @@ public class AuthController {
 			RefreshTokenService refreshTokenService,
 			VendorService vendorService,
 			VendorRepository vendorRepository,
-			PasswordEncoder passwordEncoder) {
+			PasswordEncoder passwordEncoder,
+			GoogleAuthService googleAuthService) {
 		this.authenticationManager = authenticationManager;
 		this.userRepository = userRepository;
 		this.userService = userService;
@@ -61,6 +64,7 @@ public class AuthController {
 		this.vendorService = vendorService;
 		this.vendorRepository = vendorRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.googleAuthService = googleAuthService;
 	}
 
 	@GetMapping("/login")
@@ -80,6 +84,15 @@ public class AuthController {
 		if (passwordEncoder.upgradeEncoding(user.getPassword())) {
 			userRepository.save(user);
 		}
+		String access = jwtService.generateAccessTokenForUser(user);
+		String refresh = refreshTokenService.issueForUser(user);
+		UserResponse body = userService.getProfileById(user.getId());
+		return ResponseEntity.ok(new AuthResponse(access, refresh, body));
+	}
+
+	@PostMapping("/google")
+	public ResponseEntity<AuthResponse> googleLogin(@Valid @RequestBody GoogleAuthRequest request) {
+		User user = googleAuthService.authenticate(request.idToken());
 		String access = jwtService.generateAccessTokenForUser(user);
 		String refresh = refreshTokenService.issueForUser(user);
 		UserResponse body = userService.getProfileById(user.getId());

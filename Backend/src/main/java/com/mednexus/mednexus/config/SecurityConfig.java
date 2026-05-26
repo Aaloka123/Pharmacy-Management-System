@@ -55,6 +55,7 @@ public class SecurityConfig {
 						.requestMatchers("/error").permitAll()
 						.requestMatchers(HttpMethod.POST,
 								"/api/auth/login",
+								"/api/auth/google",
 								"/api/auth/register",
 								"/api/auth/refresh",
 								"/api/auth/vendor/login",

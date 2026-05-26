@@ -37,6 +37,17 @@ public class LegacyUserTableColumnCleanup implements ApplicationRunner {
 		dropCamelIfSnakeExists(columns, "full_name", "fullName");
 		dropCamelIfSnakeExists(columns, "phone_number", "phoneNumber");
 		dropCamelIfSnakeExists(columns, "profile_image", "profileImage");
+
+		dropTableIfExists("auth_refresh_token");
+	}
+
+	private void dropTableIfExists(String tableName) {
+		try {
+			jdbc.execute("DROP TABLE IF EXISTS `" + tableName + "`");
+			log.info("Dropped legacy table `{}` (refresh tokens are stored on user/vendor).", tableName);
+		} catch (Exception ex) {
+			log.warn("Could not drop legacy table `{}`: {}", tableName, ex.getMessage());
+		}
 	}
 
 	private void dropCamelIfSnakeExists(List<String> columns, String snake, String camel) {

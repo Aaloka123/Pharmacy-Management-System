@@ -12,21 +12,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mednexus.mednexus.security.JwtProperties;
 import com.mednexus.mednexus.user.User;
+import com.mednexus.mednexus.user.UserRepository;
 import com.mednexus.mednexus.vendor.Vendor;
+import com.mednexus.mednexus.vendor.VendorRepository;
 
 @Service
 public class RefreshTokenService {
 
 	private static final SecureRandom RANDOM = new SecureRandom();
 
-	private final RefreshTokenRepository refreshTokenRepository;
-	private final com.mednexus.mednexus.security.JwtProperties jwtProperties;
+	private final UserRepository userRepository;
+	private final VendorRepository vendorRepository;
+	private final JwtProperties jwtProperties;
 
 	@Autowired
-	public RefreshTokenService(RefreshTokenRepository refreshTokenRepository,
-			com.mednexus.mednexus.security.JwtProperties jwtProperties) {
-		this.refreshTokenRepository = refreshTokenRepository;
+	public RefreshTokenService(
+			UserRepository userRepository,
+			VendorRepository vendorRepository,
+			JwtProperties jwtProperties) {
+		this.userRepository = userRepository;
+		this.vendorRepository = vendorRepository;
 		this.jwtProperties = jwtProperties;
 	}
 
@@ -47,64 +54,57 @@ public class RefreshTokenService {
 		return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 	}
 
+	public record RotationResult(String newRefreshTokenRaw, User platformUser, Vendor vendor) {
+	}
+
 	@Transactional
 	public String issueForUser(User user) {
 		String raw = newRawToken();
-		RefreshToken entity = new RefreshToken();
-		entity.setTokenHash(hashToken(raw));
-		entity.setUser(user);
-		entity.setVendor(null);
-		entity.setExpiresAt(Instant.now().plusMillis(jwtProperties.getRefreshExpirationMs()));
-		entity.setRevoked(false);
-		refreshTokenRepository.save(entity);
+		user.setRefreshTokenHash(hashToken(raw));
+		user.setRefreshTokenExpiresAt(Instant.now().plusMillis(jwtProperties.getRefreshExpirationMs()));
+		userRepository.save(user);
 		return raw;
 	}
 
 	@Transactional
 	public String issueForVendor(Vendor vendor) {
 		String raw = newRawToken();
-		RefreshToken entity = new RefreshToken();
-		entity.setTokenHash(hashToken(raw));
-		entity.setUser(null);
-		entity.setVendor(vendor);
-		entity.setExpiresAt(Instant.now().plusMillis(jwtProperties.getRefreshExpirationMs()));
-		entity.setRevoked(false);
-		refreshTokenRepository.save(entity);
+		vendor.setRefreshTokenHash(hashToken(raw));
+		vendor.setRefreshTokenExpiresAt(Instant.now().plusMillis(jwtProperties.getRefreshExpirationMs()));
+		vendorRepository.save(vendor);
 		return raw;
 	}
 
-	public record RotationResult(String newRefreshTokenRaw, User platformUser, Vendor vendor) {
-	}
-
-	/**
-	 * Validates refresh token, revokes the row, and issues a new refresh token (rotation).
-	 */
 	@Transactional
 	public Optional<RotationResult> rotate(String rawRefresh) {
 		if (rawRefresh == null || rawRefresh.isBlank()) {
 			return Optional.empty();
 		}
 		String hash = hashToken(rawRefresh.trim());
-		Optional<RefreshToken> opt = refreshTokenRepository.findByTokenHashAndRevokedFalse(hash);
-		if (opt.isEmpty()) {
-			return Optional.empty();
+		Instant now = Instant.now();
+
+		Optional<User> userOpt = userRepository.findByRefreshTokenHash(hash);
+		if (userOpt.isPresent()) {
+			User user = userOpt.get();
+			if (!isRefreshActive(user.getRefreshTokenExpiresAt(), now)) {
+				clearUserRefresh(user);
+				userRepository.save(user);
+				return Optional.empty();
+			}
+			return Optional.of(new RotationResult(issueForUser(user), user, null));
 		}
-		RefreshToken row = opt.get();
-		if (row.getExpiresAt().isBefore(Instant.now())) {
-			row.setRevoked(true);
-			refreshTokenRepository.save(row);
-			return Optional.empty();
+
+		Optional<Vendor> vendorOpt = vendorRepository.findByRefreshTokenHash(hash);
+		if (vendorOpt.isPresent()) {
+			Vendor vendor = vendorOpt.get();
+			if (!isRefreshActive(vendor.getRefreshTokenExpiresAt(), now)) {
+				clearVendorRefresh(vendor);
+				vendorRepository.save(vendor);
+				return Optional.empty();
+			}
+			return Optional.of(new RotationResult(issueForVendor(vendor), null, vendor));
 		}
-		row.setRevoked(true);
-		refreshTokenRepository.save(row);
-		if (row.getUser() != null) {
-			User u = row.getUser();
-			return Optional.of(new RotationResult(issueForUser(u), u, null));
-		}
-		if (row.getVendor() != null) {
-			Vendor v = row.getVendor();
-			return Optional.of(new RotationResult(issueForVendor(v), null, v));
-		}
+
 		return Optional.empty();
 	}
 
@@ -114,19 +114,43 @@ public class RefreshTokenService {
 			return;
 		}
 		String hash = hashToken(rawRefresh.trim());
-		refreshTokenRepository.findByTokenHashAndRevokedFalse(hash).ifPresent(row -> {
-			row.setRevoked(true);
-			refreshTokenRepository.save(row);
+		userRepository.findByRefreshTokenHash(hash).ifPresent(user -> {
+			clearUserRefresh(user);
+			userRepository.save(user);
+		});
+		vendorRepository.findByRefreshTokenHash(hash).ifPresent(vendor -> {
+			clearVendorRefresh(vendor);
+			vendorRepository.save(vendor);
 		});
 	}
 
 	@Transactional
 	public void revokeAllForUser(Long userId) {
-		refreshTokenRepository.revokeAllActiveForUser(userId);
+		userRepository.findById(userId).ifPresent(user -> {
+			clearUserRefresh(user);
+			userRepository.save(user);
+		});
 	}
 
 	@Transactional
 	public void revokeAllForVendor(Long vendorId) {
-		refreshTokenRepository.revokeAllActiveForVendor(vendorId);
+		vendorRepository.findById(vendorId).ifPresent(vendor -> {
+			clearVendorRefresh(vendor);
+			vendorRepository.save(vendor);
+		});
+	}
+
+	private static boolean isRefreshActive(Instant expiresAt, Instant now) {
+		return expiresAt != null && expiresAt.isAfter(now);
+	}
+
+	private static void clearUserRefresh(User user) {
+		user.setRefreshTokenHash(null);
+		user.setRefreshTokenExpiresAt(null);
+	}
+
+	private static void clearVendorRefresh(Vendor vendor) {
+		vendor.setRefreshTokenHash(null);
+		vendor.setRefreshTokenExpiresAt(null);
 	}
 }

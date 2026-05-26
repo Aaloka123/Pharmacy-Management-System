@@ -1,5 +1,7 @@
 package com.mednexus.mednexus.user;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,6 +36,15 @@ public class User {
 
 	@Column(name = "profile_image", length = 500)
 	private String profileImage;
+
+	@Column(name = "google_id", unique = true, length = 64)
+	private String googleId;
+
+	@Column(name = "refresh_token_hash", unique = true, length = 64)
+	private String refreshTokenHash;
+
+	@Column(name = "refresh_token_expires_at")
+	private Instant refreshTokenExpiresAt;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "role", nullable = false, length = 20)
@@ -103,6 +114,30 @@ public class User {
 
 	public void setProfileImage(String profileImage) {
 		this.profileImage = profileImage;
+	}
+
+	public String getGoogleId() {
+		return googleId;
+	}
+
+	public void setGoogleId(String googleId) {
+		this.googleId = googleId;
+	}
+
+	public String getRefreshTokenHash() {
+		return refreshTokenHash;
+	}
+
+	public void setRefreshTokenHash(String refreshTokenHash) {
+		this.refreshTokenHash = refreshTokenHash;
+	}
+
+	public Instant getRefreshTokenExpiresAt() {
+		return refreshTokenExpiresAt;
+	}
+
+	public void setRefreshTokenExpiresAt(Instant refreshTokenExpiresAt) {
+		this.refreshTokenExpiresAt = refreshTokenExpiresAt;
 	}
 
 	public Role getRole() {

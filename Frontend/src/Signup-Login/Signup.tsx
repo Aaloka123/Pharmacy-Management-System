@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import googleLogo from '../assets/Google.png'
+import GoogleSignInButton from '../components/GoogleSignInButton'
 import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
@@ -191,13 +191,7 @@ const Signup = () => {
             <span className="h-px flex-1 bg-slate-200" />
           </div>
 
-          <button
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            type="button"
-          >
-            <img alt="Google logo" className="h-5 w-5 object-contain" src={googleLogo} />
-            Continue with Google
-          </button>
+          <GoogleSignInButton />
 
           <p className="mt-6 text-center text-sm text-slate-600">
             By joining, you agree to the <span className="underline">Terms</span> and <span className="underline">Privacy Policy.</span>

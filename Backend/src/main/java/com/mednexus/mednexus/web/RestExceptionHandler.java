@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.mednexus.mednexus.auth.InvalidGoogleTokenException;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
@@ -27,6 +30,25 @@ public class RestExceptionHandler {
 	public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
 		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
 		pd.setTitle("Invalid request");
+		return pd;
+	}
+
+	@ExceptionHandler(InvalidGoogleTokenException.class)
+	public ProblemDetail handleInvalidGoogleToken(InvalidGoogleTokenException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+		pd.setTitle("Unauthorized");
+		return pd;
+	}
+
+	@ExceptionHandler(ResponseStatusException.class)
+	public ProblemDetail handleResponseStatus(ResponseStatusException ex) {
+		HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+		if (status == null) {
+			status = HttpStatus.INTERNAL_SERVER_ERROR;
+		}
+		String detail = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, detail);
+		pd.setTitle(status.getReasonPhrase());
 		return pd;
 	}
 }

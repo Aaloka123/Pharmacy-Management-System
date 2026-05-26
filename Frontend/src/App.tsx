@@ -1,5 +1,7 @@
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { useEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { getGoogleClientId } from './lib/googleAuth'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Home from './UserPages/Home'
@@ -104,10 +106,12 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <AppContent />
-      <ToastContainer position="top-right" autoClose={1200} hideProgressBar newestOnTop closeOnClick pauseOnFocusLoss={false} draggable={false} theme="colored" />
-    </BrowserRouter>
+    <GoogleOAuthProvider clientId={getGoogleClientId()}>
+      <BrowserRouter>
+        <AppContent />
+        <ToastContainer position="top-right" autoClose={1200} hideProgressBar newestOnTop closeOnClick pauseOnFocusLoss={false} draggable={false} theme="colored" />
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   )
 }
 
