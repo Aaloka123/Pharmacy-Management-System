@@ -13,6 +13,7 @@ import com.mednexus.mednexus.auth.GoogleTokenVerifierService.VerifiedGoogleIdent
 import com.mednexus.mednexus.user.Role;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserRepository;
+import com.mednexus.mednexus.vendor.Vendor;
 import com.mednexus.mednexus.vendor.VendorRepository;
 
 @Service
@@ -41,12 +42,7 @@ public class GoogleAuthService {
 	public User authenticate(String rawIdToken) {
 		VerifiedGoogleIdentity google = googleTokenVerifier.verify(rawIdToken);
 
-		if (vendorRepository.existsByEmailIgnoreCase(google.email())) {
-			throw new ResponseStatusException(
-					HttpStatus.FORBIDDEN,
-					"This email is registered as a vendor. Use vendor login instead.");
-		}
-
+		// User and vendor are separate accounts (different tables). Same email is allowed on both.
 		return userRepository.findByGoogleId(google.googleId())
 				.or(() -> userRepository.findByEmailIgnoreCase(google.email()))
 				.map(user -> linkGoogleAccount(user, google))
@@ -68,13 +64,33 @@ public class GoogleAuthService {
 	}
 
 	private User createGoogleUser(VerifiedGoogleIdentity google) {
+		String fullName = google.fullName();
+		String phoneNumber = GOOGLE_PHONE_PLACEHOLDER;
+		String profileImage = google.profileImageUrl();
+
+		var vendorOpt = vendorRepository.findByEmailIgnoreCase(google.email());
+		if (vendorOpt.isPresent()) {
+			Vendor vendor = vendorOpt.get();
+			if (vendor.getName() != null && !vendor.getName().isBlank()) {
+				fullName = vendor.getName();
+			}
+			if (vendor.getPhoneNumber() != null && !vendor.getPhoneNumber().isBlank()) {
+				phoneNumber = vendor.getPhoneNumber();
+			}
+			if ((profileImage == null || profileImage.isBlank())
+					&& vendor.getProfileImage() != null
+					&& !vendor.getProfileImage().isBlank()) {
+				profileImage = vendor.getProfileImage();
+			}
+		}
+
 		User user = new User(
-				google.fullName(),
+				fullName,
 				google.email(),
-				GOOGLE_PHONE_PLACEHOLDER,
+				phoneNumber,
 				passwordEncoder.encode("google-oauth:" + UUID.randomUUID()));
 		user.setGoogleId(google.googleId());
-		user.setProfileImage(google.profileImageUrl());
+		user.setProfileImage(profileImage);
 		user.setRole(Role.USER);
 		return userRepository.save(user);
 	}
