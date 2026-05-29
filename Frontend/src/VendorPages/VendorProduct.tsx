@@ -1,9 +1,15 @@
-import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { toast } from 'react-toastify';
 import Navbar from '../VendorComponents/Navbar';
-import productImage from '../assets/Hero1.png';
-import productImageTwo from '../assets/Hero2.jpg';
-import productImageThree from '../assets/Hero3.png';
-import productImageFour from '../assets/cta.png';
+import { resolveBackendUrl } from '../lib/api';
+import {
+  buildProductFormData,
+  createVendorProduct,
+  deleteVendorProduct,
+  listVendorProducts,
+  updateVendorProduct,
+  type ProductDto,
+} from '../lib/productsApi';
 
 type ProductRow = {
   id: number;
@@ -24,82 +30,30 @@ type ProductRow = {
   images: string[];
 };
 
+const mapDtoToRow = (dto: ProductDto): ProductRow => ({
+  id: dto.id,
+  productName: dto.productName,
+  sku: dto.sku,
+  category: dto.category,
+  strength: dto.strength,
+  form: dto.form,
+  quantity: dto.quantity,
+  storageRequirements: dto.storageRequirements,
+  expiryDate: dto.expiryDate,
+  productDescription: dto.productDescription,
+  dosageInstructions: dto.dosageInstructions,
+  sideEffects: dto.sideEffects,
+  price: Number(dto.price),
+  stock: dto.stock,
+  status: dto.status === 'ACTIVE' ? 'Active' : 'Inactive',
+  images: dto.images.map((url) => resolveBackendUrl(url)),
+});
+
 const VendorProduct = () => {
-  const [products, setProducts] = useState<ProductRow[]>([
-    {
-      id: 1,
-      productName: 'Amoxicillin 500mg',
-      sku: 'AMX-500-001',
-      category: 'Antibiotics',
-      strength: '500mg',
-      form: 'Capsule',
-      quantity: '30 ct',
-      storageRequirements: 'Store below 25C in a dry place.',
-      expiryDate: '2027-08-15',
-      productDescription: 'Broad-spectrum antibiotic capsule.',
-      dosageInstructions: ['Take after meals', 'Use with full glass of water'],
-      sideEffects: ['Nausea', 'Mild diarrhea'],
-      price: 425,
-      stock: 18,
-      status: 'Active',
-      images: [productImage],
-    },
-    {
-      id: 2,
-      productName: 'Lisinopril 10mg',
-      sku: 'LSP-010-002',
-      category: 'Cardiovascular',
-      strength: '10mg',
-      form: 'Tablet',
-      quantity: '10 tablets',
-      storageRequirements: 'Store at 20C to 25C in dry condition.',
-      expiryDate: '2028-01-10',
-      productDescription: 'ACE inhibitor tablet for blood pressure control.',
-      dosageInstructions: ['Take once daily', 'Take at the same time each day'],
-      sideEffects: ['Dry cough', 'Dizziness'],
-      price: 280,
-      stock: 24,
-      status: 'Active',
-      images: [productImageTwo],
-    },
-    {
-      id: 3,
-      productName: 'Metformin 500mg',
-      sku: 'MTF-500-003',
-      category: 'Diabetes Care',
-      strength: '500mg',
-      form: 'Tablet',
-      quantity: '20 tablets',
-      storageRequirements: 'Store away from moisture and direct sunlight.',
-      expiryDate: '2027-12-20',
-      productDescription: 'Oral antidiabetic medicine for blood sugar management.',
-      dosageInstructions: ['Take with meals', 'Do not crush or chew tablet'],
-      sideEffects: ['Nausea', 'Stomach upset'],
-      price: 190,
-      stock: 30,
-      status: 'Active',
-      images: [productImageThree],
-    },
-    {
-      id: 4,
-      productName: 'Albuterol Inhaler',
-      sku: 'ALB-090-004',
-      category: 'Respiratory',
-      strength: '100mcg',
-      form: 'Inhaler',
-      quantity: '1 unit',
-      storageRequirements: 'Keep at room temperature and away from heat.',
-      expiryDate: '2024-11-30',
-      productDescription: 'Rescue inhaler for quick relief from breathing difficulty.',
-      dosageInstructions: ['Shake before each use', 'Use as prescribed by physician'],
-      sideEffects: ['Tremor', 'Headache'],
-      price: 1150,
-      stock: 0,
-      status: 'Inactive',
-      images: [productImageFour],
-    },
-  ]);
+  const [products, setProducts] = useState<ProductRow[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [productImages, setProductImages] = useState<string[]>([]);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAllDetails, setShowAllDetails] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -118,6 +72,23 @@ const VendorProduct = () => {
     price: '',
     stock: '',
   });
+
+  const loadProducts = async () => {
+    setProductsLoading(true);
+    try {
+      const { data } = await listVendorProducts();
+      setProducts(data.map(mapDtoToRow));
+    } catch (err) {
+      toast.error('Failed to load products.');
+      console.error(err);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadProducts();
+  }, []);
 
   const filteredProducts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -177,19 +148,56 @@ const VendorProduct = () => {
       }
 
       const imageUrls = filesToAdd.map((file) => URL.createObjectURL(file));
+      setUploadFiles((prevFiles) => [...prevFiles, ...filesToAdd]);
       return [...prev, ...imageUrls];
     });
     event.target.value = '';
   };
 
   const handleRemoveImage = (indexToRemove: number) => {
-    setProductImages((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setProductImages((prev) => {
+      const target = prev[indexToRemove];
+      if (target?.startsWith('blob:')) {
+        let blobIndex = 0;
+        for (let i = 0; i < indexToRemove; i += 1) {
+          if (prev[i]?.startsWith('blob:')) blobIndex += 1;
+        }
+        setUploadFiles((prevFiles) => prevFiles.filter((_, fileIndex) => fileIndex !== blobIndex));
+        URL.revokeObjectURL(target);
+      }
+      return prev.filter((_, index) => index !== indexToRemove);
+    });
   };
 
-  const handleSubmit = (event: FormEvent) => {
+  const resetForm = () => {
+    setFormData({
+      productName: '',
+      sku: '',
+      category: '',
+      strength: '',
+      form: '',
+      quantity: '',
+      storageRequirements: '',
+      expiryDate: '',
+      productDescription: '',
+      dosageInstructions: '',
+      sideEffects: '',
+      price: '',
+      stock: '',
+    });
+    productImages.forEach((url) => {
+      if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+    });
+    setProductImages([]);
+    setUploadFiles([]);
+    setEditingId(null);
+    setShowAllDetails(false);
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const parsedStock = Number(formData.stock);
-    const payload = {
+    const writePayload = {
       productName: formData.productName.trim(),
       sku: formData.sku.trim(),
       category: formData.category.trim(),
@@ -209,40 +217,31 @@ const VendorProduct = () => {
         .filter(Boolean),
       price: Number(formData.price),
       stock: parsedStock,
-      status: parsedStock > 0 ? 'Active' as const : 'Inactive' as const,
-      images: productImages.length > 0 ? productImages : [productImage],
+      status: (parsedStock > 0 ? 'ACTIVE' : 'INACTIVE') as 'ACTIVE' | 'INACTIVE',
+      existingImages: productImages
+        .filter((url) => !url.startsWith('blob:'))
+        .map((url) => {
+          const uploadsIndex = url.indexOf('/uploads/');
+          return uploadsIndex >= 0 ? url.slice(uploadsIndex) : url;
+        }),
     };
 
-    if (editingId !== null) {
-      setProducts((prev) => prev.map((product) => (product.id === editingId ? { ...product, ...payload } : product)));
-      window.alert('Product updated successfully.');
-    } else {
-      const newProduct: ProductRow = {
-        id: Date.now(),
-        ...payload,
-      };
-      setProducts((prev) => [newProduct, ...prev]);
-      window.alert('Product added successfully.');
-    }
+    const body = buildProductFormData(writePayload, uploadFiles);
 
-    setFormData({
-      productName: '',
-      sku: '',
-      category: '',
-      strength: '',
-      form: '',
-      quantity: '',
-      storageRequirements: '',
-      expiryDate: '',
-      productDescription: '',
-      dosageInstructions: '',
-      sideEffects: '',
-      price: '',
-      stock: '',
-    });
-    setProductImages([]);
-    setEditingId(null);
-    setShowAllDetails(false);
+    try {
+      if (editingId !== null) {
+        await updateVendorProduct(editingId, body);
+        toast.success('Product updated successfully.');
+      } else {
+        await createVendorProduct(body);
+        toast.success('Product added successfully.');
+      }
+      resetForm();
+      await loadProducts();
+    } catch (err) {
+      toast.error(editingId !== null ? 'Failed to update product.' : 'Failed to add product.');
+      console.error(err);
+    }
   };
 
   const handleEdit = (product: ProductRow) => {
@@ -264,32 +263,23 @@ const VendorProduct = () => {
       stock: String(product.stock),
     });
     setProductImages(product.images);
+    setUploadFiles([]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     const confirmed = window.confirm('Are you sure you want to delete this product?');
     if (!confirmed) return;
-    setProducts((prev) => prev.filter((product) => product.id !== id));
-    if (editingId === id) {
-      setEditingId(null);
-      setFormData({
-        productName: '',
-        sku: '',
-        category: '',
-        strength: '',
-        form: '',
-        quantity: '',
-        storageRequirements: '',
-        expiryDate: '',
-        productDescription: '',
-        dosageInstructions: '',
-        sideEffects: '',
-        price: '',
-        stock: '',
-      });
-      setProductImages([]);
-      setShowAllDetails(false);
+    try {
+      await deleteVendorProduct(id);
+      toast.success('Product deleted.');
+      if (editingId === id) {
+        resetForm();
+      }
+      await loadProducts();
+    } catch (err) {
+      toast.error('Failed to delete product.');
+      console.error(err);
     }
   };
 
@@ -548,26 +538,7 @@ const VendorProduct = () => {
                 {editingId !== null && (
                   <button
                     className="cursor-pointer rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700"
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({
-                        productName: '',
-                        sku: '',
-                        category: '',
-                        strength: '',
-                        form: '',
-                        quantity: '',
-                        storageRequirements: '',
-                        expiryDate: '',
-                        productDescription: '',
-                        dosageInstructions: '',
-                        sideEffects: '',
-                        price: '',
-                        stock: '',
-                      });
-                      setProductImages([]);
-                      setShowAllDetails(false);
-                    }}
+                    onClick={resetForm}
                     type="button"
                   >
                     Cancel
@@ -615,6 +586,20 @@ const VendorProduct = () => {
                 </tr>
               </thead>
               <tbody>
+                {productsLoading ? (
+                  <tr>
+                    <td className="px-5 py-8 text-sm text-slate-500" colSpan={17}>
+                      Loading products...
+                    </td>
+                  </tr>
+                ) : null}
+                {!productsLoading && filteredProducts.length === 0 ? (
+                  <tr>
+                    <td className="px-5 py-8 text-sm text-slate-500" colSpan={17}>
+                      No products yet. Add your first product above.
+                    </td>
+                  </tr>
+                ) : null}
                 {filteredProducts.map((product, index) => (
                   (() => {
                     const expiryStatus = getExpiryStatus(product.expiryDate);
@@ -625,7 +610,7 @@ const VendorProduct = () => {
                       <img
                         alt={`${product.productName} preview`}
                         className="h-11 w-11 rounded-md border border-slate-200 object-cover"
-                        src={product.images[0] || productImage}
+                        src={product.images[0] ?? ''}
                       />
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.sku}</td>

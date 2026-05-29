@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.auth.InvalidGoogleTokenException;
+import com.mednexus.mednexus.product.DuplicateProductSkuException;
+import com.mednexus.mednexus.product.ProductNotFoundException;
+import com.mednexus.mednexus.vendor.VendorNotApprovedException;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
@@ -37,6 +40,27 @@ public class RestExceptionHandler {
 	public ProblemDetail handleInvalidGoogleToken(InvalidGoogleTokenException ex) {
 		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
 		pd.setTitle("Unauthorized");
+		return pd;
+	}
+
+	@ExceptionHandler(ProductNotFoundException.class)
+	public ProblemDetail handleProductNotFound(ProductNotFoundException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+		pd.setTitle("Not found");
+		return pd;
+	}
+
+	@ExceptionHandler(DuplicateProductSkuException.class)
+	public ProblemDetail handleDuplicateSku(DuplicateProductSkuException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+		pd.setTitle("Conflict");
+		return pd;
+	}
+
+	@ExceptionHandler(VendorNotApprovedException.class)
+	public ProblemDetail handleVendorNotApproved(VendorNotApprovedException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+		pd.setTitle("Forbidden");
 		return pd;
 	}
 

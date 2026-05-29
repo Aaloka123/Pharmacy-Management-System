@@ -218,15 +218,15 @@ const AdminVendorProfile = () => {
                   </p>
                   <p className="mt-1 text-base text-slate-600">Email: {vendor.email}</p>
                   <p className="mt-1 text-base text-slate-600">Phone: {vendor.phoneNumber}</p>
-                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-600">Store:</span>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs font-semibold text-slate-600">Store:</span>
                     <span
-                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
                         storeStatus === 'Open' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                       }`}
                     >
                       <span
-                        className={`h-2.5 w-2.5 rounded-full ${
+                        className={`h-1.5 w-1.5 rounded-full ${
                           storeStatus === 'Open' ? 'bg-emerald-500' : 'bg-rose-500'
                         }`}
                       />

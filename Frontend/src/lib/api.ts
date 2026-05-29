@@ -137,8 +137,9 @@ async function request<T>(
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body, body instanceof FormData),
-  put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body, false),
+  put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body, body instanceof FormData),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body, false),
+  delete: <T = void>(path: string) => request<T>('DELETE', path),
 }
 
 /**
