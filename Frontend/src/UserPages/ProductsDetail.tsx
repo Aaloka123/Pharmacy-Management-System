@@ -1,13 +1,13 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { addToCart } from '../lib/cartStorage'
+import { resolveBackendUrl } from '../lib/api'
+import { getPublicProduct, type ProductDto } from '../lib/productsApi'
 import { FaStar } from 'react-icons/fa'
-import AmoxicillinImage from '../assets/Amoxicillin.jpg'
-import AlbuterolImage from '../assets/Albuterol.jpg'
-import LisinoprilImage from '../assets/Lisinopril.jpg'
-import MetforminImage from '../assets/Metformin.webp'
+import placeholderImage from '../assets/Paracetamol.jpg'
 import TopProduct from '../UserComponents/TopProduct'
 
 type Review = {
@@ -20,21 +20,27 @@ type Review = {
   createdAt: string
 }
 
+const stockLabel = (stock: number) => {
+  if (stock <= 0) return { text: 'Out of stock', tone: 'text-rose-600' }
+  if (stock <= 10) return { text: `${stock} units left (low stock)`, tone: 'text-rose-600' }
+  return { text: `${stock} units available`, tone: 'text-slate-900' }
+}
+
 const ProductsDetail = () => {
-  const product = {
-    name: 'Amoxicillin',
-    subtitle: 'Antibiotics · Penicillin Type',
-    price: 425,
-    stock: 'Stock: 20 units available',
-    stockTone: 'text-slate-900',
-    strength: '500mg',
-    form: 'Capsules',
-    quantity: '30 ct',
-    image: AmoxicillinImage,
-  }
-  const productGallery = [AmoxicillinImage, AlbuterolImage, LisinoprilImage, MetforminImage]
-  const [selectedImage, setSelectedImage] = useState(product.image)
-  const thumbnailImages = productGallery.filter((image) => image !== selectedImage).slice(0, 3)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
+
+  const productIdFromState = (location.state as { productId?: number } | null)?.productId
+  const productIdFromQuery = searchParams.get('id')
+  const productId =
+    productIdFromState ??
+    (productIdFromQuery && !Number.isNaN(Number(productIdFromQuery)) ? Number(productIdFromQuery) : null)
+
+  const [product, setProduct] = useState<ProductDto | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<string>(placeholderImage)
 
   const [reviews, setReviews] = useState<Review[]>([
     {
@@ -58,6 +64,52 @@ const ProductsDetail = () => {
   ])
   const [reviewBody, setReviewBody] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
+
+  useEffect(() => {
+    if (productId == null) {
+      setLoading(false)
+      setError('No product selected.')
+      return
+    }
+
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const { data } = await getPublicProduct(productId)
+        if (cancelled) return
+        setProduct(data)
+        const gallery =
+          data.images.length > 0
+            ? data.images.map((url) => resolveBackendUrl(url))
+            : [placeholderImage]
+        setSelectedImage(gallery[0])
+      } catch (err) {
+        if (!cancelled) {
+          setError('Could not load product details.')
+          console.error(err)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [productId])
+
+  const galleryImages = useMemo(() => {
+    if (!product?.images.length) return [placeholderImage]
+    return product.images.map((url) => resolveBackendUrl(url))
+  }, [product])
+
+  const thumbnailImages = galleryImages.filter((image) => image !== selectedImage).slice(0, 3)
+
+  const categoryFormLine = product ? `${product.category} · ${product.form}` : ''
+
+  const stock = product ? stockLabel(product.stock) : null
 
   const handleSubmitReview = (e: FormEvent) => {
     e.preventDefault()
@@ -85,50 +137,90 @@ const ProductsDetail = () => {
     )
   }
 
+  if (loading) {
+    return (
+      <div className="bg-white">
+        <Header />
+        <main className="px-[100px] py-16 text-center text-slate-600">Loading product...</main>
+        <Footer />
+        <Copyright />
+      </div>
+    )
+  }
+
+  if (error || !product) {
+    return (
+      <div className="bg-white">
+        <Header />
+        <main className="px-[100px] py-16 text-center">
+          <p className="text-slate-600">{error ?? 'Product not found.'}</p>
+          <button
+            className="mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
+            onClick={() => navigate('/products')}
+            type="button"
+          >
+            Back to products
+          </button>
+        </main>
+        <Footer />
+        <Copyright />
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white">
       <Header />
       <main className="px-[100px] py-8">
         <div className="mb-5 text-[14px] text-slate-500">
-          <span>Home</span>
+          <Link to="/">Home</Link>
           <span className="mx-2 text-slate-400">/</span>
-          <span>Products</span>
+          <Link to="/products">Products</Link>
           <span className="mx-2 text-slate-400">/</span>
-          <span className="font-medium text-slate-700">Product Detail</span>
+          <span className="font-medium text-slate-700">{product.productName}</span>
         </div>
         <section className="mx-[70px] p-1 md:p-2">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div>
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4">
-                <img alt={product.name} className="h-96 w-full object-contain" src={selectedImage} />
+                <img alt={product.productName} className="h-96 w-full object-contain" src={selectedImage} />
               </div>
 
-              <div className="mt-4 flex items-center gap-3">
-                {thumbnailImages.map((image, index) => (
-                  <button
-                    className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white p-1 transition hover:border-slate-300"
-                    key={`${image}-${index}`}
-                    onClick={() => setSelectedImage(image)}
-                    type="button"
-                  >
-                    <img alt={`${product.name} preview ${index + 1}`} className="h-full w-full object-contain" src={image} />
-                  </button>
-                ))}
-              </div>
-
+              {thumbnailImages.length > 0 ? (
+                <div className="mt-4 flex items-center gap-3">
+                  {thumbnailImages.map((image, index) => (
+                    <button
+                      className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white p-1 transition hover:border-slate-300"
+                      key={`${image}-${index}`}
+                      onClick={() => setSelectedImage(image)}
+                      type="button"
+                    >
+                      <img
+                        alt={`${product.productName} preview ${index + 1}`}
+                        className="h-full w-full object-contain"
+                        src={image}
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
-              <p className="mt-2 text-sm text-slate-600">{product.subtitle}</p>
-              <p className="mt-3 text-2xl font-bold text-teal-700">NRP {product.price.toLocaleString()}</p>
-              <span className={`mt-2 inline-flex text-xs ${product.stockTone}`}>
-                Stock: <span className="px-1 font-bold">20</span> units available
-              </span>
-              <p className="mt-3 max-w-xl text-[14px] leading-7 text-slate-600">
-                Amoxicillin is a commonly used antibiotic for bacterial infections. It helps treat conditions like respiratory, skin, and
-                ear-related infections when prescribed by a healthcare professional.
-              </p>
+              <h1 className="text-2xl font-bold text-slate-900">{product.productName}</h1>
+              <p className="mt-2 text-sm text-slate-600">{categoryFormLine}</p>
+              {product.vendorBusinessName ? (
+                <p className="mt-1 text-sm text-slate-600">
+                  By: <span className="font-medium text-slate-800">{product.vendorBusinessName}</span>
+                </p>
+              ) : null}
+              <p className="mt-3 text-2xl font-bold text-teal-700">NRP {Number(product.price).toLocaleString()}</p>
+              {stock ? (
+                <span className={`mt-2 inline-flex text-xs ${stock.tone}`}>
+                  Stock: <span className="px-1 font-bold">{stock.text}</span>
+                </span>
+              ) : null}
+              <p className="mt-3 max-w-xl text-[14px] leading-7 text-slate-600">{product.productDescription}</p>
 
               <div className="mt-6 grid max-w-xl grid-cols-3 gap-6 text-sm">
                 <div>
@@ -145,19 +237,24 @@ const ProductsDetail = () => {
                 </div>
               </div>
 
+              <p className="mt-4 text-xs text-slate-500">
+                Expiry date: <span className="font-semibold text-slate-700">{product.expiryDate}</span>
+              </p>
+
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <button
-                  className="cursor-pointer rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"
+                  className="cursor-pointer rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={product.stock <= 0}
                   onClick={() =>
                     addToCart({
-                      id: product.name,
-                      name: product.name,
-                      subtitle: product.subtitle,
+                      id: String(product.id),
+                      name: product.productName,
+                      subtitle: categoryFormLine,
                       strength: product.strength,
                       form: product.form,
                       pack: product.quantity,
-                      unitPrice: product.price,
-                      image: product.image,
+                      unitPrice: Number(product.price),
+                      image: galleryImages[0],
                     })
                   }
                   type="button"
@@ -180,45 +277,39 @@ const ProductsDetail = () => {
               <div>
                 <h4 className="text-sm font-bold uppercase tracking-[0.14em] text-emerald-700">Dosage Instructions</h4>
                 <ul className="mt-3 space-y-3 text-[14px] leading-7 text-slate-700">
-                  <li className="flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-600"></span>
-                    Usual dose is 10mg to 80mg once daily.
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-600"></span>
-                    Can be administered at any time of day, with or without food.
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-600"></span>
-                    Individualize dose based on baseline LDL-C levels.
-                  </li>
+                  {product.dosageInstructions.length > 0 ? (
+                    product.dosageInstructions.map((item) => (
+                      <li className="flex items-center gap-2" key={item}>
+                        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-600" />
+                        {item}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-slate-500">No dosage instructions provided.</li>
+                  )}
                 </ul>
               </div>
 
               <div>
                 <h4 className="text-sm font-bold uppercase tracking-[0.14em] text-rose-700">Side Effects</h4>
                 <ul className="mt-3 space-y-3 text-[14px] leading-7 text-slate-700">
-                  <li className="flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-rose-600"></span>
-                    Myalgia and Arthralgia (most common).
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-rose-600"></span>
-                    Nasopharyngitis or Diarrhea.
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-rose-600"></span>
-                    Elevated liver enzymes (monitor ALT).
-                  </li>
+                  {product.sideEffects.length > 0 ? (
+                    product.sideEffects.map((item) => (
+                      <li className="flex items-center gap-2" key={item}>
+                        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-rose-600" />
+                        {item}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-slate-500">No side effects listed.</li>
+                  )}
                 </ul>
               </div>
             </div>
 
             <div className="mt-6 rounded-xl bg-sky-50 p-4">
               <h4 className="text-sm font-bold uppercase tracking-[0.14em] text-sky-700">Storage Requirements</h4>
-              <p className="mt-2 text-[14px] leading-7 text-slate-700">
-                Store at 20C to 25C (68F to 77F); excursions permitted to 15C to 30C (59F to 86F).
-              </p>
+              <p className="mt-2 text-[14px] leading-7 text-slate-700">{product.storageRequirements}</p>
             </div>
           </section>
 

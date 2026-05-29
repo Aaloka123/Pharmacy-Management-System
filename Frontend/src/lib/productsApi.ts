@@ -61,6 +61,10 @@ export function listPublicProducts(category?: string) {
   return api.get<ProductDto[]>(`/api/products${query}`)
 }
 
+export function getPublicProduct(id: number) {
+  return api.get<ProductDto>(`/api/products/${id}`)
+}
+
 export function listVendorProducts() {
   return api.get<ProductDto[]>('/api/vendors/me/products')
 }
