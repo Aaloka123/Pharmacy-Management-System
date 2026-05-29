@@ -101,6 +101,7 @@ const VendorProduct = () => {
   ]);
   const [productImages, setProductImages] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAllDetails, setShowAllDetails] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     productName: '',
@@ -241,10 +242,12 @@ const VendorProduct = () => {
     });
     setProductImages([]);
     setEditingId(null);
+    setShowAllDetails(false);
   };
 
   const handleEdit = (product: ProductRow) => {
     setEditingId(product.id);
+    setShowAllDetails(true);
     setFormData({
       productName: product.productName,
       sku: product.sku,
@@ -286,6 +289,7 @@ const VendorProduct = () => {
         stock: '',
       });
       setProductImages([]);
+      setShowAllDetails(false);
     }
   };
 
@@ -296,8 +300,37 @@ const VendorProduct = () => {
         <h1 className="text-2xl font-bold text-slate-900">Product</h1>
         <p className="mt-1 text-sm text-slate-600">Manage products with ease</p>
 
-        <section className="sticky top-4 z-10 mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">{editingId !== null ? 'Edit Product' : 'Add Product'}</h2>
+        <section
+          className={`sticky top-4 z-10 mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm ${
+            showAllDetails ? 'pb-5' : ''
+          }`}
+        >
+          <div className={`flex items-center justify-between gap-3 ${showAllDetails ? 'mb-4' : ''}`}>
+            <h2 className="text-base font-bold text-slate-900">
+              {editingId !== null ? 'Edit Product' : 'Add Product'}
+            </h2>
+            <button
+              type="button"
+              aria-expanded={showAllDetails}
+              aria-label={showAllDetails ? 'Hide all details' : 'Show all details'}
+              onClick={() => setShowAllDetails((prev) => !prev)}
+              className="inline-flex shrink-0 cursor-pointer items-center justify-center text-slate-600 transition hover:text-slate-900"
+            >
+              <svg
+                aria-hidden="true"
+                className={`h-4 w-4 transition-transform ${showAllDetails ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+          </div>
+          {showAllDetails ? (
           <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
             <label className="block text-sm text-slate-700">
               Product Name <span className="text-rose-600">*</span>
@@ -533,6 +566,7 @@ const VendorProduct = () => {
                         stock: '',
                       });
                       setProductImages([]);
+                      setShowAllDetails(false);
                     }}
                     type="button"
                   >
@@ -542,11 +576,12 @@ const VendorProduct = () => {
               </div>
             </div>
           </form>
+          ) : null}
         </section>
 
         <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4">
-            <h2 className="text-2xl font-semibold text-slate-900">Product List</h2>
+            <h2 className="text-base font-bold text-slate-900">Product List</h2>
             <input
               className="w-80 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
               onChange={(event) => setSearchTerm(event.target.value)}

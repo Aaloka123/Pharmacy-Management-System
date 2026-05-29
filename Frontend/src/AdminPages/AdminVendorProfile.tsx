@@ -192,9 +192,9 @@ const AdminVendorProfile = () => {
           </div>
         ) : (
           <section className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-teal-50">
+            <div className="border-b border-slate-200 px-6 py-6">
+              <div className="flex flex-wrap items-center gap-5">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-teal-50">
                   {showProfileImage && profileImageUrl ? (
                     <img
                       alt={`${vendor.businessName} logo`}
@@ -204,7 +204,7 @@ const AdminVendorProfile = () => {
                     />
                   ) : (
                     <span
-                      className="text-xl font-bold text-teal-700"
+                      className="text-2xl font-bold text-teal-700"
                       aria-hidden
                     >
                       {shopInitial(vendor.businessName)}
@@ -212,19 +212,21 @@ const AdminVendorProfile = () => {
                   )}
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">{vendor.businessName}</h2>
-                  <p className="mt-1 text-sm text-slate-600">Managed by {vendor.name}</p>
-                  <p className="mt-1 text-sm text-slate-600">Email: {vendor.email}</p>
-                  <p className="mt-1 text-sm text-slate-600">Phone: {vendor.phoneNumber}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-600">Store:</span>
+                  <h2 className="text-xl font-semibold text-slate-900">{vendor.businessName}</h2>
+                  <p className="mt-1.5 text-base text-slate-600">
+                    Managed by <span className="font-semibold text-slate-900">{vendor.name}</span>
+                  </p>
+                  <p className="mt-1 text-base text-slate-600">Email: {vendor.email}</p>
+                  <p className="mt-1 text-base text-slate-600">Phone: {vendor.phoneNumber}</p>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-600">Store:</span>
                     <span
-                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${
                         storeStatus === 'Open' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                       }`}
                     >
                       <span
-                        className={`h-2 w-2 rounded-full ${
+                        className={`h-2.5 w-2.5 rounded-full ${
                           storeStatus === 'Open' ? 'bg-emerald-500' : 'bg-rose-500'
                         }`}
                       />

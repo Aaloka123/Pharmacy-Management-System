@@ -54,7 +54,7 @@ const AdminUsers = () => {
   }, [users, searchQuery])
 
   const openProfile = (id: number) => {
-    navigate('/adminuserprofile', { state: { userId: id } })
+    navigate(`/adminuserprofile?userId=${id}`)
   }
 
   return (
