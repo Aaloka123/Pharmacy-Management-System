@@ -41,12 +41,12 @@ const mapDtoToRow = (dto: ProductDto): ProductRow => ({
   storageRequirements: dto.storageRequirements,
   expiryDate: dto.expiryDate,
   productDescription: dto.productDescription,
-  dosageInstructions: dto.dosageInstructions,
-  sideEffects: dto.sideEffects,
+  dosageInstructions: dto.dosageInstructions ?? [],
+  sideEffects: dto.sideEffects ?? [],
   price: Number(dto.price),
   stock: dto.stock,
   status: dto.status === 'ACTIVE' ? 'Active' : 'Inactive',
-  images: dto.images.map((url) => resolveBackendUrl(url)),
+  images: (dto.images ?? []).map((url) => resolveBackendUrl(url)),
 });
 
 const VendorProduct = () => {
@@ -73,8 +73,8 @@ const VendorProduct = () => {
     stock: '',
   });
 
-  const loadProducts = async () => {
-    setProductsLoading(true);
+  const loadProducts = async (silent = false) => {
+    if (!silent) setProductsLoading(true);
     try {
       const { data } = await listVendorProducts();
       setProducts(data.map(mapDtoToRow));
@@ -82,7 +82,7 @@ const VendorProduct = () => {
       toast.error('Failed to load products.');
       console.error(err);
     } finally {
-      setProductsLoading(false);
+      if (!silent) setProductsLoading(false);
     }
   };
 
@@ -230,14 +230,16 @@ const VendorProduct = () => {
 
     try {
       if (editingId !== null) {
-        await updateVendorProduct(editingId, body);
+        const { data: updated } = await updateVendorProduct(editingId, body);
+        setProducts((prev) => prev.map((row) => (row.id === updated.id ? mapDtoToRow(updated) : row)));
         toast.success('Product updated successfully.');
       } else {
-        await createVendorProduct(body);
+        const { data: created } = await createVendorProduct(body);
+        setProducts((prev) => [mapDtoToRow(created), ...prev]);
         toast.success('Product added successfully.');
       }
       resetForm();
-      await loadProducts();
+      void loadProducts(true);
     } catch (err) {
       toast.error(editingId !== null ? 'Failed to update product.' : 'Failed to add product.');
       console.error(err);
@@ -593,14 +595,22 @@ const VendorProduct = () => {
                     </td>
                   </tr>
                 ) : null}
-                {!productsLoading && filteredProducts.length === 0 ? (
+                {!productsLoading && products.length === 0 ? (
                   <tr>
                     <td className="px-5 py-8 text-sm text-slate-500" colSpan={17}>
                       No products yet. Add your first product above.
                     </td>
                   </tr>
                 ) : null}
-                {filteredProducts.map((product, index) => (
+                {!productsLoading && products.length > 0 && filteredProducts.length === 0 ? (
+                  <tr>
+                    <td className="px-5 py-8 text-sm text-slate-500" colSpan={17}>
+                      No products match your search.
+                    </td>
+                  </tr>
+                ) : null}
+                {!productsLoading
+                  ? filteredProducts.map((product, index) => (
                   (() => {
                     const expiryStatus = getExpiryStatus(product.expiryDate);
                     return (
@@ -679,14 +689,8 @@ const VendorProduct = () => {
                   </tr>
                     );
                   })()
-                ))}
-                {filteredProducts.length === 0 && (
-                  <tr className="border-t border-slate-200">
-                    <td className="px-5 py-4 text-sm text-slate-500" colSpan={18}>
-                      No products found.
-                    </td>
-                  </tr>
-                )}
+                ))
+                  : null}
               </tbody>
             </table>
           </div>
