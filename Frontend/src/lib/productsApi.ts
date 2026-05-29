@@ -65,6 +65,10 @@ export function listVendorProducts() {
   return api.get<ProductDto[]>('/api/vendors/me/products')
 }
 
+export function listVendorProductsByVendorId(vendorId: number) {
+  return api.get<ProductDto[]>(`/api/vendors/${vendorId}/products`)
+}
+
 export function createVendorProduct(formData: FormData) {
   return api.post<ProductDto>('/api/vendors/me/products', formData)
 }

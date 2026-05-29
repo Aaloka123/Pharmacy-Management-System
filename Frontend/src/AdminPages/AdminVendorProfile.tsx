@@ -1,9 +1,9 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
-import medicineImage from '../assets/Hero2.jpg'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { api, resolveBackendUrl } from '../lib/api'
+import { listVendorProductsByVendorId, type ProductDto } from '../lib/productsApi'
 
 type VendorDetail = {
   id: number
@@ -23,12 +23,29 @@ type VendorDetail = {
   decidedAt: string | null
 }
 
-const vendorProducts = [
-  { id: 1, sku: 'MED-PARA-500', name: 'Paracetamol 500mg', category: 'Tablet', stock: 120, price: 60, sold: 420, expiryDate: '2027-06-30', image: medicineImage },
-  { id: 2, sku: 'SUP-VITC-100', name: 'Vitamin C Capsules', category: 'Supplement', stock: 80, price: 350, sold: 185, expiryDate: '2028-01-15', image: medicineImage },
-  { id: 3, sku: 'SYP-COUGH-150', name: 'Cough Syrup', category: 'Syrup', stock: 45, price: 180, sold: 130, expiryDate: '2026-11-20', image: medicineImage },
-  { id: 4, sku: 'DEV-THERMO-01', name: 'Digital Thermometer', category: 'Medical Device', stock: 25, price: 650, sold: 70, expiryDate: 'N/A', image: medicineImage },
-]
+type VendorProductRow = {
+  id: number
+  sku: string
+  name: string
+  category: string
+  stock: number
+  price: number
+  expiryDate: string
+  status: string
+  image: string | null
+}
+
+const mapProductRow = (dto: ProductDto): VendorProductRow => ({
+  id: dto.id,
+  sku: dto.sku,
+  name: dto.productName,
+  category: dto.category,
+  stock: dto.stock,
+  price: Number(dto.price),
+  expiryDate: dto.expiryDate,
+  status: dto.status === 'ACTIVE' ? 'Active' : 'Inactive',
+  image: dto.images.length > 0 ? resolveBackendUrl(dto.images[0]) : null,
+})
 
 const formatYear = (iso: string | null | undefined): string => {
   if (!iso) return '—'
@@ -59,6 +76,8 @@ const AdminVendorProfile = () => {
   const [selectedCertificate, setSelectedCertificate] = useState<{ title: string; src: string } | null>(null)
   const [storeStatus, setStoreStatus] = useState<'Open' | 'Close'>('Open')
   const [profileImageFailed, setProfileImageFailed] = useState(false)
+  const [vendorProducts, setVendorProducts] = useState<VendorProductRow[]>([])
+  const [productsLoading, setProductsLoading] = useState(false)
 
   useEffect(() => {
     setProfileImageFailed(false)
@@ -96,8 +115,39 @@ const AdminVendorProfile = () => {
     }
   }, [vendorId])
 
-  const totalSalesCount = vendorProducts.reduce((sum, product) => sum + product.sold, 0)
-  const totalSalesAmount = vendorProducts.reduce((sum, product) => sum + product.sold * product.price, 0)
+  useEffect(() => {
+    if (vendorId == null) {
+      setVendorProducts([])
+      return
+    }
+
+    let cancelled = false
+    const loadProducts = async () => {
+      setProductsLoading(true)
+      try {
+        const { data } = await listVendorProductsByVendorId(vendorId)
+        if (!cancelled) {
+          setVendorProducts(data.map(mapProductRow))
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setVendorProducts([])
+          toast.error('Failed to load vendor products.')
+          console.error(err)
+        }
+      } finally {
+        if (!cancelled) setProductsLoading(false)
+      }
+    }
+    void loadProducts()
+    return () => {
+      cancelled = true
+    }
+  }, [vendorId])
+
+  const totalProductCount = vendorProducts.length
+  const totalStockUnits = vendorProducts.reduce((sum, product) => sum + product.stock, 0)
+  const totalInventoryValue = vendorProducts.reduce((sum, product) => sum + product.stock * product.price, 0)
 
   const certificateDocs = vendor
     ? [
@@ -344,9 +394,14 @@ const AdminVendorProfile = () => {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-slate-900">Vendor Products</h3>
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                  <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-700">Total Units Sold: {totalSalesCount}</span>
+                  <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-700">
+                    Products: {totalProductCount}
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+                    Total Stock: {totalStockUnits} units
+                  </span>
                   <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                    Total Sales: NPR {totalSalesAmount.toLocaleString()}
+                    Inventory Value: NPR {totalInventoryValue.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -363,19 +418,40 @@ const AdminVendorProfile = () => {
                       <th className="px-4 py-3 text-xs font-semibold text-slate-700">Price (NPR)</th>
                       <th className="px-4 py-3 text-xs font-semibold text-slate-700">Stock</th>
                       <th className="px-4 py-3 text-xs font-semibold text-slate-700">Expiry Date</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Units Sold</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {vendorProducts.map((product, index) => (
+                    {productsLoading ? (
+                      <tr>
+                        <td className="px-4 py-6 text-sm text-slate-500" colSpan={9}>
+                          Loading products...
+                        </td>
+                      </tr>
+                    ) : null}
+                    {!productsLoading && vendorProducts.length === 0 ? (
+                      <tr>
+                        <td className="px-4 py-6 text-sm text-slate-500" colSpan={9}>
+                          No products listed by this vendor yet.
+                        </td>
+                      </tr>
+                    ) : null}
+                    {!productsLoading
+                      ? vendorProducts.map((product, index) => (
                       <tr key={product.id} className="border-t border-slate-200">
                         <td className="px-4 py-3 text-sm text-slate-700">{index + 1}</td>
                         <td className="px-4 py-3">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-10 w-10 rounded-md border border-slate-200 object-cover"
-                          />
+                          {product.image ? (
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="h-10 w-10 rounded-md border border-slate-200 object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-xs text-slate-400">
+                              —
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-slate-800">{product.name}</td>
                         <td className="px-4 py-3 text-sm text-slate-700">{product.sku}</td>
@@ -383,9 +459,20 @@ const AdminVendorProfile = () => {
                         <td className="px-4 py-3 text-sm text-slate-700">{product.price.toLocaleString()}</td>
                         <td className="px-4 py-3 text-sm text-slate-700">{product.stock}</td>
                         <td className="px-4 py-3 text-sm text-slate-700">{product.expiryDate}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{product.sold}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                              product.status === 'Active'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {product.status}
+                          </span>
+                        </td>
                       </tr>
-                    ))}
+                    ))
+                      : null}
                   </tbody>
                 </table>
               </div>

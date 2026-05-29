@@ -51,6 +51,12 @@ public class ProductController {
 		return ResponseEntity.ok(productService.listForVendor(principal.getSubjectId()));
 	}
 
+	@GetMapping("/vendors/{vendorId}/products")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<List<ProductResponse>> listByVendor(@PathVariable Long vendorId) {
+		return ResponseEntity.ok(productService.listForVendor(vendorId));
+	}
+
 	@PostMapping(value = "/vendors/me/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('VENDOR') and principal.vendorAccount")
 	public ResponseEntity<ProductResponse> create(
