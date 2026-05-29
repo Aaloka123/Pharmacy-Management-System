@@ -4,6 +4,11 @@ import { listPublicProducts, type ProductDto } from '../lib/productsApi'
 let cachedProducts: ProductDto[] | null = null
 let loadPromise: Promise<ProductDto[]> | null = null
 
+export function invalidatePublicProductsCache() {
+  cachedProducts = null
+  loadPromise = null
+}
+
 async function fetchPublicProducts(): Promise<ProductDto[]> {
   if (cachedProducts) return cachedProducts
   if (!loadPromise) {

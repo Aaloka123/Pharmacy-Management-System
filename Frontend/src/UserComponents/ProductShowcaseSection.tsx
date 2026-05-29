@@ -16,7 +16,9 @@ const ProductCardLink = ({ product }: { product: ProductCard }) => (
     {product.image ? (
       <img alt={product.name} className="h-48 w-full bg-white p-2 object-contain" src={product.image} />
     ) : (
-      <div className="flex h-48 w-full items-center justify-center bg-slate-100 text-sm font-medium text-slate-400" />
+      <div className="flex h-48 w-full items-center justify-center bg-slate-100 text-sm text-slate-400">
+        No image
+      </div>
     )}
     <div className="p-4">
       <h3 className="text-base font-bold text-slate-900">{product.name}</h3>

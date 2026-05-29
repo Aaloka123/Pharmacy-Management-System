@@ -231,6 +231,9 @@ public class ProductService {
 				merged.add(url);
 			}
 		}
+		if (merged.isEmpty()) {
+			throw new IllegalArgumentException("At least one product image is required");
+		}
 		return merged;
 	}
 

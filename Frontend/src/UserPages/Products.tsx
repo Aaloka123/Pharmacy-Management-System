@@ -4,9 +4,7 @@ import Copyright from '../UserComponents/Copyright'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { addToCart } from '../lib/cartStorage'
-import { resolveBackendUrl } from '../lib/api'
-import { listPublicProducts, type ProductDto } from '../lib/productsApi'
-import placeholderImage from '../assets/Paracetamol.jpg'
+import { listPublicProducts, getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
 
 const ALL_CATEGORY = 'All Medications'
 
@@ -22,7 +20,7 @@ type CatalogProduct = {
   stock: number
   stockLabel: string
   stockTone: string
-  image: string
+  image: string | null
 }
 
 const stockDisplay = (stock: number) => {
@@ -37,8 +35,6 @@ const stockDisplay = (stock: number) => {
 
 const mapProduct = (dto: ProductDto): CatalogProduct => {
   const stock = stockDisplay(dto.stock)
-  const imageUrl =
-    dto.images.length > 0 ? resolveBackendUrl(dto.images[0]) : placeholderImage
   return {
     id: dto.id,
     name: dto.productName,
@@ -51,7 +47,7 @@ const mapProduct = (dto: ProductDto): CatalogProduct => {
     stock: dto.stock,
     stockLabel: stock.stockLabel,
     stockTone: stock.stockTone,
-    image: imageUrl,
+    image: getFirstProductImageUrl(dto.images),
   }
 }
 
@@ -199,7 +195,13 @@ const Products = () => {
                 tabIndex={0}
               >
                 <div className="relative h-56 w-full bg-white">
-                  {product.image ? <img alt={product.name} className="h-full w-full object-contain bg-white p-2" src={product.image} /> : null}
+                  {product.image ? (
+                    <img alt={product.name} className="h-full w-full object-contain bg-white p-2" src={product.image} />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm text-slate-400">
+                      No image
+                    </div>
+                  )}
                   <span
                     className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] uppercase ${product.stockTone}`}
                     style={{ fontWeight: 600 }}
@@ -239,7 +241,7 @@ const Products = () => {
                         form: product.form,
                         pack: product.quantity,
                         unitPrice: product.price,
-                        image: product.image,
+                        image: product.image ?? '',
                       })
                     }}
                     type="button"

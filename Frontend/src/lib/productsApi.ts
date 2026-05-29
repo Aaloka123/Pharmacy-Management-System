@@ -1,4 +1,4 @@
-import { api } from './api'
+import { api, resolveBackendUrl } from './api'
 
 export type ProductStatus = 'ACTIVE' | 'INACTIVE'
 
@@ -51,6 +51,33 @@ export function buildProductFormData(payload: ProductWritePayload, imageFiles: F
   )
   imageFiles.forEach((file) => formData.append('images', file))
   return formData
+}
+
+/** Returns a display URL only when the product has a stored upload path. */
+export function getFirstProductImageUrl(images: string[] | null | undefined): string | null {
+  if (!images?.length) return null
+  for (const raw of images) {
+    const trimmed = raw?.trim()
+    if (!trimmed || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) continue
+    const uploadsIndex = trimmed.indexOf('/uploads/')
+    if (uploadsIndex < 0) continue
+    const path = trimmed.slice(uploadsIndex)
+    return resolveBackendUrl(path)
+  }
+  return null
+}
+
+export function getProductImageUrls(images: string[] | null | undefined): string[] {
+  if (!images?.length) return []
+  return images
+    .map((raw) => {
+      const trimmed = raw?.trim()
+      if (!trimmed || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) return null
+      const uploadsIndex = trimmed.indexOf('/uploads/')
+      if (uploadsIndex < 0) return null
+      return resolveBackendUrl(trimmed.slice(uploadsIndex))
+    })
+    .filter((url): url is string => url != null)
 }
 
 export function listPublicProducts(category?: string) {

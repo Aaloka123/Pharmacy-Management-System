@@ -4,10 +4,8 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { addToCart } from '../lib/cartStorage'
-import { resolveBackendUrl } from '../lib/api'
-import { getPublicProduct, type ProductDto } from '../lib/productsApi'
+import { getPublicProduct, getProductImageUrls, type ProductDto } from '../lib/productsApi'
 import { FaStar } from 'react-icons/fa'
-import placeholderImage from '../assets/Paracetamol.jpg'
 import TopProduct from '../UserComponents/TopProduct'
 
 type Review = {
@@ -40,7 +38,7 @@ const ProductsDetail = () => {
   const [product, setProduct] = useState<ProductDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedImage, setSelectedImage] = useState<string>(placeholderImage)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   const [reviews, setReviews] = useState<Review[]>([
     {
@@ -80,11 +78,8 @@ const ProductsDetail = () => {
         const { data } = await getPublicProduct(productId)
         if (cancelled) return
         setProduct(data)
-        const gallery =
-          data.images.length > 0
-            ? data.images.map((url) => resolveBackendUrl(url))
-            : [placeholderImage]
-        setSelectedImage(gallery[0])
+        const gallery = getProductImageUrls(data.images)
+        setSelectedImage(gallery[0] ?? null)
       } catch (err) {
         if (!cancelled) {
           setError('Could not load product details.')
@@ -101,8 +96,8 @@ const ProductsDetail = () => {
   }, [productId])
 
   const galleryImages = useMemo(() => {
-    if (!product?.images.length) return [placeholderImage]
-    return product.images.map((url) => resolveBackendUrl(url))
+    if (!product) return []
+    return getProductImageUrls(product.images)
   }, [product])
 
   const thumbnailImages = galleryImages.filter((image) => image !== selectedImage).slice(0, 3)
@@ -183,7 +178,13 @@ const ProductsDetail = () => {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div>
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4">
-                <img alt={product.productName} className="h-96 w-full object-contain" src={selectedImage} />
+                {selectedImage ? (
+                  <img alt={product.productName} className="h-96 w-full object-contain" src={selectedImage} />
+                ) : (
+                  <div className="flex h-96 w-full items-center justify-center bg-slate-100 text-sm text-slate-400">
+                    No image available
+                  </div>
+                )}
               </div>
 
               {thumbnailImages.length > 0 ? (
@@ -254,7 +255,7 @@ const ProductsDetail = () => {
                       form: product.form,
                       pack: product.quantity,
                       unitPrice: Number(product.price),
-                      image: galleryImages[0],
+                      image: galleryImages[0] ?? '',
                     })
                   }
                   type="button"

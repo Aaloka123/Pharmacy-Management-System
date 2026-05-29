@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { toast } from 'react-toastify';
 import Navbar from '../VendorComponents/Navbar';
-import { resolveBackendUrl } from '../lib/api';
+import { invalidatePublicProductsCache } from '../hooks/usePublicProducts';
 import {
   buildProductFormData,
   createVendorProduct,
   deleteVendorProduct,
+  getProductImageUrls,
   listVendorProducts,
   updateVendorProduct,
   type ProductDto,
@@ -46,7 +47,7 @@ const mapDtoToRow = (dto: ProductDto): ProductRow => ({
   price: Number(dto.price),
   stock: dto.stock,
   status: dto.status === 'ACTIVE' ? 'Active' : 'Inactive',
-  images: (dto.images ?? []).map((url) => resolveBackendUrl(url)),
+  images: getProductImageUrls(dto.images),
 });
 
 const VendorProduct = () => {
@@ -194,8 +195,24 @@ const VendorProduct = () => {
     setShowAllDetails(false);
   };
 
+  const countStoredImages = () =>
+    productImages
+      .filter((url) => !url.startsWith('blob:'))
+      .map((url) => {
+        const uploadsIndex = url.indexOf('/uploads/');
+        return uploadsIndex >= 0 ? url.slice(uploadsIndex) : url;
+      })
+      .filter((url) => url.startsWith('/uploads/')).length;
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+
+    const imageCount = countStoredImages() + uploadFiles.length;
+    if (imageCount < 1) {
+      toast.error('Please upload at least one product image.');
+      return;
+    }
+
     const parsedStock = Number(formData.stock);
     const writePayload = {
       productName: formData.productName.trim(),
@@ -239,6 +256,7 @@ const VendorProduct = () => {
         toast.success('Product added successfully.');
       }
       resetForm();
+      invalidatePublicProductsCache();
       void loadProducts(true);
     } catch (err) {
       toast.error(editingId !== null ? 'Failed to update product.' : 'Failed to add product.');
@@ -278,6 +296,7 @@ const VendorProduct = () => {
       if (editingId === id) {
         resetForm();
       }
+      invalidatePublicProductsCache();
       await loadProducts();
     } catch (err) {
       toast.error('Failed to delete product.');
@@ -505,7 +524,7 @@ const VendorProduct = () => {
             </label>
 
             <label className="block text-sm text-slate-700 md:col-span-2">
-              Product Images (max 4)
+              Product Images (max 4) <span className="text-rose-600">*</span>
               <input
                 accept="image/*"
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
@@ -513,6 +532,7 @@ const VendorProduct = () => {
                 onChange={handleImageChange}
                 type="file"
               />
+              <p className="mt-1 text-xs text-slate-500">At least 1 image is required.</p>
               {productImages.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {productImages.map((image, index) => (
@@ -617,11 +637,17 @@ const VendorProduct = () => {
                   <tr className="border-t border-slate-200" key={product.id}>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{index + 1}</td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">
-                      <img
-                        alt={`${product.productName} preview`}
-                        className="h-11 w-11 rounded-md border border-slate-200 object-cover"
-                        src={product.images[0] ?? ''}
-                      />
+                      {product.images[0] ? (
+                        <img
+                          alt={`${product.productName} preview`}
+                          className="h-11 w-11 rounded-md border border-slate-200 object-cover"
+                          src={product.images[0]}
+                        />
+                      ) : (
+                        <div className="flex h-11 w-11 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-[10px] text-slate-400">
+                          —
+                        </div>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.sku}</td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-800">{product.productName}</td>
