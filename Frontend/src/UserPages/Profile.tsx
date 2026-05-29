@@ -6,7 +6,7 @@ import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { clearAuthSession, getAccessToken, getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
-import { api } from '../lib/api'
+import { api, resolveProfileImageUrl } from '../lib/api'
 
 const Profile = () => {
   const navigate = useNavigate()
@@ -60,6 +60,7 @@ const Profile = () => {
   }, [navigate])
 
   const initial = (fullName.trim().charAt(0) || email.trim().charAt(0) || 'U').toUpperCase()
+  const profileImageSrc = resolveProfileImageUrl(profileImage)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -190,8 +191,13 @@ const Profile = () => {
 
               <div className="mt-5 flex items-center justify-center">
                 <div className="relative">
-                  {profileImage ? (
-                    <img alt="Profile preview" className="h-36 w-36 rounded-full border border-slate-200 object-cover" src={profileImage} />
+                  {profileImageSrc ? (
+                    <img
+                      alt="Profile preview"
+                      className="h-36 w-36 rounded-full border border-slate-200 object-cover"
+                      referrerPolicy="no-referrer"
+                      src={profileImageSrc}
+                    />
                   ) : (
                     <div className="flex h-36 w-36 items-center justify-center rounded-full border border-slate-200 bg-linear-to-br from-teal-600 to-teal-700 text-4xl font-bold text-white">
                       {initial}

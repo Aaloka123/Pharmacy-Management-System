@@ -28,6 +28,18 @@ export function resolveBackendUrl(path: string | null | undefined): string {
   return path
 }
 
+/** Profile image URL for display (Google HTTPS URLs or {@code /uploads/...} paths). */
+export function resolveProfileImageUrl(path: string | null | undefined): string | null {
+  if (path == null || path === '') {
+    return null
+  }
+  if (path.startsWith('blob:')) {
+    return path
+  }
+  const resolved = resolveBackendUrl(path)
+  return resolved || null
+}
+
 /** Thrown by {@link api} when the response status is not 2xx (axios-compatible shape). */
 export class ApiRequestError extends Error {
   readonly response: { status: number }

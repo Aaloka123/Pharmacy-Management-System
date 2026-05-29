@@ -34,7 +34,7 @@ public class User {
 	@Column(name = "location", length = 255)
 	private String location;
 
-	@Column(name = "profile_image", length = 500)
+	@Column(name = "profile_image", length = 2048)
 	private String profileImage;
 
 	@Column(name = "google_id", unique = true, length = 64)

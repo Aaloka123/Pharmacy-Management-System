@@ -57,10 +57,22 @@ public class GoogleAuthService {
 					HttpStatus.CONFLICT,
 					"This email is already linked to a different Google account.");
 		}
-		if (google.profileImageUrl() != null && (user.getProfileImage() == null || user.getProfileImage().isBlank())) {
-			user.setProfileImage(google.profileImageUrl());
-		}
+		applyGoogleProfileImage(user, google.profileImageUrl());
 		return userRepository.save(user);
+	}
+
+	/** Sets Google avatar when the user has none, or when replacing an existing Google avatar (not a custom upload). */
+	private static void applyGoogleProfileImage(User user, String googlePictureUrl) {
+		if (googlePictureUrl == null || googlePictureUrl.isBlank()) {
+			return;
+		}
+		String current = user.getProfileImage();
+		boolean noImage = current == null || current.isBlank();
+		boolean isGoogleImage = current != null && current.contains("googleusercontent.com");
+		boolean isLocalUpload = current != null && current.startsWith("/uploads/");
+		if ((noImage || isGoogleImage) && !isLocalUpload) {
+			user.setProfileImage(googlePictureUrl);
+		}
 	}
 
 	private User createGoogleUser(VerifiedGoogleIdentity google) {
@@ -90,7 +102,11 @@ public class GoogleAuthService {
 				phoneNumber,
 				passwordEncoder.encode("google-oauth:" + UUID.randomUUID()));
 		user.setGoogleId(google.googleId());
-		user.setProfileImage(profileImage);
+		if (profileImage != null && profileImage.startsWith("/uploads/")) {
+			user.setProfileImage(profileImage);
+		} else {
+			applyGoogleProfileImage(user, google.profileImageUrl());
+		}
 		user.setRole(Role.USER);
 		return userRepository.save(user);
 	}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { IoCartOutline } from 'react-icons/io5'
 import mednexuxLogo from '../assets/Mednexux.png'
+import { resolveProfileImageUrl } from '../lib/api'
 import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
 
 const Header = () => {
@@ -11,6 +12,7 @@ const Header = () => {
     'text-teal-700'
 
   const [user, setUser] = useState<AuthUser | null>(() => getStoredUser())
+  const avatarUrl = user ? resolveProfileImageUrl(user.profileImage) : null
 
   useEffect(() => {
     const unsubscribe = onAuthChange(() => setUser(getStoredUser()))
@@ -95,8 +97,13 @@ const Header = () => {
                   }`
                 }
               >
-                {user.profileImage ? (
-                  <img alt="Profile" className="h-full w-full object-cover" src={user.profileImage} />
+                {avatarUrl ? (
+                  <img
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                    src={avatarUrl}
+                  />
                 ) : (
                   (user.fullName.trim().charAt(0) || user.email.trim().charAt(0) || 'U').toUpperCase()
                 )}

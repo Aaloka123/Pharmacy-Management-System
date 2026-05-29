@@ -1,5 +1,6 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { api } from '../lib/api'
 
@@ -13,6 +14,7 @@ type UserRow = {
 }
 
 const AdminUsers = () => {
+  const navigate = useNavigate()
   const [users, setUsers] = useState<UserRow[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
@@ -50,6 +52,10 @@ const AdminUsers = () => {
       return haystack.some((value) => value.toLowerCase().includes(normalizedQuery))
     })
   }, [users, searchQuery])
+
+  const openProfile = (id: number) => {
+    navigate('/adminuserprofile', { state: { userId: id } })
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -110,7 +116,15 @@ const AdminUsers = () => {
                   filteredUsers.map((user, index) => (
                     <tr className="border-t border-slate-200" key={user.id}>
                       <td className="px-5 py-3 text-sm text-slate-700">{index + 1}</td>
-                      <td className="px-5 py-3 text-sm text-slate-800">{user.fullName}</td>
+                      <td className="px-5 py-3 text-sm text-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => openProfile(user.id)}
+                          className="cursor-pointer font-medium text-slate-800 decoration-slate-500 underline-offset-2 hover:underline"
+                        >
+                          {user.fullName}
+                        </button>
+                      </td>
                       <td className="px-5 py-3 text-sm text-slate-700">{user.email}</td>
                       <td className="px-5 py-3 text-sm text-slate-700">{user.location?.trim() || '—'}</td>
                       <td className="px-5 py-3 text-sm text-slate-700">{user.phoneNumber}</td>
@@ -118,6 +132,7 @@ const AdminUsers = () => {
                         <button
                           className="cursor-pointer rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-teal-700"
                           type="button"
+                          onClick={() => openProfile(user.id)}
                         >
                           View Profile
                         </button>
