@@ -291,35 +291,35 @@ const VendorProduct = () => {
         <p className="mt-1 text-sm text-slate-600">Manage products with ease</p>
 
         <section
-          className={`sticky top-4 z-10 mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm ${
-            showAllDetails ? 'pb-5' : ''
+          className={`sticky top-4 z-10 mt-4 rounded-2xl border border-slate-200 bg-white shadow-sm ${
+            showAllDetails ? 'px-4 pb-5 pt-2.5' : ''
           }`}
         >
-          <div className={`flex items-center justify-between gap-3 ${showAllDetails ? 'mb-4' : ''}`}>
+          <button
+            type="button"
+            aria-expanded={showAllDetails}
+            aria-label={showAllDetails ? 'Hide add product form' : 'Open add product form'}
+            onClick={() => setShowAllDetails((prev) => !prev)}
+            className={`flex w-full cursor-pointer items-center justify-between gap-3 text-left ${
+              showAllDetails ? 'mb-4' : 'rounded-2xl px-4 py-2.5'
+            }`}
+          >
             <h2 className="text-base font-bold text-slate-900">
               {editingId !== null ? 'Edit Product' : 'Add Product'}
             </h2>
-            <button
-              type="button"
-              aria-expanded={showAllDetails}
-              aria-label={showAllDetails ? 'Hide all details' : 'Show all details'}
-              onClick={() => setShowAllDetails((prev) => !prev)}
-              className="inline-flex shrink-0 cursor-pointer items-center justify-center text-slate-600 transition hover:text-slate-900"
+            <svg
+              aria-hidden="true"
+              className={`h-4 w-4 shrink-0 text-slate-600 transition-transform ${showAllDetails ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
             >
-              <svg
-                aria-hidden="true"
-                className={`h-4 w-4 transition-transform ${showAllDetails ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </button>
-          </div>
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
           {showAllDetails ? (
           <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
             <label className="block text-sm text-slate-700">
