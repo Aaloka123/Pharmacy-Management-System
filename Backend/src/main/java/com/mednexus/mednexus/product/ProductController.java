@@ -40,7 +40,13 @@ public class ProductController {
 		return ResponseEntity.ok(productService.listCatalog(category));
 	}
 
-	@GetMapping("/products/{id}")
+	@GetMapping("/products/new-arrivals")
+	public ResponseEntity<List<ProductResponse>> listNewArrivals(
+			@RequestParam(name = "limit", defaultValue = "4") int limit) {
+		return ResponseEntity.ok(productService.listNewArrivals(limit));
+	}
+
+	@GetMapping("/products/{id:\\d+}")
 	public ResponseEntity<ProductResponse> getPublic(@PathVariable Long id) {
 		return ResponseEntity.ok(productService.getCatalogProduct(id));
 	}

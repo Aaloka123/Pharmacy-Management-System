@@ -48,6 +48,17 @@ public class ProductService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<ProductResponse> listNewArrivals(int limit) {
+		int capped = Math.min(Math.max(limit, 1), 20);
+		return productRepository
+				.findCatalog(VendorStatus.APPROVED, ProductStatus.ACTIVE, null)
+				.stream()
+				.limit(capped)
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
 	public ProductResponse getCatalogProduct(Long id) {
 		Product product = productRepository
 				.findCatalogById(id, VendorStatus.APPROVED, ProductStatus.ACTIVE)

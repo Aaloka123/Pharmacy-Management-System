@@ -1,5 +1,7 @@
 import ProductShowcaseSection from './ProductShowcaseSection'
 
-const TopProduct = () => <ProductShowcaseSection sort="topStock" title="Top Products" />
+const TopProduct = () => (
+  <ProductShowcaseSection rotateIntervalMs={10_000} sort="topStock" title="Top Products" />
+)
 
 export default TopProduct

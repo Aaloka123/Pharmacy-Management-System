@@ -9,6 +9,7 @@ export type ProductCard = {
   form: string
   quantity: string
   image: string | null
+  vendorName?: string
 }
 
 export type ShowcaseSort = 'newest' | 'topStock' | 'suggested'
@@ -16,7 +17,7 @@ export type ShowcaseSort = 'newest' | 'topStock' | 'suggested'
 const byNewest = (a: ProductDto, b: ProductDto) =>
   new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
 
-export function mapDtoToCard(dto: ProductDto): ProductCard {
+export function mapDtoToCard(dto: ProductDto, options?: { includeVendor?: boolean }): ProductCard {
   return {
     id: dto.id,
     name: dto.productName,
@@ -25,6 +26,7 @@ export function mapDtoToCard(dto: ProductDto): ProductCard {
     form: dto.form,
     quantity: dto.quantity,
     image: getFirstProductImageUrl(dto.images),
+    vendorName: options?.includeVendor ? dto.vendorBusinessName : undefined,
   }
 }
 

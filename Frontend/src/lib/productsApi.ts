@@ -88,6 +88,11 @@ export function listPublicProducts(category?: string) {
   return api.get<ProductDto[]>(`/api/products${query}`)
 }
 
+/** Latest active catalog products from approved vendors (newest first). */
+export function listNewArrivalsProducts(limit = 4) {
+  return api.get<ProductDto[]>(`/api/products/new-arrivals?limit=${limit}`)
+}
+
 export function getPublicProduct(id: number) {
   return api.get<ProductDto>(`/api/products/${id}`)
 }

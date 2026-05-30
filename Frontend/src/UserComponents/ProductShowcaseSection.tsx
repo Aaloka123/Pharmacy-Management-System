@@ -1,11 +1,17 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { usePublicProducts } from '../hooks/usePublicProducts'
-import { pickProductCards, type ProductCard, type ShowcaseSort } from '../lib/productCard'
+import { useNewArrivals, usePublicProducts } from '../hooks/usePublicProducts'
+import { mapDtoToCard, pickProductCards, type ProductCard, type ShowcaseSort } from '../lib/productCard'
+
+const VISIBLE_COUNT = 4
 
 type ProductShowcaseSectionProps = {
   title: string
-  sort: ShowcaseSort
+  sort?: ShowcaseSort
+  /** Latest vendor listings from DB (newest first); ignores `sort`. */
+  onlyNewArrivals?: boolean
+  /** When set, cycles visible products every N milliseconds. */
+  rotateIntervalMs?: number
 }
 
 const ProductCardLink = ({ product }: { product: ProductCard }) => (
@@ -22,6 +28,9 @@ const ProductCardLink = ({ product }: { product: ProductCard }) => (
     )}
     <div className="p-4">
       <h3 className="text-base font-bold text-slate-900">{product.name}</h3>
+      {product.vendorName ? (
+        <p className="mt-1 text-xs text-slate-500">By {product.vendorName}</p>
+      ) : null}
       <p className="mt-2 text-lg font-bold text-teal-700">{product.price}</p>
       <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
         <div>
@@ -41,9 +50,49 @@ const ProductCardLink = ({ product }: { product: ProductCard }) => (
   </Link>
 )
 
-const ProductShowcaseSection = ({ title, sort }: ProductShowcaseSectionProps) => {
-  const { products, loading, error } = usePublicProducts()
-  const cards = useMemo(() => pickProductCards(products, sort, 4), [products, sort])
+function visibleWindow(allCards: ProductCard[], offset: number): ProductCard[] {
+  if (allCards.length <= VISIBLE_COUNT) return allCards
+  const slice: ProductCard[] = []
+  for (let i = 0; i < VISIBLE_COUNT; i += 1) {
+    slice.push(allCards[(offset + i) % allCards.length])
+  }
+  return slice
+}
+
+const ProductShowcaseSection = ({
+  title,
+  sort = 'newest',
+  onlyNewArrivals = false,
+  rotateIntervalMs,
+}: ProductShowcaseSectionProps) => {
+  const catalog = usePublicProducts()
+  const newArrivals = useNewArrivals(VISIBLE_COUNT)
+  const { products, loading, error } = onlyNewArrivals ? newArrivals : catalog
+  const poolLimit = rotateIntervalMs ? Math.max(products.length, VISIBLE_COUNT) : VISIBLE_COUNT
+  const allCards = useMemo(() => {
+    if (onlyNewArrivals) {
+      return products.map((dto) => mapDtoToCard(dto, { includeVendor: true }))
+    }
+    return pickProductCards(products, sort, poolLimit)
+  }, [onlyNewArrivals, products, sort, poolLimit])
+  const [offset, setOffset] = useState(0)
+
+  useEffect(() => {
+    setOffset(0)
+  }, [products, sort])
+
+  useEffect(() => {
+    if (!rotateIntervalMs || allCards.length <= VISIBLE_COUNT) return undefined
+    const id = window.setInterval(() => {
+      setOffset((prev) => (prev + VISIBLE_COUNT) % allCards.length)
+    }, rotateIntervalMs)
+    return () => window.clearInterval(id)
+  }, [rotateIntervalMs, allCards.length])
+
+  const cards = useMemo(
+    () => (rotateIntervalMs ? visibleWindow(allCards, offset) : allCards.slice(0, VISIBLE_COUNT)),
+    [allCards, offset, rotateIntervalMs],
+  )
 
   return (
     <section className="bg-white px-4 py-14 md:px-8">
@@ -65,11 +114,16 @@ const ProductShowcaseSection = ({ title, sort }: ProductShowcaseSectionProps) =>
         ) : null}
         {error ? <p className="text-sm text-rose-600">{error}</p> : null}
         {!loading && !error && cards.length === 0 ? (
-          <p className="text-sm text-slate-500">No products available yet.</p>
+          <p className="text-sm text-slate-500">
+            {onlyNewArrivals ? 'No new products from vendors yet.' : 'No products available yet.'}
+          </p>
         ) : null}
 
         {!loading && cards.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            className="grid grid-cols-1 gap-6 transition-opacity duration-500 sm:grid-cols-2 lg:grid-cols-4"
+            key={rotateIntervalMs ? offset : 'static'}
+          >
             {cards.map((product) => (
               <ProductCardLink key={product.id} product={product} />
             ))}
