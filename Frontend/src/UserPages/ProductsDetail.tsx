@@ -214,7 +214,7 @@ const ProductsDetail = () => {
                 <p className="mt-1 text-sm text-slate-600">
                   By:{' '}
                   <Link
-                    className="font-medium text-teal-700 underline-offset-2 hover:underline"
+                    className="font-bold text-slate-900 underline-offset-2 hover:underline"
                     state={{ vendorId: product.vendorId }}
                     to={`/vendorprofile?id=${product.vendorId}`}
                   >

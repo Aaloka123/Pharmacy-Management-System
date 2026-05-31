@@ -1,5 +1,7 @@
 package com.mednexus.mednexus.vendor;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,11 @@ public class PublicVendorController {
 	@Autowired
 	public PublicVendorController(VendorService vendorService) {
 		this.vendorService = vendorService;
+	}
+
+	@GetMapping
+	public ResponseEntity<List<PublicVendorResponse>> listPublic() {
+		return ResponseEntity.ok(vendorService.listPublicVendors());
 	}
 
 	@GetMapping("/{id:\\d+}")

@@ -21,3 +21,20 @@ body {
 .font-semibold {
   font-weight: 400;
 }
+
+@keyframes vendor-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.vendor-marquee-track {
+  animation: vendor-marquee-scroll 150s linear infinite;
+}
+
+.vendor-marquee-track:hover {
+  animation-play-state: paused;
+}

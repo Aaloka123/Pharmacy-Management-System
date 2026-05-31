@@ -17,5 +17,7 @@ public interface VendorRepository extends JpaRepository<Vendor, Long> {
 
 	List<Vendor> findAllByStatusOrderByCreatedAtDesc(VendorStatus status);
 
+	List<Vendor> findAllByStatusOrderByCreatedAtAsc(VendorStatus status);
+
 	List<Vendor> findAllByOrderByCreatedAtDesc();
 }

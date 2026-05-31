@@ -29,7 +29,10 @@ const ProductCardLink = ({ product }: { product: ProductCard }) => (
     <div className="p-4">
       <h3 className="text-base font-bold text-slate-900">{product.name}</h3>
       {product.vendorName ? (
-        <p className="mt-1 text-xs text-slate-500">By {product.vendorName}</p>
+        <p className="mt-1 text-xs text-slate-500">
+          By{' '}
+          <span className="font-bold text-slate-900">{product.vendorName}</span>
+        </p>
       ) : null}
       <p className="mt-2 text-lg font-bold text-teal-700">{product.price}</p>
       <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">

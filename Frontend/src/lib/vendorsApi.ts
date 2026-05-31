@@ -27,6 +27,10 @@ export async function getPublicVendor(vendorId: number) {
   }
 }
 
+export function listPublicVendors() {
+  return api.get<PublicVendorDto[]>('/api/public/vendors')
+}
+
 export async function listPublicVendorProducts(vendorId: number) {
   try {
     const response = await api.get<ProductDto[]>(`/api/products?vendorId=${vendorId}`)

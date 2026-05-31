@@ -120,6 +120,13 @@ public class VendorService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<PublicVendorResponse> listPublicVendors() {
+		return vendorRepository.findAllByStatusOrderByCreatedAtAsc(VendorStatus.APPROVED).stream()
+				.map(this::toPublicResponse)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
 	public List<VendorResponse> list(VendorStatus status) {
 		List<Vendor> vendors = status == null
 				? vendorRepository.findAllByOrderByCreatedAtDesc()
