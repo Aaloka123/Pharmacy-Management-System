@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mednexus.mednexus.security.PlatformUser;
+import com.mednexus.mednexus.vendor.dto.PublicVendorResponse;
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
 import com.mednexus.mednexus.vendor.dto.VendorChangePasswordRequest;
 import com.mednexus.mednexus.vendor.dto.VendorResponse;
@@ -77,7 +78,12 @@ public class VendorController {
 		return ResponseEntity.ok(vendorService.getById(principal.getSubjectId()));
 	}
 
-	@GetMapping("/{id}")
+	@GetMapping("/{id:\\d+}/public")
+	public ResponseEntity<PublicVendorResponse> getPublicProfile(@PathVariable Long id) {
+		return ResponseEntity.ok(vendorService.getPublicProfile(id));
+	}
+
+	@GetMapping("/{id:\\d+}")
 	@PreAuthorize("hasRole('ADMIN') or (hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<VendorResponse> getOne(@PathVariable Long id) {
 		return ResponseEntity.ok(vendorService.getById(id));

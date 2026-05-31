@@ -212,7 +212,14 @@ const ProductsDetail = () => {
               <p className="mt-2 text-sm text-slate-600">{categoryFormLine}</p>
               {product.vendorBusinessName ? (
                 <p className="mt-1 text-sm text-slate-600">
-                  By: <span className="font-medium text-slate-800">{product.vendorBusinessName}</span>
+                  By:{' '}
+                  <Link
+                    className="font-medium text-teal-700 underline-offset-2 hover:underline"
+                    state={{ vendorId: product.vendorId }}
+                    to={`/vendorprofile?id=${product.vendorId}`}
+                  >
+                    {product.vendorBusinessName}
+                  </Link>
                 </p>
               ) : null}
               <p className="mt-3 text-2xl font-bold text-teal-700">NRP {Number(product.price).toLocaleString()}</p>

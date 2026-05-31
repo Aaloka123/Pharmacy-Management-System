@@ -61,7 +61,8 @@ public class SecurityConfig {
 								"/api/auth/vendor/login",
 								"/api/auth/logout").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/vendors/signup").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/products", "/api/products/*").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
 						.requestMatchers("/uploads/**").permitAll()
 						.requestMatchers("/api/**").authenticated());
 		return http.build();

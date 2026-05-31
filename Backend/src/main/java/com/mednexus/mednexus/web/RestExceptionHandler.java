@@ -13,6 +13,7 @@ import com.mednexus.mednexus.auth.InvalidGoogleTokenException;
 import com.mednexus.mednexus.product.DuplicateProductSkuException;
 import com.mednexus.mednexus.product.ProductNotFoundException;
 import com.mednexus.mednexus.vendor.VendorNotApprovedException;
+import com.mednexus.mednexus.vendor.VendorNotFoundException;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
@@ -54,6 +55,13 @@ public class RestExceptionHandler {
 	public ProblemDetail handleDuplicateSku(DuplicateProductSkuException ex) {
 		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
 		pd.setTitle("Conflict");
+		return pd;
+	}
+
+	@ExceptionHandler(VendorNotFoundException.class)
+	public ProblemDetail handleVendorNotFound(VendorNotFoundException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+		pd.setTitle("Not found");
 		return pd;
 	}
 

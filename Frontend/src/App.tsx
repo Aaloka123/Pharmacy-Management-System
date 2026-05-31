@@ -46,7 +46,7 @@ const AppContent = () => {
   }, [pathname])
 
   const normalizedPath = pathname.replace(/\/+$/, '') || '/'
-  const userRoutes = ['/', '/products', '/productsdetail', '/about', '/contacts', '/profile', '/cart']
+  const userRoutes = ['/', '/products', '/productsdetail', '/about', '/contacts', '/profile', '/cart', '/vendorprofile']
   const showChatbot = userRoutes.some((route) => normalizedPath === route || normalizedPath.startsWith(`${route}/`))
 
   return (

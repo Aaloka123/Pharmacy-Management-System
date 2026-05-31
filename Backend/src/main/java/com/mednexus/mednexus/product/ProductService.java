@@ -73,6 +73,20 @@ public class ProductService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public List<ProductResponse> listCatalogForVendor(Long vendorId) {
+		Vendor vendor = vendorRepository.findById(vendorId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vendor not found"));
+		if (vendor.getStatus() != VendorStatus.APPROVED) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vendor not found");
+		}
+		return productRepository
+				.findCatalogByVendorId(vendorId, VendorStatus.APPROVED, ProductStatus.ACTIVE)
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
 	@Transactional
 	public ProductResponse create(Long vendorId, ProductWriteRequest request, MultipartFile[] imageFiles) {
 		Vendor vendor = requireApprovedVendor(vendorId);

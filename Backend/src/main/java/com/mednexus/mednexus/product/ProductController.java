@@ -36,7 +36,11 @@ public class ProductController {
 
 	@GetMapping("/products")
 	public ResponseEntity<List<ProductResponse>> listPublic(
-			@RequestParam(name = "category", required = false) String category) {
+			@RequestParam(name = "category", required = false) String category,
+			@RequestParam(name = "vendorId", required = false) Long vendorId) {
+		if (vendorId != null) {
+			return ResponseEntity.ok(productService.listCatalogForVendor(vendorId));
+		}
 		return ResponseEntity.ok(productService.listCatalog(category));
 	}
 
@@ -44,6 +48,11 @@ public class ProductController {
 	public ResponseEntity<List<ProductResponse>> listNewArrivals(
 			@RequestParam(name = "limit", defaultValue = "4") int limit) {
 		return ResponseEntity.ok(productService.listNewArrivals(limit));
+	}
+
+	@GetMapping("/products/by-vendor/{vendorId:\\d+}")
+	public ResponseEntity<List<ProductResponse>> listByVendorPublic(@PathVariable Long vendorId) {
+		return ResponseEntity.ok(productService.listCatalogForVendor(vendorId));
 	}
 
 	@GetMapping("/products/{id:\\d+}")

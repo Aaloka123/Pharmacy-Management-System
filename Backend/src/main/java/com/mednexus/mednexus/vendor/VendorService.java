@@ -4,11 +4,14 @@ import java.time.Instant;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import com.mednexus.mednexus.vendor.dto.PublicVendorResponse;
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
 import com.mednexus.mednexus.auth.RefreshTokenService;
 import com.mednexus.mednexus.vendor.dto.VendorChangePasswordRequest;
@@ -105,6 +108,15 @@ public class VendorService {
 	public VendorResponse getById(Long id) {
 		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
 		return toResponse(vendor);
+	}
+
+	@Transactional(readOnly = true)
+	public PublicVendorResponse getPublicProfile(Long id) {
+		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		if (vendor.getStatus() != VendorStatus.APPROVED) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vendor not found");
+		}
+		return toPublicResponse(vendor);
 	}
 
 	@Transactional(readOnly = true)
@@ -210,5 +222,19 @@ public class VendorService {
 				vendor.getStatus(),
 				vendor.getCreatedAt(),
 				vendor.getDecidedAt());
+	}
+
+	private PublicVendorResponse toPublicResponse(Vendor vendor) {
+		return new PublicVendorResponse(
+				vendor.getId(),
+				vendor.getName(),
+				vendor.getBusinessName(),
+				vendor.getBusinessLocation(),
+				vendor.getLocation(),
+				vendor.getPhoneNumber(),
+				vendor.getEmail(),
+				vendor.getPharmacyLicense(),
+				vendor.getProfileImage(),
+				vendor.getCreatedAt());
 	}
 }

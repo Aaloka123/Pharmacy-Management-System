@@ -35,6 +35,19 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	@Query("""
 			SELECT p FROM Product p
 			JOIN FETCH p.vendor v
+			WHERE v.id = :vendorId
+			AND v.status = :vendorStatus
+			AND p.status = :productStatus
+			ORDER BY p.createdAt DESC
+			""")
+	List<Product> findCatalogByVendorId(
+			@Param("vendorId") Long vendorId,
+			@Param("vendorStatus") VendorStatus vendorStatus,
+			@Param("productStatus") ProductStatus productStatus);
+
+	@Query("""
+			SELECT p FROM Product p
+			JOIN FETCH p.vendor v
 			WHERE p.id = :id
 			AND v.status = :vendorStatus
 			AND p.status = :productStatus
