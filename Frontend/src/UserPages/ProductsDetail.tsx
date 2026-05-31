@@ -18,6 +18,19 @@ type Review = {
   createdAt: string
 }
 
+const PRODUCT_RATING = 4
+
+const ProductStarRating = ({ rating }: { rating: number }) => (
+  <div aria-label={`${rating} out of 5 stars`} className="flex items-center gap-0.5">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <FaStar
+        key={star}
+        className={`h-4 w-4 ${star <= rating ? 'text-amber-400' : 'text-slate-300'}`}
+      />
+    ))}
+  </div>
+)
+
 const stockLabel = (stock: number) => {
   if (stock <= 0) return { text: 'Out of stock', tone: 'text-rose-600' }
   if (stock <= 10) return { text: `${stock} units left (low stock)`, tone: 'text-rose-600' }
@@ -209,6 +222,10 @@ const ProductsDetail = () => {
 
             <div>
               <h1 className="text-2xl font-bold text-slate-900">{product.productName}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <ProductStarRating rating={PRODUCT_RATING} />
+                <span className="text-sm font-semibold text-slate-800">{PRODUCT_RATING}.0</span>
+              </div>
               <p className="mt-2 text-sm text-slate-600">{categoryFormLine}</p>
               {product.vendorBusinessName ? (
                 <p className="mt-1 text-sm text-slate-600">
