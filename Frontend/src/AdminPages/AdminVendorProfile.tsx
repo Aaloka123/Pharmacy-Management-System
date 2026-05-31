@@ -1,5 +1,6 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
 import { useEffect, useState } from 'react'
+import { FaStar } from 'react-icons/fa'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { api, resolveBackendUrl } from '../lib/api'
@@ -64,6 +65,19 @@ const shopInitial = (shopName: string): string => {
   if (!trimmed) return '?'
   return trimmed[0].toUpperCase()
 }
+
+const VENDOR_RATING = 4
+
+const VendorStarRating = ({ rating }: { rating: number }) => (
+  <div aria-label={`${rating} out of 5 stars`} className="flex items-center gap-0.5">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <FaStar
+        key={star}
+        className={`h-4 w-4 ${star <= rating ? 'text-amber-400' : 'text-slate-300'}`}
+      />
+    ))}
+  </div>
+)
 
 const AdminVendorProfile = () => {
   const navigate = useNavigate()
@@ -263,6 +277,10 @@ const AdminVendorProfile = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-slate-900">{vendor.businessName}</h2>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <VendorStarRating rating={VENDOR_RATING} />
+                    <span className="text-sm font-semibold text-slate-800">{VENDOR_RATING}.0</span>
+                  </div>
                   <p className="mt-1.5 text-base text-slate-600">
                     Managed by <span className="font-semibold text-slate-900">{vendor.name}</span>
                   </p>

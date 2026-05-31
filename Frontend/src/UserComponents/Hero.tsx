@@ -1,105 +1,155 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { HiOutlineArrowLeft, HiOutlineArrowRight } from 'react-icons/hi2'
 import Hero1 from '../assets/Hero1.png'
 import Hero2 from '../assets/Hero2.jpg'
 import Hero3 from '../assets/Hero3.png'
 
+const SLIDE_INTERVAL_MS = 7000
+
+const slides = [
+  {
+    title: 'Your trusted multi-vendor pharmacy platform',
+    description:
+      'Discover medicines from verified partner pharmacies, compare options, and order with confidence — all in one place.',
+    image: Hero1,
+  },
+  {
+    title: 'Quality medicines from approved partners',
+    description:
+      'Every pharmacy on MedNexus is reviewed for compliance so you receive safe, authentic products every time.',
+    image: Hero2,
+  },
+  {
+    title: 'Simple ordering, clear visibility',
+    description:
+      'Browse inventory, track availability, and manage your health needs with a modern experience built for patients and pharmacies.',
+    image: Hero3,
+  },
+]
+
 const Hero = () => {
-  const slides = [
-    {
-      title: 'Smarter Pharmacy Operations',
-      description:
-        'Manage inventory, prescriptions, and supplier workflows from one modern dashboard built for speed and accuracy.',
-      badge: 'All-in-one platform',
-      image: Hero1,
-    },
-    {
-      title: 'Safer Prescription Tracking',
-      description:
-        'Reduce errors with clear records, expiry monitoring, and workflow visibility designed for pharmacy teams.',
-      badge: 'Patient safety first',
-      image: Hero2,
-    },
-    {
-      title: 'Actionable Insights & Reports',
-      description:
-        'Track performance trends, stock movement, and operations metrics to make better day-to-day decisions.',
-      badge: 'Data-driven decisions',
-      image: Hero3,
-    },
-  ]
-
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
 
-  const goToPreviousSlide = () => {
+  const goToPreviousSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
-  }
+  }, [])
 
-  const goToNextSlide = () => {
+  const goToNextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % slides.length)
-  }
+  }, [])
+
+  useEffect(() => {
+    if (isPaused) return
+
+    const timer = window.setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length)
+    }, SLIDE_INTERVAL_MS)
+
+    return () => window.clearInterval(timer)
+  }, [isPaused])
+
+  const activeSlide = slides[currentSlide]
 
   return (
     <section className="bg-white">
-      <div>
-        <div className="relative overflow-hidden text-white shadow-xl">
+      <div
+        className="group relative min-h-[min(720px,calc(100vh-80px))] overflow-hidden text-white"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        {slides.map((slide, index) => (
           <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${slides[currentSlide].image})` }}
+            key={slide.title}
+            aria-hidden={index !== currentSlide}
+            className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ease-in-out ${
+              index === currentSlide ? 'opacity-100' : 'opacity-0'
+            } ${index === currentSlide ? 'hero-slide-zoom' : ''}`}
+            style={{ backgroundImage: `url(${slide.image})` }}
           />
-          <div aria-hidden="true" className="absolute inset-0 bg-slate-900/30" />
-          <button
-            aria-label="Previous slide"
-            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/25 bg-white/10 px-3 py-2 text-lg font-semibold text-white hover:bg-white/20"
-            onClick={goToPreviousSlide}
-            type="button"
-          >
-            ←
-          </button>
-          <button
-            aria-label="Next slide"
-            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/25 bg-white/10 px-3 py-2 text-lg font-semibold text-white hover:bg-white/20"
-            onClick={goToNextSlide}
-            type="button"
-          >
-            →
-          </button>
-          <div className="relative z-10 mx-auto grid min-h-[calc(100vh-80px)] max-w-[1400px] grid-cols-1 items-center gap-10 px-6 py-12 md:px-12 lg:grid-cols-2 lg:px-16">
-            <div className="max-w-3xl">
-              <h1 className="text-4xl font-bold leading-tight md:text-6xl">{slides[currentSlide].title}</h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-200 md:text-lg">{slides[currentSlide].description}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  className="rounded-lg bg-teal-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-400"
-                  to="/vendorsignup"
-                >
-                  Get Started
-                </Link>
-                <Link
-                  className="rounded-lg border border-white/30 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-                  to="/about"
-                >
-                  Learn More
-                </Link>
-              </div>
+        ))}
+
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-linear-to-r from-slate-950/90 via-slate-900/65 to-slate-900/25"
+        />
+        <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-slate-950/50 via-transparent to-transparent" />
+
+        <div className="relative z-10 mx-auto flex h-full min-h-[inherit] max-w-[1400px] flex-col justify-center px-6 py-16 md:px-12 lg:px-16">
+          <div className="max-w-2xl">
+            <h1
+              key={activeSlide.title}
+              className="hero-fade-in text-3xl font-bold leading-[1.15] tracking-tight text-white md:text-5xl lg:text-[3.25rem]"
+            >
+              {activeSlide.title}
+            </h1>
+
+            <p
+              key={activeSlide.description}
+              className="hero-fade-in mt-5 max-w-xl text-base leading-relaxed text-slate-200/95 md:text-lg"
+            >
+              {activeSlide.description}
+            </p>
+
+            <div className="hero-fade-in mt-9 flex flex-wrap items-center gap-3">
+              <Link
+                className="inline-flex items-center justify-center rounded-xl bg-linear-to-br from-teal-500 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-teal-950/25 transition hover:from-teal-400 hover:to-teal-500"
+                to="/products"
+              >
+                Browse Medicines
+              </Link>
+              <Link
+                className="inline-flex items-center justify-center rounded-xl border border-white/35 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:border-white/55 hover:bg-white/15"
+                to="/vendorsignup"
+              >
+                Partner With Us
+              </Link>
             </div>
 
-            <div />
+            <p className="mt-8 text-sm text-white/70">
+              Join a growing network of partner pharmacies delivering care across the region.
+            </p>
           </div>
+        </div>
 
-          <div className="relative z-10 mx-auto flex w-full max-w-[1400px] items-center px-6 py-4 md:px-12 lg:px-16">
-            <div className="flex items-center gap-2">
-              {slides.map((slide, index) => (
-                <button
-                  key={slide.title}
-                  aria-label={`Go to slide ${index + 1}`}
-                  className={`h-2.5 rounded-full ${currentSlide === index ? 'w-8 bg-white' : 'w-2.5 bg-white/45 hover:bg-white/70'}`}
-                  onClick={() => setCurrentSlide(index)}
-                  type="button"
+        <button
+          aria-label="Previous slide"
+          className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition hover:bg-white/20 md:left-8 md:flex lg:left-12"
+          onClick={goToPreviousSlide}
+          type="button"
+        >
+          <HiOutlineArrowLeft className="h-5 w-5" />
+        </button>
+        <button
+          aria-label="Next slide"
+          className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition hover:bg-white/20 md:right-8 md:flex lg:right-12"
+          onClick={goToNextSlide}
+          type="button"
+        >
+          <HiOutlineArrowRight className="h-5 w-5" />
+        </button>
+
+        <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-white/10 bg-slate-950/20 backdrop-blur-sm">
+          <div className="mx-auto flex max-w-[1400px] items-center gap-2 px-6 py-4 md:px-12 lg:px-16">
+            {slides.map((slide, index) => (
+              <button
+                key={slide.title}
+                aria-current={currentSlide === index ? 'true' : undefined}
+                aria-label={`Go to slide ${index + 1}: ${slide.title}`}
+                className="group/dot flex flex-col items-center gap-2 p-1"
+                onClick={() => setCurrentSlide(index)}
+                type="button"
+              >
+                <span
+                  className={`block h-1 rounded-full transition-all duration-300 ${
+                    currentSlide === index
+                      ? 'w-10 bg-teal-400'
+                      : 'w-6 bg-white/40 group-hover/dot:bg-white/65'
+                  }`}
                 />
-              ))}
-            </div>
+              </button>
+            ))}
           </div>
         </div>
       </div>

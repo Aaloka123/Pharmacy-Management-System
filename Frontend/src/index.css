@@ -22,6 +22,34 @@ body {
   font-weight: 400;
 }
 
+@keyframes hero-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-slide-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+.hero-fade-in {
+  animation: hero-fade-in 0.65s ease-out both;
+}
+
+.hero-slide-zoom {
+  animation: hero-slide-zoom 12s ease-out forwards;
+}
+
 @keyframes vendor-marquee-scroll {
   from {
     transform: translateX(0);

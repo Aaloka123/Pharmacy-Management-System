@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { FaStar } from 'react-icons/fa'
 import { FiMail, FiMapPin, FiPhone } from 'react-icons/fi'
 import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
@@ -13,6 +14,19 @@ const shopInitial = (name: string) => {
   const trimmed = name.trim()
   return trimmed ? trimmed[0].toUpperCase() : '?'
 }
+
+const VENDOR_RATING = 4
+
+const VendorStarRating = ({ rating }: { rating: number }) => (
+  <div aria-label={`${rating} out of 5 stars`} className="flex items-center gap-0.5">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <FaStar
+        key={star}
+        className={`h-4 w-4 ${star <= rating ? 'text-amber-400' : 'text-slate-300'}`}
+      />
+    ))}
+  </div>
+)
 
 const formatYear = (iso: string | null | undefined) => {
   if (!iso) return '—'
@@ -177,6 +191,10 @@ const VendorProfile = () => {
                   </div>
                   <div className="min-w-0">
                     <h1 className="text-2xl font-bold text-slate-900">{vendor.businessName}</h1>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <VendorStarRating rating={VENDOR_RATING} />
+                      <span className="text-sm font-semibold text-slate-800">{VENDOR_RATING}.0</span>
+                    </div>
                     {vendor.name ? (
                       <p className="mt-1.5 text-sm text-slate-600">
                         Managed by <span className="font-semibold text-slate-900">{vendor.name}</span>
