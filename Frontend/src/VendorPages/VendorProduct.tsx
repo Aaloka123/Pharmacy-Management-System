@@ -50,6 +50,32 @@ const mapDtoToRow = (dto: ProductDto): ProductRow => ({
   images: getProductImageUrls(dto.images),
 });
 
+const toStoredImagePaths = (images: string[]) =>
+  images
+    .map((url) => {
+      const uploadsIndex = url.indexOf('/uploads/');
+      return uploadsIndex >= 0 ? url.slice(uploadsIndex) : url;
+    })
+    .filter((url) => url.startsWith('/uploads/'));
+
+const rowToWritePayload = (product: ProductRow, status: 'ACTIVE' | 'INACTIVE') => ({
+  productName: product.productName,
+  sku: product.sku,
+  category: product.category,
+  strength: product.strength,
+  form: product.form,
+  quantity: product.quantity,
+  storageRequirements: product.storageRequirements,
+  expiryDate: product.expiryDate,
+  productDescription: product.productDescription,
+  dosageInstructions: product.dosageInstructions,
+  sideEffects: product.sideEffects,
+  price: product.price,
+  stock: product.stock,
+  status,
+  existingImages: toStoredImagePaths(product.images),
+});
+
 const VendorProduct = () => {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
@@ -214,6 +240,7 @@ const VendorProduct = () => {
     }
 
     const parsedStock = Number(formData.stock);
+    const editingProduct = editingId !== null ? products.find((row) => row.id === editingId) : undefined;
     const writePayload = {
       productName: formData.productName.trim(),
       sku: formData.sku.trim(),
@@ -234,7 +261,11 @@ const VendorProduct = () => {
         .filter(Boolean),
       price: Number(formData.price),
       stock: parsedStock,
-      status: (parsedStock > 0 ? 'ACTIVE' : 'INACTIVE') as 'ACTIVE' | 'INACTIVE',
+      status: (editingProduct?.status === 'Inactive'
+        ? 'INACTIVE'
+        : parsedStock > 0
+          ? 'ACTIVE'
+          : 'INACTIVE') as 'ACTIVE' | 'INACTIVE',
       existingImages: productImages
         .filter((url) => !url.startsWith('blob:'))
         .map((url) => {
@@ -300,6 +331,28 @@ const VendorProduct = () => {
       await loadProducts();
     } catch (err) {
       toast.error('Failed to delete product.');
+      console.error(err);
+    }
+  };
+
+  const handleSetProductLive = async (product: ProductRow, live: boolean) => {
+    if (!live) {
+      const confirmed = window.confirm(
+        'Deactivate this product? It will be hidden from the customer site but stay in your product list.',
+      );
+      if (!confirmed) return;
+    }
+
+    const status = live ? 'ACTIVE' : 'INACTIVE';
+    const body = buildProductFormData(rowToWritePayload(product, status), []);
+
+    try {
+      const { data: updated } = await updateVendorProduct(product.id, body);
+      setProducts((prev) => prev.map((row) => (row.id === updated.id ? mapDtoToRow(updated) : row)));
+      toast.success(live ? 'Product is live on the customer site again.' : 'Product deactivated.');
+      invalidatePublicProductsCache();
+    } catch (err) {
+      toast.error(live ? 'Failed to activate product.' : 'Failed to deactivate product.');
       console.error(err);
     }
   };
@@ -634,7 +687,12 @@ const VendorProduct = () => {
                   (() => {
                     const expiryStatus = getExpiryStatus(product.expiryDate);
                     return (
-                  <tr className="border-t border-slate-200" key={product.id}>
+                  <tr
+                    className={`border-t border-slate-200 ${
+                      product.status === 'Inactive' ? 'bg-rose-50/70' : ''
+                    }`}
+                    key={product.id}
+                  >
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{index + 1}</td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">
                       {product.images[0] ? (
@@ -688,10 +746,12 @@ const VendorProduct = () => {
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          product.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                          product.status === 'Active'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-rose-100 text-rose-700'
                         }`}
                       >
-                        {product.status === 'Active' ? 'In stock' : 'Out of stock'}
+                        {product.status === 'Active' ? 'Live' : 'Deactivated'}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm">
@@ -703,6 +763,23 @@ const VendorProduct = () => {
                         >
                           Edit
                         </button>
+                        {product.status === 'Active' ? (
+                          <button
+                            className="cursor-pointer rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800"
+                            onClick={() => handleSetProductLive(product, false)}
+                            type="button"
+                          >
+                            Deactivate
+                          </button>
+                        ) : (
+                          <button
+                            className="cursor-pointer rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800"
+                            onClick={() => handleSetProductLive(product, true)}
+                            type="button"
+                          >
+                            Activate
+                          </button>
+                        )}
                         <button
                           className="cursor-pointer rounded-md border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700"
                           onClick={() => handleDelete(product.id)}
