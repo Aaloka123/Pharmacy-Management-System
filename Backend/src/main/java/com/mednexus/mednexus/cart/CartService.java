@@ -57,10 +57,13 @@ public class CartService {
 
 		Cart cart = cartRepository.findByUserIdAndProductId(userId, product.getId()).orElse(null);
 		if (cart != null) {
-			cart.setQuantity(cart.getQuantity() + addQty);
+			int newQty = cart.getQuantity() + addQty;
+			ensureQuantityWithinStock(product, newQty);
+			cart.setQuantity(newQty);
 			return toResponse(cartRepository.save(cart));
 		}
 
+		ensureQuantityWithinStock(product, addQty);
 		cart = new Cart();
 		cart.setUser(user);
 		cart.setProduct(product);
@@ -75,6 +78,8 @@ public class CartService {
 		}
 		Cart cart = cartRepository.findByIdAndUserId(cartItemId, userId)
 				.orElseThrow(CartItemNotFoundException::new);
+		Product product = cart.getProduct();
+		ensureQuantityWithinStock(product, request.quantity());
 		cart.setQuantity(request.quantity());
 		return toResponse(cartRepository.save(cart));
 	}
@@ -92,6 +97,12 @@ public class CartService {
 			return;
 		}
 		cartRepository.deleteByUserIdAndIdIn(userId, cartItemIds);
+	}
+
+	private void ensureQuantityWithinStock(Product product, int requestedQty) {
+		if (requestedQty > product.getStock()) {
+			throw new InsufficientStockException(product.getStock());
+		}
 	}
 
 	private CartItemResponse toResponse(Cart cart) {

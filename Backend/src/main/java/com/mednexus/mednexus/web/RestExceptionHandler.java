@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.auth.InvalidGoogleTokenException;
 import com.mednexus.mednexus.cart.CartItemNotFoundException;
+import com.mednexus.mednexus.cart.InsufficientStockException;
 import com.mednexus.mednexus.product.DuplicateProductSkuException;
 import com.mednexus.mednexus.product.ProductNotFoundException;
 import com.mednexus.mednexus.vendor.VendorNotApprovedException;
@@ -42,6 +43,13 @@ public class RestExceptionHandler {
 	public ProblemDetail handleInvalidGoogleToken(InvalidGoogleTokenException ex) {
 		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
 		pd.setTitle("Unauthorized");
+		return pd;
+	}
+
+	@ExceptionHandler(InsufficientStockException.class)
+	public ProblemDetail handleInsufficientStock(InsufficientStockException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+		pd.setTitle("Insufficient stock");
 		return pd;
 	}
 

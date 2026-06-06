@@ -5,7 +5,7 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { fetchCart, removeCartItem, removeCartItems, updateCartItemQuantity } from '../lib/cartApi'
-import { isCartUserLoggedIn, type CartLine } from '../lib/cartStorage'
+import { isCartApiError, isCartUserLoggedIn, type CartLine } from '../lib/cartStorage'
 
 const Cart = () => {
   const navigate = useNavigate()
@@ -60,12 +60,22 @@ const Cart = () => {
 
   const updateQty = async (id: string, qty: number) => {
     if (qty < 1) return
+    const line = lines.find((item) => item.id === id)
+    if (!line) return
+    if (qty > line.stock) {
+      toast.warn(line.stock <= 0 ? 'This product is out of stock.' : `Only ${line.stock} units available in stock.`)
+      return
+    }
     setActionId(id)
     try {
       const updated = await updateCartItemQuantity(Number(id), qty)
-      setLines((prev) => prev.map((line) => (line.id === id ? updated : line)))
+      setLines((prev) => prev.map((item) => (item.id === id ? updated : item)))
     } catch (err) {
       console.error(err)
+      if (isCartApiError(err) && err.response.status === 400) {
+        toast.warn(line.stock <= 0 ? 'This product is out of stock.' : `Only ${line.stock} units available in stock.`)
+        return
+      }
       toast.error('Could not update quantity.')
     } finally {
       setActionId(null)
@@ -265,7 +275,7 @@ const Cart = () => {
                         <button
                           aria-label="Increase quantity"
                           className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
-                          disabled={actionId === line.id}
+                          disabled={actionId === line.id || line.qty >= line.stock || line.stock <= 0}
                           onClick={() => void updateQty(line.id, line.qty + 1)}
                           type="button"
                         >

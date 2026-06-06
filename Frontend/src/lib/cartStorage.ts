@@ -13,6 +13,7 @@ export type CartLine = {
   unitPrice: number
   image: string
   qty: number
+  stock: number
 }
 
 export class CartAuthRequiredError extends Error {

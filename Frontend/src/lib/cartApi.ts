@@ -29,6 +29,7 @@ export function mapCartItemToLine(item: CartItemDto): CartLine {
     unitPrice: Number(item.unitPrice),
     image,
     qty: item.qty,
+    stock: item.stock,
   }
 }
 

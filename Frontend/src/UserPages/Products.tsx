@@ -72,6 +72,10 @@ const Products = () => {
         navigate('/login', { state: { from: '/products' } })
         return
       }
+      if (isCartApiError(err) && err.response.status === 400) {
+        toast.warn('Not enough stock available for this product.')
+        return
+      }
       if (isCartApiError(err) && err.response.status === 404) {
         toast.error('This product is no longer available.')
         return
