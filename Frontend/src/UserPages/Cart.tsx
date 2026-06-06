@@ -1,57 +1,52 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
-import AmoxicillinImage from '../assets/Amoxicillin.jpg'
-import LisinoprilImage from '../assets/Lisinopril.jpg'
-
-type CartLine = {
-  id: string
-  name: string
-  subtitle: string
-  strength: string
-  form: string
-  pack: string
-  unitPrice: number
-  image: string
-  qty: number
-}
-
-const initialCartLines: CartLine[] = [
-  {
-    id: 'Amoxicillin',
-    name: 'Amoxicillin',
-    subtitle: 'Antibiotics · Penicillin Type',
-    strength: '500mg',
-    form: 'Capsules',
-    pack: '30 ct',
-    unitPrice: 425,
-    image: AmoxicillinImage,
-    qty: 1,
-  },
-  {
-    id: 'Lisinopril',
-    name: 'Lisinopril',
-    subtitle: 'Cardiovascular · ACE Inhibitor',
-    strength: '10mg',
-    form: 'Tablets',
-    pack: '90 ct',
-    unitPrice: 280,
-    image: LisinoprilImage,
-    qty: 1,
-  },
-]
+import { fetchCart, removeCartItem, removeCartItems, updateCartItemQuantity } from '../lib/cartApi'
+import { isCartUserLoggedIn, type CartLine } from '../lib/cartStorage'
 
 const Cart = () => {
-  const [lines, setLines] = useState<CartLine[]>(initialCartLines)
-  const [selectedIds, setSelectedIds] = useState<string[]>(initialCartLines[0] ? [initialCartLines[0].id] : [])
+  const navigate = useNavigate()
+  const [lines, setLines] = useState<CartLine[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [actionId, setActionId] = useState<string | null>(null)
+
+  const loadCart = useCallback(async () => {
+    if (!isCartUserLoggedIn()) {
+      setLines([])
+      setSelectedIds([])
+      setError(null)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await fetchCart()
+      setLines(data)
+      setSelectedIds(data.map((line) => line.id))
+    } catch (err) {
+      console.error(err)
+      setError('Could not load your cart. Please try again.')
+      setLines([])
+      setSelectedIds([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadCart()
+  }, [loadCart])
 
   useEffect(() => {
     const lineIds = new Set(lines.map((line) => line.id))
-    setSelectedIds((prev) => {
-      return prev.filter((id) => lineIds.has(id))
-    })
+    setSelectedIds((prev) => prev.filter((id) => lineIds.has(id)))
   }, [lines])
 
   const selectedLines = useMemo(() => lines.filter((line) => selectedIds.includes(line.id)), [lines, selectedIds])
@@ -61,19 +56,50 @@ const Cart = () => {
   const total = useMemo(() => subtotal + tax, [subtotal, tax])
   const itemCount = useMemo(() => selectedLines.length, [selectedLines])
   const allSelected = lines.length > 0 && selectedIds.length === lines.length
+  const loggedIn = isCartUserLoggedIn()
 
-  const updateQty = (id: string, qty: number) => {
+  const updateQty = async (id: string, qty: number) => {
     if (qty < 1) return
-    setLines(lines.map((line) => (line.id === id ? { ...line, qty } : line)))
+    setActionId(id)
+    try {
+      const updated = await updateCartItemQuantity(Number(id), qty)
+      setLines((prev) => prev.map((line) => (line.id === id ? updated : line)))
+    } catch (err) {
+      console.error(err)
+      toast.error('Could not update quantity.')
+    } finally {
+      setActionId(null)
+    }
   }
 
-  const removeLine = (id: string) => {
-    setLines(lines.filter((line) => line.id !== id))
+  const removeLine = async (id: string) => {
+    setActionId(id)
+    try {
+      await removeCartItem(Number(id))
+      setLines((prev) => prev.filter((line) => line.id !== id))
+      toast.success('Item removed from cart.')
+    } catch (err) {
+      console.error(err)
+      toast.error('Could not remove item.')
+    } finally {
+      setActionId(null)
+    }
   }
 
-  const removeSelected = () => {
+  const removeSelected = async () => {
     if (selectedIds.length === 0) return
-    setLines(lines.filter((line) => !selectedIds.includes(line.id)))
+    setActionId('bulk')
+    try {
+      await removeCartItems(selectedIds.map(Number))
+      setLines((prev) => prev.filter((line) => !selectedIds.includes(line.id)))
+      setSelectedIds([])
+      toast.success('Selected items removed.')
+    } catch (err) {
+      console.error(err)
+      toast.error('Could not remove selected items.')
+    } finally {
+      setActionId(null)
+    }
   }
 
   const toggleSelect = (id: string) => {
@@ -101,7 +127,34 @@ const Cart = () => {
           </div>
         </div>
 
-        {lines.length === 0 ? (
+        {loading ? (
+          <p className="mt-10 text-center text-sm text-slate-600">Loading your cart...</p>
+        ) : !loggedIn ? (
+          <section className="mt-10 rounded-3xl border border-dashed border-slate-200 bg-white px-8 py-16 text-center shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Sign in to view your cart</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+              Log in to save items to your account and manage your cart from any device.
+            </p>
+            <button
+              className="mt-8 inline-flex items-center justify-center rounded-lg bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition hover:from-teal-700 hover:to-teal-800"
+              onClick={() => navigate('/login', { state: { from: '/cart' } })}
+              type="button"
+            >
+              Log in
+            </button>
+          </section>
+        ) : error ? (
+          <section className="mt-10 rounded-3xl border border-rose-200 bg-rose-50 px-8 py-12 text-center">
+            <p className="text-sm text-rose-700">{error}</p>
+            <button
+              className="mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
+              onClick={() => void loadCart()}
+              type="button"
+            >
+              Retry
+            </button>
+          </section>
+        ) : lines.length === 0 ? (
           <section className="mt-10 rounded-3xl border border-dashed border-slate-200 bg-white px-8 py-16 text-center shadow-sm">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-teal-50 text-teal-700">
               <svg aria-hidden="true" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">
@@ -142,8 +195,8 @@ const Cart = () => {
                 </div>
                 <button
                   className="inline-flex items-center gap-1.5 text-sm font-semibold text-rose-600 transition hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={selectedIds.length === 0}
-                  onClick={removeSelected}
+                  disabled={selectedIds.length === 0 || actionId === 'bulk'}
+                  onClick={() => void removeSelected()}
                   type="button"
                 >
                   <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -202,8 +255,8 @@ const Cart = () => {
                         <button
                           aria-label="Decrease quantity"
                           className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
-                          disabled={line.qty <= 1}
-                          onClick={() => updateQty(line.id, line.qty - 1)}
+                          disabled={line.qty <= 1 || actionId === line.id}
+                          onClick={() => void updateQty(line.id, line.qty - 1)}
                           type="button"
                         >
                           −
@@ -211,8 +264,9 @@ const Cart = () => {
                         <span className="min-w-8 text-center text-xs font-semibold text-slate-900">{line.qty}</span>
                         <button
                           aria-label="Increase quantity"
-                          className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900"
-                          onClick={() => updateQty(line.id, line.qty + 1)}
+                          className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+                          disabled={actionId === line.id}
+                          onClick={() => void updateQty(line.id, line.qty + 1)}
                           type="button"
                         >
                           +
@@ -221,8 +275,9 @@ const Cart = () => {
                     </div>
                     <button
                       aria-label={`Remove ${line.name} from cart`}
-                      className="justify-self-end rounded-lg border border-transparent p-2 text-rose-600 transition hover:border-rose-100 hover:bg-rose-50 hover:text-rose-700"
-                      onClick={() => removeLine(line.id)}
+                      className="justify-self-end rounded-lg border border-transparent p-2 text-rose-600 transition hover:border-rose-100 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                      disabled={actionId === line.id}
+                      onClick={() => void removeLine(line.id)}
                       type="button"
                     >
                       <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">

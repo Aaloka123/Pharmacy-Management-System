@@ -3,7 +3,8 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { addToCart } from '../lib/cartStorage'
+import { toast } from 'react-toastify'
+import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartStorage'
 import { listPublicProducts, getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
 
 const ALL_CATEGORY = 'All Medications'
@@ -58,6 +59,29 @@ const Products = () => {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORY)
   const [sortBy, setSortBy] = useState('default')
+  const [addingProductId, setAddingProductId] = useState<number | null>(null)
+
+  const handleAddToCart = async (productId: number) => {
+    setAddingProductId(productId)
+    try {
+      await addToCart({ productId })
+      toast.success('Added to cart.')
+    } catch (err) {
+      if (err instanceof CartAuthRequiredError) {
+        toast.info('Please log in to add items to your cart.')
+        navigate('/login', { state: { from: '/products' } })
+        return
+      }
+      if (isCartApiError(err) && err.response.status === 404) {
+        toast.error('This product is no longer available.')
+        return
+      }
+      toast.error('Could not add to cart.')
+      console.error(err)
+    } finally {
+      setAddingProductId(null)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -230,23 +254,14 @@ const Products = () => {
                   </div>
                   <button
                     className="mt-2 flex w-full items-center justify-center rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={product.stock <= 0}
+                    disabled={product.stock <= 0 || addingProductId === product.id}
                     onClick={(event) => {
                       event.stopPropagation()
-                      addToCart({
-                        id: String(product.id),
-                        name: product.name,
-                        subtitle: product.subtitle,
-                        strength: product.strength,
-                        form: product.form,
-                        pack: product.quantity,
-                        unitPrice: product.price,
-                        image: product.image ?? '',
-                      })
+                      void handleAddToCart(product.id)
                     }}
                     type="button"
                   >
-                    Add to Cart
+                    {addingProductId === product.id ? 'Adding...' : 'Add to Cart'}
                   </button>
                 </div>
               </article>

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
-import { addToCart } from '../lib/cartStorage'
+import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartStorage'
 import { getPublicProduct, getProductImageUrls, type ProductDto } from '../lib/productsApi'
 import { FaStar } from 'react-icons/fa'
 import TopProduct from '../UserComponents/TopProduct'
@@ -75,6 +76,30 @@ const ProductsDetail = () => {
   ])
   const [reviewBody, setReviewBody] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
+  const [addingToCart, setAddingToCart] = useState(false)
+
+  const handleAddToCart = async () => {
+    if (!product) return
+    setAddingToCart(true)
+    try {
+      await addToCart({ productId: product.id })
+      toast.success('Added to cart.')
+    } catch (err) {
+      if (err instanceof CartAuthRequiredError) {
+        toast.info('Please log in to add items to your cart.')
+        navigate('/login', { state: { from: `/productsdetail?id=${product.id}` } })
+        return
+      }
+      if (isCartApiError(err) && err.response.status === 404) {
+        toast.error('This product is no longer available.')
+        return
+      }
+      toast.error('Could not add to cart.')
+      console.error(err)
+    } finally {
+      setAddingToCart(false)
+    }
+  }
 
   useEffect(() => {
     if (productId == null) {
@@ -269,22 +294,11 @@ const ProductsDetail = () => {
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <button
                   className="cursor-pointer rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={product.stock <= 0}
-                  onClick={() =>
-                    addToCart({
-                      id: String(product.id),
-                      name: product.productName,
-                      subtitle: categoryFormLine,
-                      strength: product.strength,
-                      form: product.form,
-                      pack: product.quantity,
-                      unitPrice: Number(product.price),
-                      image: galleryImages[0] ?? '',
-                    })
-                  }
+                  disabled={product.stock <= 0 || addingToCart}
+                  onClick={() => void handleAddToCart()}
                   type="button"
                 >
-                  Add to Cart
+                  {addingToCart ? 'Adding...' : 'Add to Cart'}
                 </button>
                 <button
                   className="cursor-pointer rounded-lg border border-teal-700 bg-transparent px-6 py-2.5 text-sm font-semibold text-teal-700 transition duration-200 hover:bg-teal-50"

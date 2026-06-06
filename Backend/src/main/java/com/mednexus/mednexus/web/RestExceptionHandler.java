@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.auth.InvalidGoogleTokenException;
+import com.mednexus.mednexus.cart.CartItemNotFoundException;
 import com.mednexus.mednexus.product.DuplicateProductSkuException;
 import com.mednexus.mednexus.product.ProductNotFoundException;
 import com.mednexus.mednexus.vendor.VendorNotApprovedException;
@@ -41,6 +42,13 @@ public class RestExceptionHandler {
 	public ProblemDetail handleInvalidGoogleToken(InvalidGoogleTokenException ex) {
 		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
 		pd.setTitle("Unauthorized");
+		return pd;
+	}
+
+	@ExceptionHandler(CartItemNotFoundException.class)
+	public ProblemDetail handleCartItemNotFound(CartItemNotFoundException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+		pd.setTitle("Not found");
 		return pd;
 	}
 
