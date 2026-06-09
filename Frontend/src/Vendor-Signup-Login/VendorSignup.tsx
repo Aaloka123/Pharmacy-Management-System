@@ -96,7 +96,7 @@ const VendorSignup = () => {
         return
       }
 
-      toast.success('Signup request submitted. Awaiting admin approval.')
+      toast.success('Signup request submitted! Check your email for application status from MedNexus.')
       setIsSubmitted(true)
       setFormData({
         businessPanVatId: '',

@@ -69,4 +69,54 @@ public class EmailService {
 			log.error("Failed to send welcome email to {}", toEmail, ex);
 		}
 	}
+
+	public void sendVendorPendingApprovalEmail(String toEmail, String vendorName, String businessName) {
+		try {
+			String greetingName = vendorName == null || vendorName.isBlank() ? "there" : vendorName.trim();
+			String business = businessName == null || businessName.isBlank() ? "your pharmacy" : businessName.trim();
+			SimpleMailMessage message = new SimpleMailMessage();
+			message.setFrom(fromAddress);
+			message.setTo(toEmail);
+			message.setSubject("Your MedNexus vendor application is under review");
+			message.setText("""
+					Hello %s,
+
+					Thank you for applying to join MedNexus as a partner pharmacy.
+
+					We have received your application for %s. Your request is currently pending admin review.
+
+					Our team will verify your documents and business details. You will receive another email once your account is approved.
+
+					— The MedNexus Team
+					""".formatted(greetingName, business));
+			mailSender.send(message);
+		} catch (Exception ex) {
+			log.error("Failed to send vendor pending approval email to {}", toEmail, ex);
+		}
+	}
+
+	public void sendVendorApprovedWelcomeEmail(String toEmail, String vendorName, String businessName) {
+		try {
+			String greetingName = vendorName == null || vendorName.isBlank() ? "there" : vendorName.trim();
+			String business = businessName == null || businessName.isBlank() ? "your pharmacy" : businessName.trim();
+			SimpleMailMessage message = new SimpleMailMessage();
+			message.setFrom(fromAddress);
+			message.setTo(toEmail);
+			message.setSubject("Welcome to the MedNexus vendor portal");
+			message.setText("""
+					Hello %s,
+
+					Great news — your vendor application for %s has been approved!
+
+					Welcome to the MedNexus vendor portal. You can now log in to manage products, track orders, and grow your online presence with us.
+
+					Thank you for partnering with MedNexus.
+
+					— The MedNexus Team
+					""".formatted(greetingName, business));
+			mailSender.send(message);
+		} catch (Exception ex) {
+			log.error("Failed to send vendor approved welcome email to {}", toEmail, ex);
+		}
+	}
 }

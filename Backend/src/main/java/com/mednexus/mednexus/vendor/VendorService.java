@@ -2,8 +2,10 @@ package com.mednexus.mednexus.vendor;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.mednexus.mednexus.otp.EmailService;
 import com.mednexus.mednexus.vendor.dto.PublicVendorResponse;
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
 import com.mednexus.mednexus.auth.RefreshTokenService;
@@ -25,16 +28,23 @@ public class VendorService {
 	private final PasswordEncoder passwordEncoder;
 	private final VendorFileStorage fileStorage;
 	private final RefreshTokenService refreshTokenService;
+	private final EmailService emailService;
+	private final Executor mailExecutor;
 
 	@Autowired
-	public VendorService(VendorRepository vendorRepository,
+	public VendorService(
+			VendorRepository vendorRepository,
 			PasswordEncoder passwordEncoder,
 			VendorFileStorage fileStorage,
-			RefreshTokenService refreshTokenService) {
+			RefreshTokenService refreshTokenService,
+			EmailService emailService,
+			@Qualifier("mailExecutor") Executor mailExecutor) {
 		this.vendorRepository = vendorRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.fileStorage = fileStorage;
 		this.refreshTokenService = refreshTokenService;
+		this.emailService = emailService;
+		this.mailExecutor = mailExecutor;
 	}
 
 	@Transactional
@@ -79,6 +89,10 @@ public class VendorService {
 		vendor.setCreatedAt(Instant.now());
 
 		Vendor saved = vendorRepository.save(vendor);
+		String recipient = saved.getEmail();
+		String vendorName = saved.getName();
+		String registeredBusinessName = saved.getBusinessName();
+		mailExecutor.execute(() -> emailService.sendVendorPendingApprovalEmail(recipient, vendorName, registeredBusinessName));
 		return toResponse(saved);
 	}
 
@@ -200,6 +214,10 @@ public class VendorService {
 		}
 		vendor.setStatus(VendorStatus.APPROVED);
 		vendor.setDecidedAt(Instant.now());
+		String recipient = vendor.getEmail();
+		String vendorName = vendor.getName();
+		String approvedBusinessName = vendor.getBusinessName();
+		mailExecutor.execute(() -> emailService.sendVendorApprovedWelcomeEmail(recipient, vendorName, approvedBusinessName));
 		return toResponse(vendor);
 	}
 
