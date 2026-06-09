@@ -4,6 +4,8 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mednexus.mednexus.auth.dto.PendingOtpResponse;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserRepository;
+import com.mednexus.mednexus.vendor.Vendor;
+import com.mednexus.mednexus.vendor.VendorRepository;
 
 @Service
 public class OtpService {
@@ -22,6 +26,7 @@ public class OtpService {
 
 	private final OtpRepository otpRepository;
 	private final UserRepository userRepository;
+	private final VendorRepository vendorRepository;
 	private final EmailService emailService;
 	private final Executor mailExecutor;
 
@@ -29,10 +34,12 @@ public class OtpService {
 	public OtpService(
 			OtpRepository otpRepository,
 			UserRepository userRepository,
+			VendorRepository vendorRepository,
 			EmailService emailService,
 			@Qualifier("mailExecutor") Executor mailExecutor) {
 		this.otpRepository = otpRepository;
 		this.userRepository = userRepository;
+		this.vendorRepository = vendorRepository;
 		this.emailService = emailService;
 		this.mailExecutor = mailExecutor;
 	}
@@ -40,19 +47,62 @@ public class OtpService {
 	@Transactional
 	public PendingOtpResponse issueLoginOtp(Long userId, String email) {
 		otpRepository.deleteByUserId(userId);
+		return issueOtp(
+				OtpAccountType.USER,
+				email,
+				code -> buildUserOtp(userId, code),
+				(recipient, code) -> emailService.sendLoginOtp(recipient, code));
+	}
 
+	@Transactional
+	public PendingOtpResponse issueVendorLoginOtp(Long vendorId, String email) {
+		otpRepository.deleteByVendorId(vendorId);
+		return issueOtp(
+				OtpAccountType.VENDOR,
+				email,
+				code -> buildVendorOtp(vendorId, code),
+				(recipient, code) -> emailService.sendVendorLoginOtp(recipient, code));
+	}
+
+	@Transactional
+	public User verifyAndConsumeForUser(String otpToken, String code) {
+		Otp otp = verifyOtpRecord(otpToken, code);
+		if (otp.getAccountType() != OtpAccountType.USER || otp.getUser() == null) {
+			throw new InvalidOtpException("Verification code expired or invalid. Please log in again.");
+		}
+		User user = otp.getUser();
+		otpRepository.delete(otp);
+		return user;
+	}
+
+	@Transactional
+	public Vendor verifyAndConsumeForVendor(String otpToken, String code) {
+		Otp otp = verifyOtpRecord(otpToken, code);
+		if (otp.getAccountType() != OtpAccountType.VENDOR || otp.getVendor() == null) {
+			throw new InvalidOtpException("Verification code expired or invalid. Please log in again.");
+		}
+		Vendor vendor = otp.getVendor();
+		otpRepository.delete(otp);
+		return vendor;
+	}
+
+	private PendingOtpResponse issueOtp(
+			OtpAccountType accountType,
+			String email,
+			Function<String, Otp> otpBuilder,
+			BiConsumer<String, String> mailSender) {
 		String code = String.format("%06d", RANDOM.nextInt(1_000_000));
 		String otpToken = UUID.randomUUID().toString().replace("-", "");
 
-		Otp otp = new Otp();
-		otp.setUser(userRepository.getReferenceById(userId));
+		Otp otp = otpBuilder.apply(code);
+		otp.setAccountType(accountType);
 		otp.setOtpToken(otpToken);
 		otp.setCode(code);
 		otp.setExpiresAt(Instant.now().plusSeconds(OTP_TTL_MINUTES * 60L));
 		otpRepository.save(otp);
 
 		String recipient = email;
-		mailExecutor.execute(() -> emailService.sendLoginOtp(recipient, code));
+		mailExecutor.execute(() -> mailSender.accept(recipient, code));
 
 		return new PendingOtpResponse(
 				true,
@@ -61,8 +111,19 @@ public class OtpService {
 				"Check your email for the 6-digit verification code.");
 	}
 
-	@Transactional
-	public User verifyAndConsume(String otpToken, String code) {
+	private Otp buildUserOtp(Long userId, String code) {
+		Otp otp = new Otp();
+		otp.setUser(userRepository.getReferenceById(userId));
+		return otp;
+	}
+
+	private Otp buildVendorOtp(Long vendorId, String code) {
+		Otp otp = new Otp();
+		otp.setVendor(vendorRepository.getReferenceById(vendorId));
+		return otp;
+	}
+
+	private Otp verifyOtpRecord(String otpToken, String code) {
 		if (otpToken == null || otpToken.isBlank()) {
 			throw new InvalidOtpException("Verification session is invalid.");
 		}
@@ -82,10 +143,7 @@ public class OtpService {
 		if (!otp.getCode().equals(normalizedCode)) {
 			throw new InvalidOtpException("Incorrect verification code.");
 		}
-
-		User user = otp.getUser();
-		otpRepository.delete(otp);
-		return user;
+		return otp;
 	}
 
 	static String maskEmail(String email) {
@@ -100,4 +158,5 @@ public class OtpService {
 		}
 		return local.charAt(0) + "***" + domain;
 	}
+
 }

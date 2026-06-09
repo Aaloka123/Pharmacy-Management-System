@@ -25,12 +25,21 @@ public class EmailService {
 	}
 
 	public void sendLoginOtp(String toEmail, String code) {
+		sendOtpEmail(toEmail, code, "Your MedNexus login verification code", "Your MedNexus verification code is: %s");
+	}
+
+	public void sendVendorLoginOtp(String toEmail, String code) {
+		sendOtpEmail(toEmail, code, "Your MedNexus vendor login verification code",
+				"Your MedNexus vendor portal verification code is: %s");
+	}
+
+	private void sendOtpEmail(String toEmail, String code, String subject, String bodyTemplate) {
 		try {
 			SimpleMailMessage message = new SimpleMailMessage();
 			message.setFrom(fromAddress);
 			message.setTo(toEmail);
-			message.setSubject("Your MedNexus login verification code");
-			message.setText("Your MedNexus verification code is: %s\n\nExpires in 10 minutes.".formatted(code));
+			message.setSubject(subject);
+			message.setText("%s\n\nExpires in 10 minutes.".formatted(bodyTemplate.formatted(code)));
 			mailSender.send(message);
 		} catch (Exception ex) {
 			log.error("Failed to send OTP email to {}", toEmail, ex);

@@ -3,9 +3,12 @@ package com.mednexus.mednexus.otp;
 import java.time.Instant;
 
 import com.mednexus.mednexus.user.User;
+import com.mednexus.mednexus.vendor.Vendor;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,9 +26,17 @@ public class Otp {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "user_id", nullable = false)
+	@Enumerated(EnumType.STRING)
+	@Column(name = "account_type", nullable = false, length = 20)
+	private OtpAccountType accountType;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id")
 	private User user;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "vendor_id")
+	private Vendor vendor;
 
 	@Column(name = "otp_token", nullable = false, unique = true, length = 64)
 	private String otpToken;
@@ -57,12 +68,28 @@ public class Otp {
 		this.id = id;
 	}
 
+	public OtpAccountType getAccountType() {
+		return accountType;
+	}
+
+	public void setAccountType(OtpAccountType accountType) {
+		this.accountType = accountType;
+	}
+
 	public User getUser() {
 		return user;
 	}
 
 	public void setUser(User user) {
 		this.user = user;
+	}
+
+	public Vendor getVendor() {
+		return vendor;
+	}
+
+	public void setVendor(Vendor vendor) {
+		this.vendor = vendor;
 	}
 
 	public String getOtpToken() {

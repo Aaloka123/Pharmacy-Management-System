@@ -83,7 +83,20 @@ public class VendorService {
 	}
 
 	@Transactional
+	public Vendor authenticateForOtp(VendorLoginRequest request) {
+		Vendor vendor = findAuthenticatedVendor(request);
+		if (passwordEncoder.upgradeEncoding(vendor.getPassword())) {
+			vendor.setPassword(passwordEncoder.encode(request.password()));
+		}
+		return vendor;
+	}
+
+	@Transactional
 	public VendorResponse login(VendorLoginRequest request) {
+		return toResponse(findAuthenticatedVendor(request));
+	}
+
+	private Vendor findAuthenticatedVendor(VendorLoginRequest request) {
 		if (request == null || request.email() == null || request.password() == null) {
 			throw new InvalidVendorCredentialsException();
 		}
@@ -98,10 +111,7 @@ public class VendorService {
 			case REJECTED -> throw new InvalidVendorCredentialsException();
 			case APPROVED -> { /* allowed */ }
 		}
-		if (passwordEncoder.upgradeEncoding(vendor.getPassword())) {
-			vendor.setPassword(passwordEncoder.encode(request.password()));
-		}
-		return toResponse(vendor);
+		return vendor;
 	}
 
 	@Transactional(readOnly = true)

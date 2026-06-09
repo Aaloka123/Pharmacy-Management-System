@@ -14,4 +14,8 @@ public interface OtpRepository extends JpaRepository<Otp, Long> {
 	@Modifying
 	@Query("DELETE FROM Otp o WHERE o.user.id = :userId")
 	void deleteByUserId(@Param("userId") Long userId);
+
+	@Modifying
+	@Query("DELETE FROM Otp o WHERE o.vendor.id = :vendorId")
+	void deleteByVendorId(@Param("vendorId") Long vendorId);
 }

@@ -90,7 +90,7 @@ public class AuthController {
 
 	@PostMapping("/verify-otp")
 	public ResponseEntity<AuthResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
-		User user = otpService.verifyAndConsume(request.otpToken(), request.code());
+		User user = otpService.verifyAndConsumeForUser(request.otpToken(), request.code());
 		String access = jwtService.generateAccessTokenForUser(user);
 		String refresh = refreshTokenService.issueForUser(user);
 		UserResponse body = userService.getProfileById(user.getId());
@@ -113,10 +113,14 @@ public class AuthController {
 	}
 
 	@PostMapping("/vendor/login")
-	public ResponseEntity<AuthResponse> vendorLogin(@Valid @RequestBody VendorLoginRequest request) {
-		var vendorResponse = vendorService.login(request);
-		Vendor vendor = vendorRepository.findById(vendorResponse.id())
-				.orElseThrow();
+	public ResponseEntity<PendingOtpResponse> vendorLogin(@Valid @RequestBody VendorLoginRequest request) {
+		Vendor vendor = vendorService.authenticateForOtp(request);
+		return ResponseEntity.ok(otpService.issueVendorLoginOtp(vendor.getId(), vendor.getEmail()));
+	}
+
+	@PostMapping("/vendor/verify-otp")
+	public ResponseEntity<AuthResponse> verifyVendorOtp(@Valid @RequestBody VerifyOtpRequest request) {
+		Vendor vendor = otpService.verifyAndConsumeForVendor(request.otpToken(), request.code());
 		String access = jwtService.generateAccessTokenForVendor(vendor);
 		String refresh = refreshTokenService.issueForVendor(vendor);
 		UserResponse body = vendorToUserResponse(vendor);
