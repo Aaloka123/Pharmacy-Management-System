@@ -2,7 +2,7 @@ import GoogleSignInButton from '../components/GoogleSignInButton'
 import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
@@ -11,6 +11,9 @@ import { homePathForRole, setAuthSession, type AuthUser } from '../lib/auth'
 
 const LOGIN_URL = '/api/auth/login'
 const VERIFY_OTP_URL = '/api/auth/verify-otp'
+const OTP_LENGTH = 6
+const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => '')
+const MIN_LOGIN_WAIT_MS = 5000
 
 type AuthLoginResponse = { accessToken: string; refreshToken: string; user: AuthUser }
 
@@ -31,7 +34,8 @@ const Login = () => {
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
   const [otpToken, setOtpToken] = useState('')
   const [maskedEmail, setMaskedEmail] = useState('')
-  const [otpCode, setOtpCode] = useState('')
+  const [otpDigits, setOtpDigits] = useState<string[]>(EMPTY_OTP)
+  const otpInputRefs = useRef<Array<HTMLInputElement | null>>([])
 
   useEffect(() => {
     const fromSignup = location.state as { email?: string } | undefined
@@ -41,6 +45,12 @@ const Login = () => {
     }
   }, [location.pathname, location.state, navigate])
 
+  useEffect(() => {
+    if (step === 'otp') {
+      otpInputRefs.current[0]?.focus()
+    }
+  }, [step])
+
   const completeLogin = (body: AuthLoginResponse) => {
     setAuthSession(body.user, body.accessToken, body.refreshToken)
     toast.success(`Welcome back, ${body.user.fullName.split(' ')[0]}!`)
@@ -48,9 +58,18 @@ const Login = () => {
     navigate(from ?? homePathForRole(body.user.role), { replace: true })
   }
 
+  const waitForMinimumLoginDelay = async (startedAt: number) => {
+    const elapsed = Date.now() - startedAt
+    const remaining = MIN_LOGIN_WAIT_MS - elapsed
+    if (remaining > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remaining))
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    const startedAt = Date.now()
     try {
       const res = await fetch(resolveBackendUrl(LOGIN_URL), {
         method: 'POST',
@@ -59,6 +78,7 @@ const Login = () => {
       })
 
       if (!res.ok) {
+        await waitForMinimumLoginDelay(startedAt)
         if (res.status === 401) {
           toast.error('Invalid email or password.')
         } else {
@@ -68,21 +88,51 @@ const Login = () => {
       }
 
       const body = (await res.json()) as PendingOtpResponse
+      await waitForMinimumLoginDelay(startedAt)
       setOtpToken(body.otpToken)
       setMaskedEmail(body.maskedEmail)
-      setOtpCode('')
+      setOtpDigits(EMPTY_OTP)
       setStep('otp')
-      toast.info(body.message)
     } catch {
+      await waitForMinimumLoginDelay(startedAt)
       toast.error('Could not reach the server. Is the backend running on port 8080?')
     } finally {
       setLoading(false)
     }
   }
 
+  const handleOtpDigitChange = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(-1)
+    setOtpDigits((prev) => {
+      const next = [...prev]
+      next[index] = digit
+      return next
+    })
+    if (digit && index < OTP_LENGTH - 1) {
+      otpInputRefs.current[index + 1]?.focus()
+    }
+  }
+
+  const handleOtpKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus()
+    }
+  }
+
+  const handleOtpPaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault()
+    const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH)
+    if (!pasted) return
+    const next = EMPTY_OTP.map((_, index) => pasted[index] ?? '')
+    setOtpDigits(next)
+    const focusIndex = Math.min(pasted.length, OTP_LENGTH - 1)
+    otpInputRefs.current[focusIndex]?.focus()
+  }
+
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!/^\d{6}$/.test(otpCode.trim())) {
+    const code = otpDigits.join('')
+    if (!/^\d{6}$/.test(code)) {
       toast.error('Enter the 6-digit code from your email.')
       return
     }
@@ -92,7 +142,7 @@ const Login = () => {
       const res = await fetch(resolveBackendUrl(VERIFY_OTP_URL), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ otpToken, code: otpCode.trim() }),
+        body: JSON.stringify({ otpToken, code }),
       })
 
       if (!res.ok) {
@@ -119,7 +169,7 @@ const Login = () => {
   const handleBackToLogin = () => {
     setStep('credentials')
     setOtpToken('')
-    setOtpCode('')
+    setOtpDigits(EMPTY_OTP)
     setMaskedEmail('')
   }
 
@@ -186,7 +236,7 @@ const Login = () => {
                   type="submit"
                   disabled={loading}
                 >
-                  {loading ? 'Sending code…' : 'Login'}
+                  {loading ? 'Please wait…' : 'Login'}
                 </button>
               </form>
 
@@ -207,21 +257,28 @@ const Login = () => {
 
               <form className="mt-8 space-y-6" onSubmit={handleVerifyOtp}>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="otp">
-                    Verification code
-                  </label>
-                  <input
-                    autoComplete="one-time-code"
-                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-center text-lg tracking-[0.4em] text-slate-900 outline-none transition focus:border-teal-600"
-                    id="otp"
-                    inputMode="numeric"
-                    maxLength={6}
-                    onChange={(ev) => setOtpCode(ev.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="000000"
-                    required
-                    type="text"
-                    value={otpCode}
-                  />
+                  <p className="mb-3 text-sm font-medium text-slate-700">Verification code</p>
+                  <div className="flex justify-center gap-2 sm:gap-3">
+                    {otpDigits.map((digit, index) => (
+                      <input
+                        key={index}
+                        ref={(el) => {
+                          otpInputRefs.current[index] = el
+                        }}
+                        aria-label={`Digit ${index + 1} of ${OTP_LENGTH}`}
+                        autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                        className="h-12 w-10 rounded-lg border border-slate-300 text-center text-lg font-semibold text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 sm:h-14 sm:w-12"
+                        inputMode="numeric"
+                        maxLength={1}
+                        onChange={(ev) => handleOtpDigitChange(index, ev.target.value)}
+                        onKeyDown={(ev) => handleOtpKeyDown(index, ev)}
+                        onPaste={index === 0 ? handleOtpPaste : undefined}
+                        required
+                        type="text"
+                        value={digit}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <button

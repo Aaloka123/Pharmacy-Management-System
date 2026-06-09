@@ -3,13 +3,16 @@ package com.mednexus.mednexus.otp;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mednexus.mednexus.auth.dto.PendingOtpResponse;
 import com.mednexus.mednexus.user.User;
+import com.mednexus.mednexus.user.UserRepository;
 
 @Service
 public class OtpService {
@@ -18,35 +21,44 @@ public class OtpService {
 	private static final SecureRandom RANDOM = new SecureRandom();
 
 	private final OtpRepository otpRepository;
+	private final UserRepository userRepository;
 	private final EmailService emailService;
+	private final Executor mailExecutor;
 
 	@Autowired
-	public OtpService(OtpRepository otpRepository, EmailService emailService) {
+	public OtpService(
+			OtpRepository otpRepository,
+			UserRepository userRepository,
+			EmailService emailService,
+			@Qualifier("mailExecutor") Executor mailExecutor) {
 		this.otpRepository = otpRepository;
+		this.userRepository = userRepository;
 		this.emailService = emailService;
+		this.mailExecutor = mailExecutor;
 	}
 
 	@Transactional
-	public PendingOtpResponse issueLoginOtp(User user) {
-		otpRepository.deleteByUserId(user.getId());
+	public PendingOtpResponse issueLoginOtp(Long userId, String email) {
+		otpRepository.deleteByUserId(userId);
 
 		String code = String.format("%06d", RANDOM.nextInt(1_000_000));
 		String otpToken = UUID.randomUUID().toString().replace("-", "");
 
 		Otp otp = new Otp();
-		otp.setUser(user);
+		otp.setUser(userRepository.getReferenceById(userId));
 		otp.setOtpToken(otpToken);
 		otp.setCode(code);
 		otp.setExpiresAt(Instant.now().plusSeconds(OTP_TTL_MINUTES * 60L));
 		otpRepository.save(otp);
 
-		emailService.sendLoginOtp(user.getEmail(), code);
+		String recipient = email;
+		mailExecutor.execute(() -> emailService.sendLoginOtp(recipient, code));
 
 		return new PendingOtpResponse(
 				true,
 				otpToken,
-				maskEmail(user.getEmail()),
-				"A 6-digit verification code was sent to your email.");
+				maskEmail(email),
+				"Check your email for the 6-digit verification code.");
 	}
 
 	@Transactional

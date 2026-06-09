@@ -3,8 +3,6 @@ package com.mednexus.mednexus.auth;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,6 +20,7 @@ import com.mednexus.mednexus.auth.dto.VerifyOtpRequest;
 import com.mednexus.mednexus.otp.OtpService;
 import com.mednexus.mednexus.security.JwtService;
 import com.mednexus.mednexus.user.Role;
+import com.mednexus.mednexus.user.InvalidCredentialsException;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserRepository;
 import com.mednexus.mednexus.user.UserService;
@@ -38,7 +37,6 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-	private final AuthenticationManager authenticationManager;
 	private final UserRepository userRepository;
 	private final UserService userService;
 	private final JwtService jwtService;
@@ -51,7 +49,6 @@ public class AuthController {
 
 	@Autowired
 	public AuthController(
-			AuthenticationManager authenticationManager,
 			UserRepository userRepository,
 			UserService userService,
 			JwtService jwtService,
@@ -61,7 +58,6 @@ public class AuthController {
 			PasswordEncoder passwordEncoder,
 			GoogleAuthService googleAuthService,
 			OtpService otpService) {
-		this.authenticationManager = authenticationManager;
 		this.userRepository = userRepository;
 		this.userService = userService;
 		this.jwtService = jwtService;
@@ -83,14 +79,13 @@ public class AuthController {
 
 	@PostMapping("/login")
 	public ResponseEntity<PendingOtpResponse> login(@Valid @RequestBody AuthRequest request) {
-		authenticationManager.authenticate(
-				new UsernamePasswordAuthenticationToken(request.email().trim(), request.password()));
-		User user = userRepository.findByEmailIgnoreCase(request.email().trim())
-				.orElseThrow();
-		if (passwordEncoder.upgradeEncoding(user.getPassword())) {
-			userRepository.save(user);
+		String email = request.email().trim();
+		User user = userRepository.findByEmailIgnoreCase(email)
+				.orElseThrow(InvalidCredentialsException::new);
+		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+			throw new InvalidCredentialsException();
 		}
-		return ResponseEntity.ok(otpService.issueLoginOtp(user));
+		return ResponseEntity.ok(otpService.issueLoginOtp(user.getId(), user.getEmail()));
 	}
 
 	@PostMapping("/verify-otp")
