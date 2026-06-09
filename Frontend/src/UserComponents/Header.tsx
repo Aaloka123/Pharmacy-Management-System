@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { LuShoppingCart } from 'react-icons/lu'
 import mednexuxLogo from '../assets/Mednexux.png'
 import { resolveProfileImageUrl } from '../lib/api'
 import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
+import { fetchCart } from '../lib/cartApi'
+import { isCartUserLoggedIn, onCartChanged } from '../lib/cartStorage'
 
 const Header = () => {
   const baseLinkClass =
@@ -12,12 +14,37 @@ const Header = () => {
     'text-teal-700'
 
   const [user, setUser] = useState<AuthUser | null>(() => getStoredUser())
+  const [cartCount, setCartCount] = useState(0)
   const avatarUrl = user ? resolveProfileImageUrl(user.profileImage) : null
 
-  useEffect(() => {
-    const unsubscribe = onAuthChange(() => setUser(getStoredUser()))
-    return unsubscribe
+  const refreshCartCount = useCallback(async () => {
+    if (!isCartUserLoggedIn()) {
+      setCartCount(0)
+      return
+    }
+    try {
+      const lines = await fetchCart()
+      setCartCount(lines.length)
+    } catch {
+      setCartCount(0)
+    }
   }, [])
+
+  useEffect(() => {
+    const unsubscribe = onAuthChange(() => {
+      setUser(getStoredUser())
+      void refreshCartCount()
+    })
+    return unsubscribe
+  }, [refreshCartCount])
+
+  useEffect(() => {
+    void refreshCartCount()
+    const unsubscribe = onCartChanged(() => {
+      void refreshCartCount()
+    })
+    return unsubscribe
+  }, [refreshCartCount])
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[#F8FAFC] px-[80px] py-2.5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur">
@@ -74,16 +101,21 @@ const Header = () => {
           {user ? (
             <>
               <NavLink
-                aria-label="Cart"
+                aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : 'Cart'}
                 title="Cart"
                 to="/cart"
                 className={({ isActive }) =>
-                  `flex h-10 w-10 shrink-0 items-center justify-center text-slate-700 transition duration-200 hover:text-teal-700 ${
+                  `relative flex h-10 w-10 shrink-0 items-center justify-center text-slate-700 transition duration-200 hover:text-teal-700 ${
                     isActive ? 'text-teal-700' : ''
                   }`
                 }
               >
                 <LuShoppingCart className="h-5 w-5" strokeWidth={2} />
+                {cartCount > 0 ? (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-slate-200 bg-white px-1 text-[10px] font-semibold tabular-nums text-teal-700 shadow-sm">
+                    {cartCount}
+                  </span>
+                ) : null}
               </NavLink>
               <NavLink
                 aria-label="Profile"

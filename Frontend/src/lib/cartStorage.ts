@@ -28,11 +28,25 @@ export function isCartUserLoggedIn(): boolean {
   return Boolean(getAccessToken() && user && user.role !== 'VENDOR')
 }
 
+export const CART_CHANGED_EVENT = 'mednexus:cart-changed'
+
+export function notifyCartChanged(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(CART_CHANGED_EVENT))
+  }
+}
+
+export function onCartChanged(handler: () => void): () => void {
+  window.addEventListener(CART_CHANGED_EVENT, handler)
+  return () => window.removeEventListener(CART_CHANGED_EVENT, handler)
+}
+
 export async function addToCart(input: { productId: number; quantity?: number }): Promise<void> {
   if (!isCartUserLoggedIn()) {
     throw new CartAuthRequiredError()
   }
   await addProductToCart(input.productId, input.quantity ?? 1)
+  notifyCartChanged()
 }
 
 export function isCartApiError(error: unknown): error is ApiRequestError {

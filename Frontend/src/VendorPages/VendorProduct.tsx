@@ -154,12 +154,6 @@ const VendorProduct = () => {
     return { label: 'Valid', classes: 'bg-emerald-100 text-emerald-700' };
   };
 
-  const truncateDescription = (value: string, maxChars = 90) => {
-    const text = value.trim();
-    if (text.length <= maxChars) return text;
-    return `${text.slice(0, maxChars).trim()}.........`;
-  };
-
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     setProductImages((prev) => {
@@ -637,7 +631,7 @@ const VendorProduct = () => {
             />
           </div>
           <div className="w-full overflow-x-auto">
-            <table className="min-w-[1600px] text-left">
+            <table className="min-w-[1600px] table-fixed text-left">
               <thead className="bg-slate-100">
                 <tr>
                   <th className="whitespace-nowrap px-5 py-3 text-sm font-semibold text-slate-700">ID</th>
@@ -713,8 +707,10 @@ const VendorProduct = () => {
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.strength}</td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.form}</td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.quantity}</td>
-                    <td className="max-w-[240px] px-5 py-3 align-top text-sm text-slate-700">
-                      {truncateDescription(product.storageRequirements)}
+                    <td className="w-[240px] px-5 py-3 align-top text-sm text-slate-700">
+                      <p className="line-clamp-3 wrap-anywhere">
+                        {product.storageRequirements}
+                      </p>
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.expiryDate}</td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm">
@@ -722,19 +718,27 @@ const VendorProduct = () => {
                         {expiryStatus.label}
                       </span>
                     </td>
-                    <td className="max-w-[240px] px-5 py-3 align-top text-sm text-slate-700">{truncateDescription(product.productDescription)}</td>
-                    <td className="max-w-[220px] px-5 py-3 align-top text-sm text-slate-700">
+                    <td className="w-[240px] px-5 py-3 align-top text-sm text-slate-700">
+                      <p className="line-clamp-3 wrap-anywhere">
+                        {product.productDescription}
+                      </p>
+                    </td>
+                    <td className="w-[220px] px-5 py-3 align-top text-sm text-slate-700">
                       <ul className="list-disc pl-4">
                         {product.dosageInstructions.slice(0, 2).map((item, itemIndex) => (
-                          <li key={`${product.id}-dosage-${itemIndex}`}>{item}</li>
+                          <li className="wrap-anywhere" key={`${product.id}-dosage-${itemIndex}`}>
+                            {item}
+                          </li>
                         ))}
                         {product.dosageInstructions.length > 2 && <li className="list-none pl-0">.....</li>}
                       </ul>
                     </td>
-                    <td className="max-w-[220px] px-5 py-3 align-top text-sm text-slate-700">
+                    <td className="w-[220px] px-5 py-3 align-top text-sm text-slate-700">
                       <ul className="list-disc pl-4 marker:text-rose-600">
                         {product.sideEffects.slice(0, 2).map((item, itemIndex) => (
-                          <li key={`${product.id}-side-${itemIndex}`}>{item}</li>
+                          <li className="wrap-anywhere" key={`${product.id}-side-${itemIndex}`}>
+                            {item}
+                          </li>
                         ))}
                         {product.sideEffects.length > 2 && <li className="list-none pl-0 marker:text-transparent">.....</li>}
                       </ul>

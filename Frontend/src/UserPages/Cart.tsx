@@ -5,7 +5,7 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { fetchCart, removeCartItem, removeCartItems, updateCartItemQuantity } from '../lib/cartApi'
-import { isCartApiError, isCartUserLoggedIn, type CartLine } from '../lib/cartStorage'
+import { isCartApiError, isCartUserLoggedIn, notifyCartChanged, type CartLine } from '../lib/cartStorage'
 
 const Cart = () => {
   const navigate = useNavigate()
@@ -30,6 +30,7 @@ const Cart = () => {
       const data = await fetchCart()
       setLines(data)
       setSelectedIds(data.map((line) => line.id))
+      notifyCartChanged()
     } catch (err) {
       console.error(err)
       setError('Could not load your cart. Please try again.')
@@ -87,6 +88,7 @@ const Cart = () => {
     try {
       await removeCartItem(Number(id))
       setLines((prev) => prev.filter((line) => line.id !== id))
+      notifyCartChanged()
       toast.success('Item removed from cart.')
     } catch (err) {
       console.error(err)
@@ -103,6 +105,7 @@ const Cart = () => {
       await removeCartItems(selectedIds.map(Number))
       setLines((prev) => prev.filter((line) => !selectedIds.includes(line.id)))
       setSelectedIds([])
+      notifyCartChanged()
       toast.success('Selected items removed.')
     } catch (err) {
       console.error(err)
