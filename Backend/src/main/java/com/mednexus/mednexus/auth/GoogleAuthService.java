@@ -1,8 +1,10 @@
 package com.mednexus.mednexus.auth;
 
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.auth.GoogleTokenVerifierService.VerifiedGoogleIdentity;
+import com.mednexus.mednexus.otp.EmailService;
 import com.mednexus.mednexus.user.Role;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserRepository;
@@ -25,17 +28,23 @@ public class GoogleAuthService {
 	private final UserRepository userRepository;
 	private final VendorRepository vendorRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final EmailService emailService;
+	private final Executor mailExecutor;
 
 	@Autowired
 	public GoogleAuthService(
 			GoogleTokenVerifierService googleTokenVerifier,
 			UserRepository userRepository,
 			VendorRepository vendorRepository,
-			PasswordEncoder passwordEncoder) {
+			PasswordEncoder passwordEncoder,
+			EmailService emailService,
+			@Qualifier("mailExecutor") Executor mailExecutor) {
 		this.googleTokenVerifier = googleTokenVerifier;
 		this.userRepository = userRepository;
 		this.vendorRepository = vendorRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.emailService = emailService;
+		this.mailExecutor = mailExecutor;
 	}
 
 	@Transactional
@@ -108,6 +117,10 @@ public class GoogleAuthService {
 			applyGoogleProfileImage(user, google.profileImageUrl());
 		}
 		user.setRole(Role.USER);
-		return userRepository.save(user);
+		User saved = userRepository.save(user);
+		String recipient = saved.getEmail();
+		String name = saved.getFullName();
+		mailExecutor.execute(() -> emailService.sendWelcomeEmail(recipient, name));
+		return saved;
 	}
 }

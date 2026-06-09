@@ -52,7 +52,7 @@ const Signup = () => {
       }
 
       const signedUpEmail = email.trim()
-      toast.success('Account created! Sign in with your email and password.')
+      toast.success('Account created! Check your email for a welcome message from MedNexus.')
       setFullName('')
       setEmail('')
       setPhoneNumber('')

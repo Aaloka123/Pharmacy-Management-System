@@ -1,12 +1,16 @@
 package com.mednexus.mednexus.user;
 
+import java.util.concurrent.Executor;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mednexus.mednexus.auth.RefreshTokenService;
+import com.mednexus.mednexus.otp.EmailService;
 import com.mednexus.mednexus.user.dto.ChangePasswordRequest;
 import com.mednexus.mednexus.user.dto.SignupRequest;
 import com.mednexus.mednexus.user.dto.UpdateProfileRequest;
@@ -19,16 +23,23 @@ public class UserService {
 	private final PasswordEncoder passwordEncoder;
 	private final UserFileStorage fileStorage;
 	private final RefreshTokenService refreshTokenService;
+	private final EmailService emailService;
+	private final Executor mailExecutor;
 
 	@Autowired
-	public UserService(UserRepository userRepository,
+	public UserService(
+			UserRepository userRepository,
 			PasswordEncoder passwordEncoder,
 			UserFileStorage fileStorage,
-			RefreshTokenService refreshTokenService) {
+			RefreshTokenService refreshTokenService,
+			EmailService emailService,
+			@Qualifier("mailExecutor") Executor mailExecutor) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.fileStorage = fileStorage;
 		this.refreshTokenService = refreshTokenService;
+		this.emailService = emailService;
+		this.mailExecutor = mailExecutor;
 	}
 
 	@Transactional
@@ -58,6 +69,9 @@ public class UserService {
 				request.phoneNumber().trim(),
 				passwordEncoder.encode(request.password()));
 		User saved = userRepository.save(user);
+		String recipient = saved.getEmail();
+		String fullName = saved.getFullName();
+		mailExecutor.execute(() -> emailService.sendWelcomeEmail(recipient, fullName));
 		return toResponse(saved);
 	}
 

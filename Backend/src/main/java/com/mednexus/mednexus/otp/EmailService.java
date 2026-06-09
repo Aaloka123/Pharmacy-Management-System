@@ -36,4 +36,28 @@ public class EmailService {
 			log.error("Failed to send OTP email to {}", toEmail, ex);
 		}
 	}
+
+	public void sendWelcomeEmail(String toEmail, String fullName) {
+		try {
+			String greetingName = fullName == null || fullName.isBlank() ? "there" : fullName.trim();
+			SimpleMailMessage message = new SimpleMailMessage();
+			message.setFrom(fromAddress);
+			message.setTo(toEmail);
+			message.setSubject("Welcome to MedNexus");
+			message.setText("""
+					Hello %s,
+
+					Welcome to MedNexus!
+
+					Your account has been created successfully. You can now browse medicines, explore partner pharmacies, and manage your orders with confidence.
+
+					Thank you for joining us.
+
+					— The MedNexus Team
+					""".formatted(greetingName));
+			mailSender.send(message);
+		} catch (Exception ex) {
+			log.error("Failed to send welcome email to {}", toEmail, ex);
+		}
+	}
 }
