@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { HiOutlineArrowRight } from 'react-icons/hi2'
 import { Link } from 'react-router-dom'
 import { useNewArrivals, usePublicProducts } from '../hooks/usePublicProducts'
 import { mapDtoToCard, pickProductCards, type ProductCard, type ShowcaseSort } from '../lib/productCard'
@@ -105,10 +106,16 @@ const ProductShowcaseSection = ({
             <h2 className="mt-2 text-2xl font-bold text-slate-900">{title}</h2>
           </div>
           <Link
-            className="text-sm font-semibold italic text-slate-900 underline underline-offset-2 transition hover:text-teal-700"
+            className="group inline-flex cursor-pointer whitespace-nowrap text-sm font-medium text-slate-600 transition hover:text-teal-700"
             to="/products"
           >
-            View All
+            <span className="inline-flex items-center gap-1.5 border-b border-slate-300 pb-0.5 transition group-hover:border-teal-600">
+              View All
+              <HiOutlineArrowRight
+                aria-hidden
+                className="h-4 w-4 shrink-0 transition group-hover:translate-x-0.5"
+              />
+            </span>
           </Link>
         </div>
 

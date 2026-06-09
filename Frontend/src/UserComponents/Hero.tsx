@@ -115,7 +115,7 @@ const Hero = () => {
 
         <button
           aria-label="Previous slide"
-          className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition hover:bg-white/20 md:left-8 md:flex lg:left-12"
+          className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition hover:bg-white/20 md:left-8 md:flex lg:left-12"
           onClick={goToPreviousSlide}
           type="button"
         >
@@ -123,7 +123,7 @@ const Hero = () => {
         </button>
         <button
           aria-label="Next slide"
-          className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition hover:bg-white/20 md:right-8 md:flex lg:right-12"
+          className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition hover:bg-white/20 md:right-8 md:flex lg:right-12"
           onClick={goToNextSlide}
           type="button"
         >
@@ -137,7 +137,7 @@ const Hero = () => {
                 key={slide.title}
                 aria-current={currentSlide === index ? 'true' : undefined}
                 aria-label={`Go to slide ${index + 1}: ${slide.title}`}
-                className="group/dot flex flex-col items-center gap-2 p-1"
+                className="group/dot flex cursor-pointer flex-col items-center gap-2 p-1"
                 onClick={() => setCurrentSlide(index)}
                 type="button"
               >
