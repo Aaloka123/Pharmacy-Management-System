@@ -16,7 +16,10 @@ import com.mednexus.mednexus.auth.dto.AuthRequest;
 import com.mednexus.mednexus.auth.dto.AuthResponse;
 import com.mednexus.mednexus.auth.dto.GoogleAuthRequest;
 import com.mednexus.mednexus.auth.dto.LogoutRequest;
+import com.mednexus.mednexus.auth.dto.PendingOtpResponse;
 import com.mednexus.mednexus.auth.dto.RefreshTokenRequest;
+import com.mednexus.mednexus.auth.dto.VerifyOtpRequest;
+import com.mednexus.mednexus.otp.OtpService;
 import com.mednexus.mednexus.security.JwtService;
 import com.mednexus.mednexus.user.Role;
 import com.mednexus.mednexus.user.User;
@@ -44,6 +47,7 @@ public class AuthController {
 	private final VendorRepository vendorRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final GoogleAuthService googleAuthService;
+	private final OtpService otpService;
 
 	@Autowired
 	public AuthController(
@@ -55,7 +59,8 @@ public class AuthController {
 			VendorService vendorService,
 			VendorRepository vendorRepository,
 			PasswordEncoder passwordEncoder,
-			GoogleAuthService googleAuthService) {
+			GoogleAuthService googleAuthService,
+			OtpService otpService) {
 		this.authenticationManager = authenticationManager;
 		this.userRepository = userRepository;
 		this.userService = userService;
@@ -65,6 +70,7 @@ public class AuthController {
 		this.vendorRepository = vendorRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.googleAuthService = googleAuthService;
+		this.otpService = otpService;
 	}
 
 	@GetMapping("/login")
@@ -76,7 +82,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
+	public ResponseEntity<PendingOtpResponse> login(@Valid @RequestBody AuthRequest request) {
 		authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(request.email().trim(), request.password()));
 		User user = userRepository.findByEmailIgnoreCase(request.email().trim())
@@ -84,6 +90,12 @@ public class AuthController {
 		if (passwordEncoder.upgradeEncoding(user.getPassword())) {
 			userRepository.save(user);
 		}
+		return ResponseEntity.ok(otpService.issueLoginOtp(user));
+	}
+
+	@PostMapping("/verify-otp")
+	public ResponseEntity<AuthResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+		User user = otpService.verifyAndConsume(request.otpToken(), request.code());
 		String access = jwtService.generateAccessTokenForUser(user);
 		String refresh = refreshTokenService.issueForUser(user);
 		UserResponse body = userService.getProfileById(user.getId());

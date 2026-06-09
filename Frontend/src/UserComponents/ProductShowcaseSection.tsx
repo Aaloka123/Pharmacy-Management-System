@@ -106,7 +106,7 @@ const ProductShowcaseSection = ({
             <h2 className="mt-2 text-2xl font-bold text-slate-900">{title}</h2>
           </div>
           <Link
-            className="group inline-flex cursor-pointer whitespace-nowrap text-sm font-medium text-slate-600 transition hover:text-teal-700"
+            className="group inline-flex cursor-pointer whitespace-nowrap text-sm font-medium italic text-slate-600 transition hover:text-teal-700"
             to="/products"
           >
             <span className="inline-flex items-center gap-1.5 border-b border-slate-300 pb-0.5 transition group-hover:border-teal-600">
