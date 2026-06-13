@@ -344,6 +344,7 @@ const Cart = () => {
               <button
                 className="mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={selectedLines.length === 0}
+                onClick={() => navigate('/checkout', { state: { lines: selectedLines } })}
                 type="button"
               >
                 Proceed to checkout

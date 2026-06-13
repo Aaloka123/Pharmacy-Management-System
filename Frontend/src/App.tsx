@@ -17,6 +17,7 @@ import ChatbotButton from './UserComponents/ChatbotButton'
 import ProductsDetail from './UserPages/ProductsDetail'
 import Profile from './UserPages/Profile'
 import Cart from './UserPages/Cart'
+import Checkout from './UserPages/Checkout'
 import Dashboard from './VendorPages/VendorDashboard'
 import Message from './VendorPages/VendorMessage'
 import Product from './VendorPages/VendorProduct'
@@ -46,7 +47,7 @@ const AppContent = () => {
   }, [pathname])
 
   const normalizedPath = pathname.replace(/\/+$/, '') || '/'
-  const userRoutes = ['/', '/products', '/productsdetail', '/about', '/contacts', '/profile', '/cart', '/vendorprofile']
+  const userRoutes = ['/', '/products', '/productsdetail', '/about', '/contacts', '/profile', '/cart', '/checkout', '/vendorprofile']
   const showChatbot = userRoutes.some((route) => normalizedPath === route || normalizedPath.startsWith(`${route}/`))
 
   return (
@@ -63,6 +64,7 @@ const AppContent = () => {
         {/* User-account pages (login required) */}
         <Route path="/profile" element={<RequireAuth roles={['USER']}><Profile /></RequireAuth>} />
         <Route path="/cart" element={<RequireAuth roles={['USER']}><Cart /></RequireAuth>} />
+        <Route path="/checkout" element={<RequireAuth roles={['USER']}><Checkout /></RequireAuth>} />
         <Route path="/prescription" element={<RequireAuth roles={['USER']}><Prescription /></RequireAuth>} />
         
 
