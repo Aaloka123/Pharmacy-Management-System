@@ -12,6 +12,7 @@ public record VendorOrderResponse(
 		String email,
 		String phone,
 		String location,
+		String vendorName,
 		String productName,
 		String productSku,
 		String productImage,

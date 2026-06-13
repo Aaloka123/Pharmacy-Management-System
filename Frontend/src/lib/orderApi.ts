@@ -9,6 +9,7 @@ export type VendorOrderDto = {
   email: string
   phone: string
   location: string
+  vendorName: string
   productName: string
   productSku: string
   productImage: string | null
@@ -31,6 +32,11 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<VendorOrde
 
 export async function fetchMyOrders(): Promise<VendorOrderDto[]> {
   const { data } = await api.get<VendorOrderDto[]>('/api/orders')
+  return data
+}
+
+export async function fetchUserOrders(userId: number): Promise<VendorOrderDto[]> {
+  const { data } = await api.get<VendorOrderDto[]>(`/api/users/${userId}/orders`)
   return data
 }
 

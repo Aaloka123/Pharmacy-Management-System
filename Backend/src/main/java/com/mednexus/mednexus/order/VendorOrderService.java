@@ -147,6 +147,7 @@ public class VendorOrderService {
 				user.getEmail(),
 				user.getPhoneNumber(),
 				location,
+				order.getVendor().getBusinessName(),
 				order.getProductName(),
 				order.getProductSku(),
 				order.getProductImage(),

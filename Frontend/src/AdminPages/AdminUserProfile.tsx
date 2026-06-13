@@ -1,13 +1,14 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
-import AlbuterolImage from '../assets/Albuterol.jpg'
-import BrufinImage from '../assets/Brufin.jpg'
-import MetforminImage from '../assets/Metformin.webp'
-import ParacetamolImage from '../assets/Paracetamol.jpg'
-import AmoxicillinImage from '../assets/Amoxicillin.jpg'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { api, resolveProfileImageUrl } from '../lib/api'
+import { api, resolveBackendUrl, resolveProfileImageUrl } from '../lib/api'
+import {
+  fetchUserOrders,
+  type ApiOrderStatus,
+  type ApiPaymentMethod,
+  type VendorOrderDto,
+} from '../lib/orderApi'
 
 type UserDetail = {
   id: number
@@ -37,74 +38,26 @@ const formatLocation = (location: string | null | undefined): string => {
   return trimmed ? trimmed : '—'
 }
 
-/** Static placeholder — replace with API data later. */
-const STATIC_PURCHASE_HISTORY = [
-  {
-    id: 1,
-    orderId: 'ORD-10241',
-    name: 'Paracetamol 500mg',
-    image: ParacetamolImage,
-    vendor: 'Himalaya Pharmacy',
-    paymentMethod: 'eSewa',
-    quantity: 2,
-    unitPrice: 60,
-    purchasedAt: '2026-05-20',
-    status: 'Delivered' as const,
-  },
-  {
-    id: 2,
-    orderId: 'ORD-10218',
-    name: 'Ibuprofen (Brufen)',
-    image: BrufinImage,
-    vendor: 'City Med Store',
-    paymentMethod: 'Khalti',
-    quantity: 1,
-    unitPrice: 85,
-    purchasedAt: '2026-05-12',
-    status: 'Shipped' as const,
-  },
-  {
-    id: 3,
-    orderId: 'ORD-10195',
-    name: 'Metformin 500mg',
-    image: MetforminImage,
-    vendor: 'HealthPlus Pharmacy',
-    paymentMethod: 'Card',
-    quantity: 3,
-    unitPrice: 120,
-    purchasedAt: '2026-05-05',
-    status: 'Pending' as const,
-  },
-  {
-    id: 4,
-    orderId: 'ORD-10172',
-    name: 'Albuterol Inhaler',
-    image: AlbuterolImage,
-    vendor: 'Nepal MediCare',
-    paymentMethod: 'Fonepay',
-    quantity: 1,
-    unitPrice: 450,
-    purchasedAt: '2026-04-28',
-    status: 'Shipped' as const,
-  },
-  {
-    id: 5,
-    orderId: 'ORD-10140',
-    name: 'Amoxicillin 250mg',
-    image: AmoxicillinImage,
-    vendor: 'GreenLife Pharmacy',
-    paymentMethod: 'Cash on Delivery',
-    quantity: 2,
-    unitPrice: 180,
-    purchasedAt: '2026-04-15',
-    status: 'Delivered' as const,
-  },
-]
+const paymentLabel: Record<ApiPaymentMethod, string> = {
+  COD: 'Cash on Delivery',
+  ESEWA: 'eSewa',
+  KHALTI: 'Khalti',
+}
 
-const purchaseStatusClass: Record<(typeof STATIC_PURCHASE_HISTORY)[number]['status'], string> = {
-  Pending: 'bg-amber-100 text-amber-700',
-  Shipped: 'bg-sky-100 text-sky-700',
-  Delivered: 'bg-emerald-100 text-emerald-700',
+const statusLabel: Record<ApiOrderStatus, string> = {
+  PENDING: 'Pending',
+  CONFIRMED: 'Confirmed',
+  SHIPPED: 'Shipped',
+  DELIVERED: 'Delivered',
+  CANCELED: 'Canceled',
+}
+
+const purchaseStatusClass: Record<ApiOrderStatus, string> = {
+  PENDING: 'bg-amber-100 text-amber-700',
+  CONFIRMED: 'bg-indigo-100 text-indigo-700',
+  SHIPPED: 'bg-sky-100 text-sky-700',
+  DELIVERED: 'bg-emerald-100 text-emerald-700',
+  CANCELED: 'bg-rose-100 text-rose-700',
 }
 
 const AdminUserProfile = () => {
@@ -121,7 +74,9 @@ const AdminUserProfile = () => {
   }, [searchParams])
 
   const [user, setUser] = useState<UserDetail | null>(null)
+  const [orders, setOrders] = useState<VendorOrderDto[]>([])
   const [loading, setLoading] = useState(true)
+  const [ordersLoading, setOrdersLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [profileImageFailed, setProfileImageFailed] = useState(false)
 
@@ -132,8 +87,10 @@ const AdminUserProfile = () => {
   useEffect(() => {
     if (userId == null) {
       setLoading(false)
+      setOrdersLoading(false)
       setError('No user selected. Open a user from the users list.')
       setUser(null)
+      setOrders([])
       return
     }
 
@@ -163,14 +120,41 @@ const AdminUserProfile = () => {
     }
   }, [userId])
 
+  useEffect(() => {
+    if (userId == null) return
+
+    let cancelled = false
+    const loadOrders = async () => {
+      setOrdersLoading(true)
+      try {
+        const data = await fetchUserOrders(userId)
+        if (!cancelled) {
+          setOrders(data)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setOrders([])
+          toast.error('Failed to load purchase history.')
+          console.error(err)
+        }
+      } finally {
+        if (!cancelled) setOrdersLoading(false)
+      }
+    }
+    void loadOrders()
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
   const profileImageUrl = user ? resolveProfileImageUrl(user.profileImage) : null
   const showProfileImage = Boolean(profileImageUrl) && !profileImageFailed
 
-  const totalOrders = STATIC_PURCHASE_HISTORY.length
-  const totalSpent = STATIC_PURCHASE_HISTORY.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
-    0,
-  )
+  const totalOrders = orders.length
+  const totalSpent = orders.reduce((sum, item) => {
+    if (item.status === 'CANCELED') return sum
+    return sum + item.quantity * Number(item.unitPrice)
+  }, 0)
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -262,56 +246,74 @@ const AdminUserProfile = () => {
                 </div>
               </div>
 
-              <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200">
-                <table className="min-w-full text-left">
-                  <thead className="bg-slate-100">
-                    <tr>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">No.</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Image</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Order ID</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Product</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Vendor</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Payment</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Date</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Qty</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Price (NPR)</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Total (NPR)</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {STATIC_PURCHASE_HISTORY.map((item, index) => (
-                      <tr key={item.id} className="border-t border-slate-200">
-                        <td className="px-4 py-3 text-sm text-slate-700">{index + 1}</td>
-                        <td className="px-4 py-3">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="h-10 w-10 rounded-md border border-slate-200 object-cover"
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{item.orderId}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-slate-800">{item.name}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{item.vendor}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{item.paymentMethod}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{item.purchasedAt}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{item.quantity}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{item.unitPrice.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
-                          {(item.quantity * item.unitPrice).toLocaleString()}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${purchaseStatusClass[item.status]}`}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
+              {ordersLoading ? (
+                <p className="mt-4 text-sm text-slate-600">Loading purchase history…</p>
+              ) : orders.length === 0 ? (
+                <p className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-600">
+                  No purchases yet.
+                </p>
+              ) : (
+                <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200">
+                  <table className="min-w-full text-left">
+                    <thead className="bg-slate-100">
+                      <tr>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">No.</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Image</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Order ID</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Product</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Vendor</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Payment</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Date</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Qty</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Price (NPR)</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Total (NPR)</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-slate-700">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {orders.map((item, index) => {
+                        const unitPrice = Number(item.unitPrice)
+                        const lineTotal = item.quantity * unitPrice
+                        const imageUrl = item.productImage ? resolveBackendUrl(item.productImage) : null
+
+                        return (
+                          <tr key={item.id} className="border-t border-slate-200">
+                            <td className="px-4 py-3 text-sm text-slate-700">{index + 1}</td>
+                            <td className="px-4 py-3">
+                              {imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={item.productName}
+                                  className="h-10 w-10 rounded-md border border-slate-200 object-cover"
+                                />
+                              ) : (
+                                <span className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-[10px] text-slate-400">
+                                  N/A
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">ORD-{item.id}</td>
+                            <td className="px-4 py-3 text-sm font-medium text-slate-800">{item.productName}</td>
+                            <td className="px-4 py-3 text-sm text-slate-700">{item.vendorName}</td>
+                            <td className="px-4 py-3 text-sm text-slate-700">{paymentLabel[item.paymentMethod]}</td>
+                            <td className="px-4 py-3 text-sm text-slate-700">{item.orderDate.slice(0, 10)}</td>
+                            <td className="px-4 py-3 text-sm text-slate-700">{item.quantity}</td>
+                            <td className="px-4 py-3 text-sm text-slate-700">{unitPrice.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-sm text-slate-700">{lineTotal.toLocaleString()}</td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${purchaseStatusClass[item.status]}`}
+                              >
+                                {statusLabel[item.status]}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </section>
         )}

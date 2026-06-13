@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mednexus.mednexus.order.VendorOrderService;
+import com.mednexus.mednexus.order.dto.VendorOrderResponse;
 import com.mednexus.mednexus.security.PlatformUser;
 import com.mednexus.mednexus.user.dto.ChangePasswordRequest;
 import com.mednexus.mednexus.user.dto.UpdateProfileRequest;
@@ -28,10 +30,18 @@ import com.mednexus.mednexus.user.dto.UserResponse;
 public class UserController {
 
 	private final UserService userService;
+	private final VendorOrderService vendorOrderService;
 
 	@Autowired
-	public UserController(UserService userService) {
+	public UserController(UserService userService, VendorOrderService vendorOrderService) {
 		this.userService = userService;
+		this.vendorOrderService = vendorOrderService;
+	}
+
+	@GetMapping("/{id}/orders")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<List<VendorOrderResponse>> listUserOrders(@PathVariable Long id) {
+		return ResponseEntity.ok(vendorOrderService.listForUser(id));
 	}
 
 	/**
