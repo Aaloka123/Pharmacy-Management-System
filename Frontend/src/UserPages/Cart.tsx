@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { LuPackageSearch } from 'react-icons/lu'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import Footer from '../UserComponents/Footer'
@@ -138,6 +139,15 @@ const Cart = () => {
               Review your items before checkout. Prescription products may need verification.
             </p>
           </div>
+          {loggedIn ? (
+            <Link
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              to="/ordertracking"
+            >
+              <LuPackageSearch className="h-4 w-4" strokeWidth={2} />
+              Order tracking
+            </Link>
+          ) : null}
         </div>
 
         {loading ? (
