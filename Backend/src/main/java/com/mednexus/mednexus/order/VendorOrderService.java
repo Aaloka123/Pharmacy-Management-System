@@ -114,6 +114,19 @@ public class VendorOrderService {
 		return toResponse(order);
 	}
 
+	@Transactional
+	public VendorOrderResponse cancelByUser(Long userId, Long orderId) {
+		VendorOrder order = vendorOrderRepository.findByIdAndUserIdWithDetails(orderId, userId)
+				.orElseThrow(OrderNotFoundException::new);
+		if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
+			throw new IllegalArgumentException("Only pending or confirmed orders can be canceled");
+		}
+		Product product = order.getProduct();
+		product.setStock(product.getStock() + order.getQuantity());
+		order.setStatus(OrderStatus.CANCELED);
+		return toResponse(order);
+	}
+
 	private PaymentMethod toPaymentMethod(PaymentMethodDto dto) {
 		return switch (dto) {
 			case COD -> PaymentMethod.COD;

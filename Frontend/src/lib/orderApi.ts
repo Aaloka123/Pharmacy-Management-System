@@ -34,6 +34,15 @@ export async function fetchMyOrders(): Promise<VendorOrderDto[]> {
   return data
 }
 
+export async function cancelOrder(orderId: number): Promise<VendorOrderDto> {
+  const { data } = await api.post<VendorOrderDto>(`/api/orders/${orderId}/cancel`)
+  return data
+}
+
+export function canUserCancelOrder(status: ApiOrderStatus): boolean {
+  return status === 'PENDING' || status === 'CONFIRMED'
+}
+
 export async function fetchVendorOrders(): Promise<VendorOrderDto[]> {
   const { data } = await api.get<VendorOrderDto[]>('/api/vendor/orders')
   return data

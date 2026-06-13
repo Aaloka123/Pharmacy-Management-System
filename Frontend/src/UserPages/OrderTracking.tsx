@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
-import { resolveBackendUrl } from '../lib/api'
-import { fetchMyOrders, type ApiOrderStatus, type VendorOrderDto } from '../lib/orderApi'
+import { ApiRequestError, resolveBackendUrl } from '../lib/api'
+import {
+  cancelOrder,
+  canUserCancelOrder,
+  fetchMyOrders,
+  type ApiOrderStatus,
+  type VendorOrderDto,
+} from '../lib/orderApi'
 
 const statusLabel: Record<ApiOrderStatus, string> = {
   PENDING: 'Pending',
@@ -25,6 +32,7 @@ const statusClass: Record<ApiOrderStatus, string> = {
 const OrderTracking = () => {
   const [orders, setOrders] = useState<VendorOrderDto[]>([])
   const [loading, setLoading] = useState(true)
+  const [cancelingId, setCancelingId] = useState<number | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -39,6 +47,23 @@ const OrderTracking = () => {
     }
     void load()
   }, [])
+
+  const handleCancel = async (orderId: number) => {
+    setCancelingId(orderId)
+    try {
+      const updated = await cancelOrder(orderId)
+      setOrders((prev) => prev.map((order) => (order.id === orderId ? updated : order)))
+      toast.success('Order canceled successfully.')
+    } catch (err) {
+      if (err instanceof ApiRequestError && err.response.status === 400) {
+        toast.error('This order can no longer be canceled.')
+      } else {
+        toast.error('Could not cancel the order. Please try again.')
+      }
+    } finally {
+      setCancelingId(null)
+    }
+  }
 
   return (
     <div className="bg-white">
@@ -96,9 +121,21 @@ const OrderTracking = () => {
                       </p>
                     </div>
                   </div>
-                  <span className={`self-start rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass[order.status]}`}>
-                    {statusLabel[order.status]}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    {canUserCancelOrder(order.status) ? (
+                      <button
+                        className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
+                        disabled={cancelingId === order.id}
+                        onClick={() => void handleCancel(order.id)}
+                        type="button"
+                      >
+                        {cancelingId === order.id ? 'Canceling…' : 'Cancel order'}
+                      </button>
+                    ) : null}
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass[order.status]}`}>
+                      {statusLabel[order.status]}
+                    </span>
+                  </div>
                 </div>
               </article>
             ))}

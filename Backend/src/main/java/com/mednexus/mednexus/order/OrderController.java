@@ -46,4 +46,11 @@ public class OrderController {
 			@AuthenticationPrincipal PlatformUser principal) {
 		return ResponseEntity.ok(vendorOrderService.listForUser(principal.getSubjectId()));
 	}
+
+	@PostMapping("/{id}/cancel")
+	public ResponseEntity<VendorOrderResponse> cancelOrder(
+			@AuthenticationPrincipal PlatformUser principal,
+			@PathVariable Long id) {
+		return ResponseEntity.ok(vendorOrderService.cancelByUser(principal.getSubjectId(), id));
+	}
 }
