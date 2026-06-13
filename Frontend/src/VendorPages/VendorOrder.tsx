@@ -1,11 +1,15 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Navbar from '../VendorComponents/Navbar';
-import AmoxicillinImage from '../assets/Amoxicillin.jpg';
-import LisinoprilImage from '../assets/Lisinopril.jpg';
-import productImageThree from '../assets/Hero3.png';
-import productImageFour from '../assets/cta.png';
 import fallbackImage from '../assets/Hero1.png';
+import { resolveBackendUrl } from '../lib/api';
+import {
+  fetchVendorOrders,
+  updateVendorOrderStatus,
+  type ApiOrderStatus,
+  type VendorOrderDto,
+} from '../lib/orderApi';
 
 type PaymentMethod = 'e-sewa' | 'khalti' | 'COD';
 type OrderStatus = 'Pending' | 'Confirmed' | 'Shipped' | 'Delivered' | 'Canceled';
@@ -18,6 +22,7 @@ type VendorOrder = {
   phone: string;
   location: string;
   productName: string;
+  productSku: string;
   productImage: string;
   unitPrice: number;
   quantity: number;
@@ -29,88 +34,88 @@ type VendorOrder = {
 const updatableOrderStatuses: OrderStatus[] = ['Pending', 'Confirmed', 'Shipped', 'Delivered'];
 const statusFilterOptions: StatusFilter[] = ['All', 'Pending', 'Confirmed', 'Shipped', 'Delivered', 'Canceled'];
 
-const initialUserOrders: VendorOrder[] = [
-  {
-    id: 1,
-    clientName: 'Sita Sharma',
-    email: 'sita.sharma@email.com',
-    phone: '9841000001',
-    location: 'Koteshwor, Kathmandu',
-    productName: 'Amoxicillin 500mg',
-    productImage: AmoxicillinImage,
-    unitPrice: 425,
-    quantity: 2,
-    paymentMethod: 'e-sewa',
-    orderDate: '2026-05-07',
-    status: 'Pending',
-  },
-  {
-    id: 2,
-    clientName: 'Ram Thapa',
-    email: 'ram.thapa@email.com',
-    phone: '9861000002',
-    location: 'Lalitpur, Jawalakhel',
-    productName: 'Lisinopril 10mg',
-    productImage: LisinoprilImage,
-    unitPrice: 280,
-    quantity: 1,
-    paymentMethod: 'khalti',
-    orderDate: '2026-05-07',
-    status: 'Confirmed',
-  },
-  {
-    id: 3,
-    clientName: 'Anita Karki',
-    email: 'anita.karki@email.com',
-    phone: '9801000003',
-    location: 'Bhaktapur, Suryabinayak',
-    productName: 'Metformin 500mg',
-    productImage: productImageThree,
-    unitPrice: 190,
-    quantity: 3,
-    paymentMethod: 'COD',
-    orderDate: '2026-05-06',
-    status: 'Shipped',
-  },
-  {
-    id: 4,
-    clientName: 'Bikash Rai',
-    email: 'bikash.rai@email.com',
-    phone: '9818000004',
-    location: 'Pokhara, Lakeside',
-    productName: 'Albuterol Inhaler',
-    productImage: productImageFour,
-    unitPrice: 1150,
-    quantity: 1,
-    paymentMethod: 'e-sewa',
-    orderDate: '2026-05-06',
-    status: 'Delivered',
-  },
-  {
-    id: 5,
-    clientName: 'Nima Gurung',
-    email: 'nima.gurung@email.com',
-    phone: '9823000005',
-    location: 'Butwal, Devinagar',
-    productName: 'Cetirizine 10mg',
-    productImage: fallbackImage,
-    unitPrice: 90,
-    quantity: 2,
-    paymentMethod: 'COD',
-    orderDate: '2026-05-05',
-    status: 'Canceled',
-  },
-];
+const mapPayment = (method: VendorOrderDto['paymentMethod']): PaymentMethod => {
+  if (method === 'ESEWA') return 'e-sewa';
+  if (method === 'KHALTI') return 'khalti';
+  return 'COD';
+};
+
+const mapStatus = (status: ApiOrderStatus): OrderStatus => {
+  const labels: Record<ApiOrderStatus, OrderStatus> = {
+    PENDING: 'Pending',
+    CONFIRMED: 'Confirmed',
+    SHIPPED: 'Shipped',
+    DELIVERED: 'Delivered',
+    CANCELED: 'Canceled',
+  };
+  return labels[status];
+};
+
+const toApiStatus = (status: OrderStatus): ApiOrderStatus => {
+  const values: Record<OrderStatus, ApiOrderStatus> = {
+    Pending: 'PENDING',
+    Confirmed: 'CONFIRMED',
+    Shipped: 'SHIPPED',
+    Delivered: 'DELIVERED',
+    Canceled: 'CANCELED',
+  };
+  return values[status];
+};
+
+const dtoToVendorOrder = (dto: VendorOrderDto): VendorOrder => ({
+  id: dto.id,
+  clientName: dto.clientName,
+  email: dto.email,
+  phone: dto.phone,
+  location: dto.location,
+  productName: dto.productName,
+  productSku: dto.productSku,
+  productImage: dto.productImage ? resolveBackendUrl(dto.productImage) : fallbackImage,
+  unitPrice: Number(dto.unitPrice),
+  quantity: dto.quantity,
+  paymentMethod: mapPayment(dto.paymentMethod),
+  orderDate: dto.orderDate.slice(0, 10),
+  status: mapStatus(dto.status),
+});
 
 const Order = () => {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<VendorOrder[]>(initialUserOrders);
+  const [orders, setOrders] = useState<VendorOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('All');
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
 
-  const updateOrderStatus = (orderId: number, status: OrderStatus) => {
-    setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, status } : order)));
+  useEffect(() => {
+    const loadOrders = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchVendorOrders();
+        setOrders(data.map(dtoToVendorOrder));
+      } catch {
+        setError('Could not load orders. Please try again.');
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void loadOrders();
+  }, []);
+
+  const updateOrderStatus = async (orderId: number, status: OrderStatus) => {
+    setUpdatingOrderId(orderId);
+    try {
+      const updated = await updateVendorOrderStatus(orderId, toApiStatus(status));
+      setOrders((prev) => prev.map((order) => (order.id === orderId ? dtoToVendorOrder(updated) : order)));
+      toast.success('Order status updated.');
+    } catch {
+      toast.error('Could not update order status.');
+    } finally {
+      setUpdatingOrderId(null);
+    }
   };
 
   const statusCounts = {
@@ -195,7 +200,11 @@ const Order = () => {
         </div>
 
         <section className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          {filteredOrders.length === 0 ? (
+          {loading ? (
+            <p className="px-5 py-4 text-sm text-slate-500">Loading orders...</p>
+          ) : error ? (
+            <p className="px-5 py-4 text-sm text-rose-600">{error}</p>
+          ) : filteredOrders.length === 0 ? (
             <p className="px-5 py-4 text-sm text-slate-500">No user orders available right now.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -262,9 +271,9 @@ const Order = () => {
                         <td className="px-5 py-4">
                           <select
                             value={order.status}
-                            onChange={(event) => updateOrderStatus(order.id, event.target.value as OrderStatus)}
-                            disabled={order.status === 'Canceled'}
-                            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-700 focus:border-teal-600 focus:outline-none"
+                            onChange={(event) => void updateOrderStatus(order.id, event.target.value as OrderStatus)}
+                            disabled={order.status === 'Canceled' || updatingOrderId === order.id}
+                            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-700 focus:border-teal-600 focus:outline-none disabled:opacity-60"
                           >
                             {getUpdatableStatuses(order.status).map((status) => (
                               <option key={status} value={status}>
@@ -330,7 +339,7 @@ const Order = () => {
                                         </div>
                                       </td>
                                       <td className="py-3 pr-4 font-medium text-slate-800">{order.productName}</td>
-                                      <td className="py-3 pr-4 text-xs text-slate-500">SKU-{order.id.toString().padStart(4, '0')}</td>
+                                      <td className="py-3 pr-4 text-xs text-slate-500">{order.productSku}</td>
                                       <td className="py-3 pr-4">{order.quantity}</td>
                                       <td className="py-3 pr-4">Rs. {order.unitPrice.toLocaleString()}</td>
                                       <td className="py-3 text-right font-semibold text-slate-900">

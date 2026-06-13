@@ -8,7 +8,9 @@ import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
 import { fetchCart } from '../lib/cartApi'
-import { isCartUserLoggedIn, type CartLine } from '../lib/cartStorage'
+import { isCartUserLoggedIn, notifyCartChanged, type CartLine } from '../lib/cartStorage'
+import { placeOrder, toApiPaymentMethod } from '../lib/orderApi'
+import { ApiRequestError } from '../lib/api'
 
 type PaymentMethod = 'cod' | 'esewa' | 'khalti'
 
@@ -118,10 +120,20 @@ const Checkout = () => {
 
     setPlacingOrder(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600))
+      await placeOrder({
+        paymentMethod: toApiPaymentMethod(paymentMethod),
+        cartItemIds: lines.map((line) => Number(line.id)),
+      })
+      notifyCartChanged()
       const paymentLabel = PAYMENT_OPTIONS.find((option) => option.id === paymentMethod)?.label ?? 'Selected method'
       toast.success(`Order placed with ${paymentLabel}. We will confirm your order shortly.`)
-      navigate('/products', { replace: true })
+      navigate('/ordertracking', { replace: true })
+    } catch (err) {
+      if (err instanceof ApiRequestError && err.response.status === 400) {
+        toast.error('Some items are out of stock or unavailable. Please review your cart.')
+      } else {
+        toast.error('Could not place your order. Please try again.')
+      }
     } finally {
       setPlacingOrder(false)
     }
