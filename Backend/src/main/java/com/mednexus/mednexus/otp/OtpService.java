@@ -49,9 +49,21 @@ public class OtpService {
 		otpRepository.deleteByUserId(userId);
 		return issueOtp(
 				OtpAccountType.USER,
+				OtpPurpose.LOGIN,
 				email,
 				code -> buildUserOtp(userId, code),
 				(recipient, code) -> emailService.sendLoginOtp(recipient, code));
+	}
+
+	@Transactional
+	public PendingOtpResponse issuePasswordResetOtp(Long userId, String email) {
+		otpRepository.deleteByUserId(userId);
+		return issueOtp(
+				OtpAccountType.USER,
+				OtpPurpose.PASSWORD_RESET,
+				email,
+				code -> buildUserOtp(userId, code),
+				(recipient, code) -> emailService.sendPasswordResetOtp(recipient, code));
 	}
 
 	@Transactional
@@ -59,6 +71,7 @@ public class OtpService {
 		otpRepository.deleteByVendorId(vendorId);
 		return issueOtp(
 				OtpAccountType.VENDOR,
+				OtpPurpose.LOGIN,
 				email,
 				code -> buildVendorOtp(vendorId, code),
 				(recipient, code) -> emailService.sendVendorLoginOtp(recipient, code));
@@ -66,7 +79,7 @@ public class OtpService {
 
 	@Transactional
 	public User verifyAndConsumeForUser(String otpToken, String code) {
-		Otp otp = verifyOtpRecord(otpToken, code);
+		Otp otp = verifyOtpRecord(otpToken, code, OtpPurpose.LOGIN);
 		if (otp.getAccountType() != OtpAccountType.USER || otp.getUser() == null) {
 			throw new InvalidOtpException("Verification code expired or invalid. Please log in again.");
 		}
@@ -76,8 +89,19 @@ public class OtpService {
 	}
 
 	@Transactional
+	public User verifyAndConsumeForPasswordReset(String otpToken, String code) {
+		Otp otp = verifyOtpRecord(otpToken, code, OtpPurpose.PASSWORD_RESET);
+		if (otp.getAccountType() != OtpAccountType.USER || otp.getUser() == null) {
+			throw new InvalidOtpException("Verification code expired or invalid. Please try again.");
+		}
+		User user = otp.getUser();
+		otpRepository.delete(otp);
+		return user;
+	}
+
+	@Transactional
 	public Vendor verifyAndConsumeForVendor(String otpToken, String code) {
-		Otp otp = verifyOtpRecord(otpToken, code);
+		Otp otp = verifyOtpRecord(otpToken, code, OtpPurpose.LOGIN);
 		if (otp.getAccountType() != OtpAccountType.VENDOR || otp.getVendor() == null) {
 			throw new InvalidOtpException("Verification code expired or invalid. Please log in again.");
 		}
@@ -88,6 +112,7 @@ public class OtpService {
 
 	private PendingOtpResponse issueOtp(
 			OtpAccountType accountType,
+			OtpPurpose purpose,
 			String email,
 			Function<String, Otp> otpBuilder,
 			BiConsumer<String, String> mailSender) {
@@ -96,6 +121,7 @@ public class OtpService {
 
 		Otp otp = otpBuilder.apply(code);
 		otp.setAccountType(accountType);
+		otp.setPurpose(purpose);
 		otp.setOtpToken(otpToken);
 		otp.setCode(code);
 		otp.setExpiresAt(Instant.now().plusSeconds(OTP_TTL_MINUTES * 60L));
@@ -123,7 +149,7 @@ public class OtpService {
 		return otp;
 	}
 
-	private Otp verifyOtpRecord(String otpToken, String code) {
+	private Otp verifyOtpRecord(String otpToken, String code, OtpPurpose expectedPurpose) {
 		if (otpToken == null || otpToken.isBlank()) {
 			throw new InvalidOtpException("Verification session is invalid.");
 		}
@@ -133,11 +159,15 @@ public class OtpService {
 		}
 
 		Otp otp = otpRepository.findByOtpToken(otpToken.trim())
-				.orElseThrow(() -> new InvalidOtpException("Verification code expired or invalid. Please log in again."));
+				.orElseThrow(() -> new InvalidOtpException("Verification code expired or invalid. Please try again."));
+
+		if (otp.getPurpose() != expectedPurpose) {
+			throw new InvalidOtpException("Verification code expired or invalid. Please try again.");
+		}
 
 		if (otp.getExpiresAt().isBefore(Instant.now())) {
 			otpRepository.delete(otp);
-			throw new InvalidOtpException("Verification code has expired. Please log in again.");
+			throw new InvalidOtpException("Verification code has expired. Please try again.");
 		}
 
 		if (!otp.getCode().equals(normalizedCode)) {

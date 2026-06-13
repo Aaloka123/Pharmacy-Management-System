@@ -90,6 +90,16 @@ public class UserService {
 	}
 
 	@Transactional
+	public void resetPassword(Long id, String newPassword) {
+		if (newPassword == null || newPassword.length() < 6) {
+			throw new IllegalArgumentException("Password must be at least 6 characters");
+		}
+		User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+		user.setPassword(passwordEncoder.encode(newPassword));
+		refreshTokenService.revokeAllForUser(id);
+	}
+
+	@Transactional
 	public void changePassword(Long id, ChangePasswordRequest request) {
 		if (request == null || request.currentPassword() == null || request.newPassword() == null) {
 			throw new InvalidCredentialsException();

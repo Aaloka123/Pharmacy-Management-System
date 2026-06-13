@@ -9,13 +9,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.auth.dto.AuthRequest;
 import com.mednexus.mednexus.auth.dto.AuthResponse;
+import com.mednexus.mednexus.auth.dto.ForgotPasswordRequest;
 import com.mednexus.mednexus.auth.dto.GoogleAuthRequest;
 import com.mednexus.mednexus.auth.dto.LogoutRequest;
 import com.mednexus.mednexus.auth.dto.PendingOtpResponse;
 import com.mednexus.mednexus.auth.dto.RefreshTokenRequest;
+import com.mednexus.mednexus.auth.dto.ResetPasswordRequest;
 import com.mednexus.mednexus.auth.dto.VerifyOtpRequest;
 import com.mednexus.mednexus.otp.OtpService;
 import com.mednexus.mednexus.security.JwtService;
@@ -110,6 +113,23 @@ public class AuthController {
 	public ResponseEntity<UserResponse> register(@RequestBody SignupRequest request) {
 		UserResponse created = userService.register(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(created);
+	}
+
+	@PostMapping("/forgot-password")
+	public ResponseEntity<PendingOtpResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+		String email = request.email().trim();
+		User user = userRepository.findByEmailIgnoreCase(email)
+				.orElseThrow(() -> new ResponseStatusException(
+						HttpStatus.NOT_FOUND, "No account found with this email address."));
+		return ResponseEntity.ok(otpService.issuePasswordResetOtp(user.getId(), user.getEmail()));
+	}
+
+	@PostMapping("/reset-password")
+	public ResponseEntity<java.util.Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+		User user = otpService.verifyAndConsumeForPasswordReset(request.otpToken(), request.code());
+		userService.resetPassword(user.getId(), request.newPassword());
+		return ResponseEntity.ok(java.util.Map.of(
+				"message", "Password updated successfully. You can now log in."));
 	}
 
 	@PostMapping("/vendor/login")

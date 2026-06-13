@@ -31,6 +31,7 @@ public class OtpTableInitializer implements ApplicationRunner {
 			createOtpTable();
 		} else {
 			migrateOtpTableForVendors();
+			migrateOtpTableForPurpose();
 		}
 	}
 
@@ -40,6 +41,7 @@ public class OtpTableInitializer implements ApplicationRunner {
 				CREATE TABLE `otp` (
 				  `id` bigint NOT NULL AUTO_INCREMENT,
 				  `account_type` varchar(20) NOT NULL,
+				  `purpose` varchar(20) NOT NULL DEFAULT 'LOGIN',
 				  `user_id` bigint DEFAULT NULL,
 				  `vendor_id` bigint DEFAULT NULL,
 				  `otp_token` varchar(64) NOT NULL,
@@ -72,6 +74,13 @@ public class OtpTableInitializer implements ApplicationRunner {
 		}
 		if (columnIsNotNullable("otp", "user_id")) {
 			jdbc.execute("ALTER TABLE `otp` MODIFY COLUMN `user_id` bigint DEFAULT NULL");
+		}
+	}
+
+	private void migrateOtpTableForPurpose() {
+		if (!columnExists("otp", "purpose")) {
+			log.info("Migrating `otp` table for password reset codes...");
+			jdbc.execute("ALTER TABLE `otp` ADD COLUMN `purpose` varchar(20) NOT NULL DEFAULT 'LOGIN'");
 		}
 	}
 

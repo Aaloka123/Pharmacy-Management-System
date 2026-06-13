@@ -58,6 +58,8 @@ public class SecurityConfig {
 								"/api/auth/verify-otp",
 								"/api/auth/google",
 								"/api/auth/register",
+								"/api/auth/forgot-password",
+								"/api/auth/reset-password",
 								"/api/auth/refresh",
 								"/api/auth/vendor/login",
 								"/api/auth/vendor/verify-otp",

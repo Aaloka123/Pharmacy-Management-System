@@ -30,6 +30,10 @@ public class Otp {
 	@Column(name = "account_type", nullable = false, length = 20)
 	private OtpAccountType accountType;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "purpose", nullable = false, length = 20)
+	private OtpPurpose purpose = OtpPurpose.LOGIN;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id")
 	private User user;
@@ -74,6 +78,14 @@ public class Otp {
 
 	public void setAccountType(OtpAccountType accountType) {
 		this.accountType = accountType;
+	}
+
+	public OtpPurpose getPurpose() {
+		return purpose;
+	}
+
+	public void setPurpose(OtpPurpose purpose) {
+		this.purpose = purpose;
 	}
 
 	public User getUser() {

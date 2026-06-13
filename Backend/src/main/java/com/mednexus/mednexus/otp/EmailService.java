@@ -33,6 +33,11 @@ public class EmailService {
 				"Your MedNexus vendor portal verification code is: %s");
 	}
 
+	public void sendPasswordResetOtp(String toEmail, String code) {
+		sendOtpEmail(toEmail, code, "Your MedNexus password reset code",
+				"Your MedNexus password reset code is: %s");
+	}
+
 	private void sendOtpEmail(String toEmail, String code, String subject, String bodyTemplate) {
 		try {
 			SimpleMailMessage message = new SimpleMailMessage();
