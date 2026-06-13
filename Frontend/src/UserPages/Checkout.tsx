@@ -20,21 +20,25 @@ const PAYMENT_OPTIONS: Array<{
   id: PaymentMethod
   label: string
   description: string
+  available: boolean
 }> = [
   {
     id: 'cod',
     label: 'Cash on Delivery',
     description: 'Pay with cash when your order is delivered.',
+    available: true,
   },
   {
     id: 'esewa',
     label: 'eSewa',
     description: 'Pay securely using your eSewa wallet.',
+    available: false,
   },
   {
     id: 'khalti',
     label: 'Khalti',
     description: 'Pay securely using your Khalti wallet.',
+    available: false,
   },
 ]
 
@@ -177,20 +181,26 @@ const Checkout = () => {
               <div className="mt-5 space-y-3">
                 {PAYMENT_OPTIONS.map((option) => {
                   const selected = paymentMethod === option.id
+                  const disabled = !option.available
                   return (
                     <label
-                      className={`flex cursor-pointer items-center gap-3.5 rounded-xl border px-4 py-3.5 transition ${
-                        selected
-                          ? 'border-teal-600 bg-teal-50/50 shadow-sm ring-1 ring-teal-600/15'
-                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                      className={`flex items-center gap-3.5 rounded-xl border px-4 py-3.5 transition ${
+                        disabled
+                          ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-60'
+                          : selected
+                            ? 'cursor-pointer border-teal-600 bg-teal-50/50 shadow-sm ring-1 ring-teal-600/15'
+                            : 'cursor-pointer border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
                       }`}
                       key={option.id}
                     >
                       <input
                         checked={selected}
-                        className="h-4 w-4 shrink-0 border-slate-300 text-teal-700 focus:ring-teal-700"
+                        className="h-4 w-4 shrink-0 border-slate-300 text-teal-700 focus:ring-teal-700 disabled:cursor-not-allowed"
+                        disabled={disabled}
                         name="payment-method"
-                        onChange={() => setPaymentMethod(option.id)}
+                        onChange={() => {
+                          if (!disabled) setPaymentMethod(option.id)
+                        }}
                         type="radio"
                         value={option.id}
                       />
