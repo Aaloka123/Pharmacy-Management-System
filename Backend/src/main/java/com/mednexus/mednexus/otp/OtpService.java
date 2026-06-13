@@ -78,6 +78,17 @@ public class OtpService {
 	}
 
 	@Transactional
+	public PendingOtpResponse issueVendorPasswordResetOtp(Long vendorId, String email) {
+		otpRepository.deleteByVendorId(vendorId);
+		return issueOtp(
+				OtpAccountType.VENDOR,
+				OtpPurpose.PASSWORD_RESET,
+				email,
+				code -> buildVendorOtp(vendorId, code),
+				(recipient, code) -> emailService.sendVendorPasswordResetOtp(recipient, code));
+	}
+
+	@Transactional
 	public User verifyAndConsumeForUser(String otpToken, String code) {
 		Otp otp = verifyOtpRecord(otpToken, code, OtpPurpose.LOGIN);
 		if (otp.getAccountType() != OtpAccountType.USER || otp.getUser() == null) {
@@ -104,6 +115,17 @@ public class OtpService {
 		Otp otp = verifyOtpRecord(otpToken, code, OtpPurpose.LOGIN);
 		if (otp.getAccountType() != OtpAccountType.VENDOR || otp.getVendor() == null) {
 			throw new InvalidOtpException("Verification code expired or invalid. Please log in again.");
+		}
+		Vendor vendor = otp.getVendor();
+		otpRepository.delete(otp);
+		return vendor;
+	}
+
+	@Transactional
+	public Vendor verifyAndConsumeForVendorPasswordReset(String otpToken, String code) {
+		Otp otp = verifyOtpRecord(otpToken, code, OtpPurpose.PASSWORD_RESET);
+		if (otp.getAccountType() != OtpAccountType.VENDOR || otp.getVendor() == null) {
+			throw new InvalidOtpException("Verification code expired or invalid. Please try again.");
 		}
 		Vendor vendor = otp.getVendor();
 		otpRepository.delete(otp);

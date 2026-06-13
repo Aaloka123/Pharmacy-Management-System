@@ -226,7 +226,7 @@ const Vendorlogin = () => {
                   </label>
 
                   <p className="text-right text-sm">
-                    <Link className="text-slate-600 hover:text-teal-700 hover:underline" to="/forgetpassword">
+                    <Link className="text-slate-600 hover:text-teal-700 hover:underline" to="/forgetpassword?account=vendor">
                       Forgot Password?
                     </Link>
                   </p>

@@ -132,6 +132,24 @@ public class AuthController {
 				"message", "Password updated successfully. You can now log in."));
 	}
 
+	@PostMapping("/vendor/forgot-password")
+	public ResponseEntity<PendingOtpResponse> vendorForgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+		String email = request.email().trim();
+		Vendor vendor = vendorRepository.findByEmailIgnoreCase(email)
+				.orElseThrow(() -> new ResponseStatusException(
+						HttpStatus.NOT_FOUND, "No vendor account found with this email address."));
+		return ResponseEntity.ok(otpService.issueVendorPasswordResetOtp(vendor.getId(), vendor.getEmail()));
+	}
+
+	@PostMapping("/vendor/reset-password")
+	public ResponseEntity<java.util.Map<String, String>> vendorResetPassword(
+			@Valid @RequestBody ResetPasswordRequest request) {
+		Vendor vendor = otpService.verifyAndConsumeForVendorPasswordReset(request.otpToken(), request.code());
+		vendorService.resetPassword(vendor.getId(), request.newPassword());
+		return ResponseEntity.ok(java.util.Map.of(
+				"message", "Password updated successfully. You can now log in."));
+	}
+
 	@PostMapping("/vendor/login")
 	public ResponseEntity<PendingOtpResponse> vendorLogin(@Valid @RequestBody VendorLoginRequest request) {
 		Vendor vendor = vendorService.authenticateForOtp(request);

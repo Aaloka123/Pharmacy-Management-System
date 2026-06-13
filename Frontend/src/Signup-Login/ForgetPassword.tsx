@@ -2,13 +2,15 @@ import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type 
 import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
 import { resolveBackendUrl } from '../lib/api'
 
-const FORGOT_PASSWORD_URL = '/api/auth/forgot-password'
-const RESET_PASSWORD_URL = '/api/auth/reset-password'
+const USER_FORGOT_PASSWORD_URL = '/api/auth/forgot-password'
+const USER_RESET_PASSWORD_URL = '/api/auth/reset-password'
+const VENDOR_FORGOT_PASSWORD_URL = '/api/auth/vendor/forgot-password'
+const VENDOR_RESET_PASSWORD_URL = '/api/auth/vendor/reset-password'
 const OTP_LENGTH = 6
 const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => '')
 const MIN_REQUEST_WAIT_MS = 5000
@@ -22,6 +24,11 @@ type PendingOtpResponse = {
 
 const ForgetPassword = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isVendor = searchParams.get('account') === 'vendor'
+  const forgotPasswordUrl = isVendor ? VENDOR_FORGOT_PASSWORD_URL : USER_FORGOT_PASSWORD_URL
+  const resetPasswordUrl = isVendor ? VENDOR_RESET_PASSWORD_URL : USER_RESET_PASSWORD_URL
+  const loginPath = isVendor ? '/vendorlogin' : '/login'
   const [step, setStep] = useState<'email' | 'otp' | 'password'>('email')
   const [email, setEmail] = useState('')
   const [otpToken, setOtpToken] = useState('')
@@ -53,7 +60,7 @@ const ForgetPassword = () => {
     setLoading(true)
     const startedAt = Date.now()
     try {
-      const res = await fetch(resolveBackendUrl(FORGOT_PASSWORD_URL), {
+      const res = await fetch(resolveBackendUrl(forgotPasswordUrl), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
@@ -62,7 +69,11 @@ const ForgetPassword = () => {
       if (!res.ok) {
         await waitForMinimumDelay(startedAt)
         if (res.status === 404) {
-          toast.error('No account found with this email address.')
+          toast.error(
+            isVendor
+              ? 'No vendor account found with this email address.'
+              : 'No account found with this email address.',
+          )
         } else {
           toast.error('Could not send reset code. Please try again.')
         }
@@ -141,7 +152,7 @@ const ForgetPassword = () => {
 
     setLoading(true)
     try {
-      const res = await fetch(resolveBackendUrl(RESET_PASSWORD_URL), {
+      const res = await fetch(resolveBackendUrl(resetPasswordUrl), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ otpToken, code, newPassword }),
@@ -160,7 +171,7 @@ const ForgetPassword = () => {
       }
 
       toast.success('Password updated! You can now log in.')
-      navigate('/login', { replace: true })
+      navigate(loginPath, { replace: true })
     } catch {
       toast.error('Could not reach the server. Is the backend running on port 8080?')
     } finally {
@@ -190,9 +201,12 @@ const ForgetPassword = () => {
         <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
           {step === 'email' && (
             <>
-              <h1 className="text-center text-2xl font-bold text-slate-900">Forgot password</h1>
+              <h1 className="text-center text-2xl font-bold text-slate-900">
+                {isVendor ? 'Forgot vendor password' : 'Forgot password'}
+              </h1>
               <p className="mt-2 text-center text-sm text-slate-500">
-                Enter your email and we&apos;ll send you a 6-digit code to reset your password.
+                Enter your {isVendor ? 'vendor ' : ''}email and we&apos;ll send you a 6-digit code to reset your
+                password.
               </p>
 
               <form className="mt-8 space-y-6" onSubmit={handleSendCode}>
@@ -348,7 +362,7 @@ const ForgetPassword = () => {
 
           <p className="mt-6 text-center text-sm text-slate-600">
             Remember your password?{' '}
-            <Link className="font-medium text-teal-700 hover:text-teal-800" to="/login">
+            <Link className="font-medium text-teal-700 hover:text-teal-800" to={loginPath}>
               Back to login
             </Link>
           </p>

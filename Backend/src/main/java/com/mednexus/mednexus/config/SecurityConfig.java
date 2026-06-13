@@ -63,6 +63,8 @@ public class SecurityConfig {
 								"/api/auth/refresh",
 								"/api/auth/vendor/login",
 								"/api/auth/vendor/verify-otp",
+								"/api/auth/vendor/forgot-password",
+								"/api/auth/vendor/reset-password",
 								"/api/auth/logout").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/vendors/signup").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()

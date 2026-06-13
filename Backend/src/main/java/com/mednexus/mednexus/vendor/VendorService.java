@@ -191,6 +191,16 @@ public class VendorService {
 	}
 
 	@Transactional
+	public void resetPassword(Long id, String newPassword) {
+		if (newPassword == null || newPassword.length() < 6) {
+			throw new InvalidVendorStateException("Password must be at least 6 characters");
+		}
+		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		vendor.setPassword(passwordEncoder.encode(newPassword));
+		refreshTokenService.revokeAllForVendor(id);
+	}
+
+	@Transactional
 	public void changePassword(Long id, VendorChangePasswordRequest request) {
 		if (request == null || request.currentPassword() == null || request.newPassword() == null) {
 			throw new InvalidVendorCredentialsException();
