@@ -119,6 +119,12 @@ const OrderTracking = () => {
                       <p className="mt-1 text-xs text-slate-500">
                         Ordered {order.orderDate.slice(0, 10)} · {order.paymentMethod}
                       </p>
+                      <Link
+                        className="mt-2 inline-flex text-xs font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+                        to={`/productsdetail?id=${order.productId}`}
+                      >
+                        View product details
+                      </Link>
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 sm:justify-end">

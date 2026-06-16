@@ -5,6 +5,7 @@ export type ApiOrderStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' |
 
 export type VendorOrderDto = {
   id: number
+  productId: number
   clientName: string
   email: string
   phone: string

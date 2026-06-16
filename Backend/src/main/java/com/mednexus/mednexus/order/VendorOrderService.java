@@ -151,6 +151,7 @@ public class VendorOrderService {
 		}
 		return new VendorOrderResponse(
 				order.getId(),
+				order.getProduct().getId(),
 				user.getFullName(),
 				user.getEmail(),
 				user.getPhoneNumber(),

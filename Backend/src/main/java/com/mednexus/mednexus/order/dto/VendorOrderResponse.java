@@ -8,6 +8,7 @@ import com.mednexus.mednexus.order.PaymentMethod;
 
 public record VendorOrderResponse(
 		Long id,
+		Long productId,
 		String clientName,
 		String email,
 		String phone,
