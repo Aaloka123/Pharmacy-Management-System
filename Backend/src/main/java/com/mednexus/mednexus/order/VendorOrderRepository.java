@@ -32,6 +32,17 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 	@Query("""
 			SELECT o FROM VendorOrder o
 			JOIN FETCH o.user
+			JOIN FETCH o.vendor
+			JOIN FETCH o.product
+			WHERE o.id = :orderId AND o.vendor.id = :vendorId
+			""")
+	Optional<VendorOrder> findByIdAndVendorIdWithDetails(
+			@Param("orderId") Long orderId,
+			@Param("vendorId") Long vendorId);
+
+	@Query("""
+			SELECT o FROM VendorOrder o
+			JOIN FETCH o.user
 			JOIN FETCH o.product
 			WHERE o.id = :orderId AND o.user.id = :userId
 			""")

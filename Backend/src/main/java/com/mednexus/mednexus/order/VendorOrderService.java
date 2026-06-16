@@ -11,6 +11,7 @@ import com.mednexus.mednexus.cart.Cart;
 import com.mednexus.mednexus.cart.CartItemNotFoundException;
 import com.mednexus.mednexus.cart.CartRepository;
 import com.mednexus.mednexus.cart.InsufficientStockException;
+import com.mednexus.mednexus.notification.NotificationService;
 import com.mednexus.mednexus.order.dto.PaymentMethodDto;
 import com.mednexus.mednexus.order.dto.PlaceOrderRequest;
 import com.mednexus.mednexus.order.dto.UpdateOrderStatusRequest;
@@ -29,15 +30,18 @@ public class VendorOrderService {
 	private final VendorOrderRepository vendorOrderRepository;
 	private final CartRepository cartRepository;
 	private final UserRepository userRepository;
+	private final NotificationService notificationService;
 
 	@Autowired
 	public VendorOrderService(
 			VendorOrderRepository vendorOrderRepository,
 			CartRepository cartRepository,
-			UserRepository userRepository) {
+			UserRepository userRepository,
+			NotificationService notificationService) {
 		this.vendorOrderRepository = vendorOrderRepository;
 		this.cartRepository = cartRepository;
 		this.userRepository = userRepository;
+		this.notificationService = notificationService;
 	}
 
 	@Transactional
@@ -105,12 +109,16 @@ public class VendorOrderService {
 
 	@Transactional
 	public VendorOrderResponse updateStatus(Long vendorId, Long orderId, UpdateOrderStatusRequest request) {
-		VendorOrder order = vendorOrderRepository.findByIdAndVendorId(orderId, vendorId)
+		VendorOrder order = vendorOrderRepository.findByIdAndVendorIdWithDetails(orderId, vendorId)
 				.orElseThrow(OrderNotFoundException::new);
 		if (order.getStatus() == OrderStatus.CANCELED) {
 			throw new InvalidVendorStateException("Canceled orders cannot be updated");
 		}
-		order.setStatus(request.status());
+		OrderStatus newStatus = request.status();
+		if (order.getStatus() != newStatus) {
+			order.setStatus(newStatus);
+			notificationService.notifyOrderStatusUpdated(order, newStatus);
+		}
 		return toResponse(order);
 	}
 

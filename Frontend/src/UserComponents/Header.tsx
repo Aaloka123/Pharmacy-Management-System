@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { LuBell, LuShoppingCart } from 'react-icons/lu'
+import { LuShoppingCart } from 'react-icons/lu'
 import mednexuxLogo from '../assets/Mednexux.png'
+import UserNotificationBell from './UserNotificationBell'
 import { resolveProfileImageUrl } from '../lib/api'
 import { getAccessToken, getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
 import { fetchCart } from '../lib/cartApi'
@@ -103,14 +104,7 @@ const Header = () => {
             <div className="flex items-center gap-3">
               {isCartUserLoggedIn() ? (
                 <div className="flex items-center gap-0.5">
-                  <button
-                    aria-label="Notifications"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center text-slate-700 transition duration-200 hover:text-teal-700"
-                    title="Notifications"
-                    type="button"
-                  >
-                    <LuBell className="h-5 w-5" strokeWidth={2} />
-                  </button>
+                  <UserNotificationBell />
                   <NavLink
                     aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : 'Cart'}
                     title="Cart"
