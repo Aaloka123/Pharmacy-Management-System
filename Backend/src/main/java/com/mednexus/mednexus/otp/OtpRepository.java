@@ -1,5 +1,6 @@
 package com.mednexus.mednexus.otp;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,4 +19,8 @@ public interface OtpRepository extends JpaRepository<Otp, Long> {
 	@Modifying
 	@Query("DELETE FROM Otp o WHERE o.vendor.id = :vendorId")
 	void deleteByVendorId(@Param("vendorId") Long vendorId);
+
+	@Modifying
+	@Query("DELETE FROM Otp o WHERE o.expiresAt < :cutoff")
+	int deleteByExpiresAtBefore(@Param("cutoff") Instant cutoff);
 }

@@ -138,6 +138,8 @@ public class OtpService {
 			String email,
 			Function<String, Otp> otpBuilder,
 			BiConsumer<String, String> mailSender) {
+		purgeExpiredOtps();
+
 		String code = String.format("%06d", RANDOM.nextInt(1_000_000));
 		String otpToken = UUID.randomUUID().toString().replace("-", "");
 
@@ -171,6 +173,11 @@ public class OtpService {
 		return otp;
 	}
 
+	@Transactional
+	void purgeExpiredOtps() {
+		otpRepository.deleteByExpiresAtBefore(Instant.now());
+	}
+
 	private Otp verifyOtpRecord(String otpToken, String code, OtpPurpose expectedPurpose) {
 		if (otpToken == null || otpToken.isBlank()) {
 			throw new InvalidOtpException("Verification session is invalid.");
@@ -179,6 +186,8 @@ public class OtpService {
 		if (!normalizedCode.matches("\\d{6}")) {
 			throw new InvalidOtpException("Enter the 6-digit verification code.");
 		}
+
+		purgeExpiredOtps();
 
 		Otp otp = otpRepository.findByOtpToken(otpToken.trim())
 				.orElseThrow(() -> new InvalidOtpException("Verification code expired or invalid. Please try again."));
