@@ -15,6 +15,7 @@ type VendorApi = {
   businessLocation: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   storeStatus: ApiStoreStatus
+  storeLockedByAdmin?: boolean
 }
 
 type VendorRow = {

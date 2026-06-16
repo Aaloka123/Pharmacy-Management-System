@@ -20,6 +20,7 @@ public record VendorResponse(
 		String profileImage,
 		VendorStatus status,
 		StoreStatus storeStatus,
+		boolean storeLockedByAdmin,
 		Instant createdAt,
 		Instant decidedAt) {
 }

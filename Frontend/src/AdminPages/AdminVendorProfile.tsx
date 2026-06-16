@@ -3,9 +3,14 @@ import { useEffect, useState } from 'react'
 import { FaStar } from 'react-icons/fa'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { api, resolveBackendUrl } from '../lib/api'
+import { api, ApiRequestError, resolveBackendUrl } from '../lib/api'
 import { listVendorProductsByVendorId, type ProductDto } from '../lib/productsApi'
-import { toDisplayStoreStatus, type ApiStoreStatus } from '../lib/vendorsApi'
+import {
+  toApiStoreStatus,
+  toDisplayStoreStatus,
+  updateVendorStoreStatus,
+  type ApiStoreStatus,
+} from '../lib/vendorsApi'
 
 type VendorDetail = {
   id: number
@@ -22,6 +27,7 @@ type VendorDetail = {
   profileImage: string | null
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   storeStatus: ApiStoreStatus
+  storeLockedByAdmin: boolean
   createdAt: string
   decidedAt: string | null
 }
@@ -93,6 +99,7 @@ const AdminVendorProfile = () => {
   const [profileImageFailed, setProfileImageFailed] = useState(false)
   const [vendorProducts, setVendorProducts] = useState<VendorProductRow[]>([])
   const [productsLoading, setProductsLoading] = useState(false)
+  const [isUpdatingStoreStatus, setIsUpdatingStoreStatus] = useState(false)
 
   useEffect(() => {
     setProfileImageFailed(false)
@@ -183,6 +190,40 @@ const AdminVendorProfile = () => {
     vendor?.profileImage?.trim() ? resolveBackendUrl(vendor.profileImage) : null
   const showProfileImage = Boolean(profileImageUrl) && !profileImageFailed
   const storeStatus = vendor ? toDisplayStoreStatus(vendor.storeStatus ?? 'OPEN') : 'Open'
+
+  const handleStoreStatusChange = async () => {
+    if (!vendor || vendor.status !== 'APPROVED') return
+
+    const nextStatus = storeStatus === 'Open' ? 'Close' : 'Open'
+    const confirmed = window.confirm(`Do you want to change this vendor's store status to ${nextStatus}?`)
+    if (!confirmed) return
+
+    setIsUpdatingStoreStatus(true)
+    try {
+      const { data } = await updateVendorStoreStatus(vendor.id, toApiStoreStatus(nextStatus))
+      setVendor((current) =>
+        current
+          ? {
+              ...current,
+              storeStatus: data.storeStatus,
+              storeLockedByAdmin: data.storeLockedByAdmin,
+            }
+          : current,
+      )
+      toast.success(
+        nextStatus === 'Close' ? 'Vendor store has been closed.' : 'Vendor store has been opened.',
+      )
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        toast.error('Failed to update store status.')
+      } else {
+        toast.error('Could not reach the server.')
+      }
+      console.error(err)
+    } finally {
+      setIsUpdatingStoreStatus(false)
+    }
+  }
 
   const handlePrintCertificate = () => {
     if (!selectedCertificate) return
@@ -281,21 +322,6 @@ const AdminVendorProfile = () => {
                   </p>
                   <p className="mt-1 text-base text-slate-600">Email: {vendor.email}</p>
                   <p className="mt-1 text-base text-slate-600">Phone: {vendor.phoneNumber}</p>
-                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                    <span className="text-xs font-semibold text-slate-600">Store:</span>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        storeStatus === 'Open' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                      }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          storeStatus === 'Open' ? 'bg-emerald-500' : 'bg-rose-500'
-                        }`}
-                      />
-                      {storeStatus}
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -492,23 +518,25 @@ const AdminVendorProfile = () => {
             </div>
 
             <div className="border-t border-slate-200 px-5 py-5">
-              <h3 className="text-sm font-semibold text-slate-900">Store Status</h3>
-              <div className="mt-3">
-                <span
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
+              <h3 className="text-base font-semibold text-slate-900">Store Status</h3>
+              {vendor.status === 'APPROVED' ? (
+                <button
+                  className={`mt-4 w-full rounded-lg px-4 py-3 text-center text-base font-semibold text-white disabled:opacity-60 ${
                     storeStatus === 'Open'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-rose-100 text-rose-700'
+                      ? 'bg-rose-600 hover:bg-rose-700'
+                      : 'bg-emerald-600 hover:bg-emerald-700'
                   }`}
+                  disabled={isUpdatingStoreStatus}
+                  onClick={() => void handleStoreStatusChange()}
+                  type="button"
                 >
-                  <span
-                    className={`h-2 w-2 rounded-full ${
-                      storeStatus === 'Open' ? 'bg-emerald-500' : 'bg-rose-500'
-                    }`}
-                  />
-                  {storeStatus}
-                </span>
-              </div>
+                  {isUpdatingStoreStatus
+                    ? 'Updating…'
+                    : storeStatus === 'Open'
+                      ? 'Temporarily Close Shop'
+                      : 'Open Shop'}
+                </button>
+              ) : null}
             </div>
           </section>
         )}

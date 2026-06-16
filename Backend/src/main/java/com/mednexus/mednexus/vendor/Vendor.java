@@ -64,6 +64,9 @@ public class Vendor {
 	@Column(name = "store_status", nullable = false, length = 20)
 	private StoreStatus storeStatus = StoreStatus.OPEN;
 
+	@Column(name = "store_locked_by_admin", nullable = false)
+	private boolean storeLockedByAdmin = false;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -207,6 +210,14 @@ public class Vendor {
 
 	public void setStoreStatus(StoreStatus storeStatus) {
 		this.storeStatus = storeStatus;
+	}
+
+	public boolean isStoreLockedByAdmin() {
+		return storeLockedByAdmin;
+	}
+
+	public void setStoreLockedByAdmin(boolean storeLockedByAdmin) {
+		this.storeLockedByAdmin = storeLockedByAdmin;
 	}
 
 	public Instant getCreatedAt() {

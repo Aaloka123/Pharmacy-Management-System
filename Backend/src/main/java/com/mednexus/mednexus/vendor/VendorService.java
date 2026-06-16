@@ -193,7 +193,7 @@ public class VendorService {
 	}
 
 	@Transactional
-	public VendorResponse updateStoreStatus(Long id, UpdateStoreStatusRequest request) {
+	public VendorResponse updateStoreStatus(Long id, UpdateStoreStatusRequest request, boolean isAdmin) {
 		if (request == null || request.storeStatus() == null) {
 			throw new InvalidVendorStateException("Store status is required");
 		}
@@ -201,7 +201,20 @@ public class VendorService {
 		if (vendor.getStatus() != VendorStatus.APPROVED) {
 			throw new InvalidVendorStateException("Only approved vendors can change store status");
 		}
-		vendor.setStoreStatus(request.storeStatus());
+
+		StoreStatus requested = request.storeStatus();
+		if (!isAdmin && vendor.isStoreLockedByAdmin() && requested == StoreStatus.OPEN) {
+			throw new InvalidVendorStateException(
+					"Your store was closed by an administrator. Only an administrator can reopen it.");
+		}
+
+		if (requested == StoreStatus.OPEN) {
+			vendor.setStoreStatus(StoreStatus.OPEN);
+			vendor.setStoreLockedByAdmin(false);
+		} else {
+			vendor.setStoreStatus(StoreStatus.CLOSED);
+			vendor.setStoreLockedByAdmin(isAdmin);
+		}
 		return toResponse(vendor);
 	}
 
@@ -239,6 +252,7 @@ public class VendorService {
 		}
 		vendor.setStatus(VendorStatus.APPROVED);
 		vendor.setStoreStatus(StoreStatus.OPEN);
+		vendor.setStoreLockedByAdmin(false);
 		vendor.setDecidedAt(Instant.now());
 		String recipient = vendor.getEmail();
 		String vendorName = vendor.getName();
@@ -282,6 +296,7 @@ public class VendorService {
 				vendor.getProfileImage(),
 				vendor.getStatus(),
 				vendor.getStoreStatus(),
+				vendor.isStoreLockedByAdmin(),
 				vendor.getCreatedAt(),
 				vendor.getDecidedAt());
 	}

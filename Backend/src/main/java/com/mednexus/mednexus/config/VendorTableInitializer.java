@@ -35,6 +35,11 @@ public class VendorTableInitializer implements ApplicationRunner {
 			jdbc.execute(
 					"ALTER TABLE `vendor` ADD COLUMN `store_status` varchar(20) NOT NULL DEFAULT 'OPEN'");
 		}
+		if (!columnExists("vendor", "store_locked_by_admin")) {
+			log.info("Adding `store_locked_by_admin` column to `vendor` table...");
+			jdbc.execute(
+					"ALTER TABLE `vendor` ADD COLUMN `store_locked_by_admin` tinyint(1) NOT NULL DEFAULT 0");
+		}
 		jdbc.execute("UPDATE `vendor` SET `store_status` = 'OPEN' WHERE `status` = 'PENDING'");
 	}
 

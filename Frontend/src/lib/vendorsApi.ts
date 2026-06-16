@@ -27,7 +27,10 @@ export function toApiStoreStatus(status: 'Open' | 'Close'): ApiStoreStatus {
 }
 
 export function updateVendorStoreStatus(vendorId: number, storeStatus: ApiStoreStatus) {
-  return api.put(`/api/vendors/${vendorId}/store-status`, { storeStatus })
+  return api.put<{ storeStatus: ApiStoreStatus; storeLockedByAdmin: boolean }>(
+    `/api/vendors/${vendorId}/store-status`,
+    { storeStatus },
+  )
 }
 
 function filterProductsForVendor(products: ProductDto[], vendorId: number) {

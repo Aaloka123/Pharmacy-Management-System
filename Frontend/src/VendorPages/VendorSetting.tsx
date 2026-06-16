@@ -27,6 +27,7 @@ type VendorRecord = {
   profileImage: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   storeStatus: ApiStoreStatus;
+  storeLockedByAdmin: boolean;
 };
 
 const Setting = () => {
@@ -150,13 +151,26 @@ const Setting = () => {
 
   const handleStoreStatusChange = async (nextStatus: 'Open' | 'Close') => {
     if (!vendor) return;
+    if (nextStatus === 'Open' && vendor.storeLockedByAdmin) {
+      toast.error('Your store was closed by an administrator. Only an administrator can reopen it.');
+      return;
+    }
     const confirmed = window.confirm(`Do you want to change store status to ${nextStatus}?`);
     if (!confirmed) return;
 
     setIsUpdatingStoreStatus(true);
     try {
       const { data } = await updateVendorStoreStatus(vendor.id, toApiStoreStatus(nextStatus));
-      applyVendor(data);
+      setVendor((current) =>
+        current
+          ? {
+              ...current,
+              storeStatus: data.storeStatus,
+              storeLockedByAdmin: data.storeLockedByAdmin,
+            }
+          : current,
+      );
+      setStoreStatus(toDisplayStoreStatus(data.storeStatus));
       toast.success(nextStatus === 'Close' ? 'Your shop is now closed.' : 'Your shop is now open.');
     } catch (e) {
       if (e instanceof ApiRequestError) {
@@ -622,12 +636,21 @@ const Setting = () => {
 
             <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Store Status</h2>
+              {vendor.storeLockedByAdmin && storeStatus === 'Close' ? (
+                <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Your store was closed by an administrator. Contact admin to reopen your shop.
+                </p>
+              ) : null}
               <div className="mt-3">
                 <button
                   className={`w-full rounded-lg px-4 py-1.5 text-center text-sm font-semibold text-white disabled:opacity-60 ${
                     storeStatus === 'Open' ? 'bg-emerald-600' : 'bg-rose-600'
                   }`}
-                  disabled={isUpdatingStoreStatus || vendor.status !== 'APPROVED'}
+                  disabled={
+                    isUpdatingStoreStatus
+                    || vendor.status !== 'APPROVED'
+                    || (storeStatus === 'Close' && vendor.storeLockedByAdmin)
+                  }
                   onClick={() => void handleStoreStatusChange(storeStatus === 'Open' ? 'Close' : 'Open')}
                   type="button"
                 >

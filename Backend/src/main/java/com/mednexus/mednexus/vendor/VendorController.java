@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mednexus.mednexus.security.PlatformUser;
+import com.mednexus.mednexus.user.Role;
 import com.mednexus.mednexus.vendor.dto.PublicVendorResponse;
 import com.mednexus.mednexus.vendor.dto.UpdateStoreStatusRequest;
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
@@ -118,11 +119,13 @@ public class VendorController {
 	}
 
 	@PutMapping("/{id}/store-status")
-	@PreAuthorize("hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId")
+	@PreAuthorize("hasRole('ADMIN') or (hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<VendorResponse> updateStoreStatus(
+			@AuthenticationPrincipal PlatformUser principal,
 			@PathVariable Long id,
 			@Valid @RequestBody UpdateStoreStatusRequest request) {
-		return ResponseEntity.ok(vendorService.updateStoreStatus(id, request));
+		boolean isAdmin = principal.getAppRole() == Role.ADMIN;
+		return ResponseEntity.ok(vendorService.updateStoreStatus(id, request, isAdmin));
 	}
 
 	@PostMapping("/{id}/approve")
