@@ -2,6 +2,8 @@ import { api } from './api'
 import type { ProductDto } from './productsApi'
 import { listPublicProducts } from './productsApi'
 
+export type ApiStoreStatus = 'OPEN' | 'CLOSED'
+
 export type PublicVendorDto = {
   id: number
   name: string
@@ -12,7 +14,20 @@ export type PublicVendorDto = {
   email: string
   pharmacyLicense: string
   profileImage: string | null
+  storeStatus: ApiStoreStatus
   createdAt: string
+}
+
+export function toDisplayStoreStatus(status: ApiStoreStatus): 'Open' | 'Close' {
+  return status === 'OPEN' ? 'Open' : 'Close'
+}
+
+export function toApiStoreStatus(status: 'Open' | 'Close'): ApiStoreStatus {
+  return status === 'Open' ? 'OPEN' : 'CLOSED'
+}
+
+export function updateVendorStoreStatus(vendorId: number, storeStatus: ApiStoreStatus) {
+  return api.put(`/api/vendors/${vendorId}/store-status`, { storeStatus })
 }
 
 function filterProductsForVendor(products: ProductDto[], vendorId: number) {

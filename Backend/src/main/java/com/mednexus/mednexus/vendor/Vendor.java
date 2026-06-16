@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
@@ -59,6 +60,10 @@ public class Vendor {
 	@Column(name = "status", nullable = false, length = 20)
 	private VendorStatus status = VendorStatus.PENDING;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "store_status", nullable = false, length = 20)
+	private StoreStatus storeStatus = StoreStatus.OPEN;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -72,6 +77,16 @@ public class Vendor {
 	private Instant refreshTokenExpiresAt;
 
 	public Vendor() {
+	}
+
+	@PrePersist
+	void onCreate() {
+		if (createdAt == null) {
+			createdAt = Instant.now();
+		}
+		if (storeStatus == null) {
+			storeStatus = StoreStatus.OPEN;
+		}
 	}
 
 	public Long getId() {
@@ -184,6 +199,14 @@ public class Vendor {
 
 	public void setStatus(VendorStatus status) {
 		this.status = status;
+	}
+
+	public StoreStatus getStoreStatus() {
+		return storeStatus;
+	}
+
+	public void setStoreStatus(StoreStatus storeStatus) {
+		this.storeStatus = storeStatus;
 	}
 
 	public Instant getCreatedAt() {

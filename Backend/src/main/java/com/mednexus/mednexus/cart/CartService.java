@@ -17,6 +17,7 @@ import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserNotFoundException;
 import com.mednexus.mednexus.user.UserRepository;
 import com.mednexus.mednexus.vendor.VendorStatus;
+import com.mednexus.mednexus.vendor.StoreStatus;
 
 @Service
 public class CartService {
@@ -50,7 +51,7 @@ public class CartService {
 		int addQty = request.quantity() != null && request.quantity() > 0 ? request.quantity() : 1;
 
 		Product product = productRepository
-				.findCatalogById(request.productId(), VendorStatus.APPROVED, ProductStatus.ACTIVE)
+				.findCatalogById(request.productId(), VendorStatus.APPROVED, StoreStatus.OPEN, ProductStatus.ACTIVE)
 				.orElseThrow(ProductNotFoundException::new);
 
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);

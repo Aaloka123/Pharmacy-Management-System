@@ -5,6 +5,12 @@ import { toast } from 'react-toastify';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import { api, ApiRequestError } from '../lib/api';
 import { getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth';
+import {
+  toApiStoreStatus,
+  toDisplayStoreStatus,
+  updateVendorStoreStatus,
+  type ApiStoreStatus,
+} from '../lib/vendorsApi';
 
 type VendorRecord = {
   id: number;
@@ -20,6 +26,7 @@ type VendorRecord = {
   panVatCertificate: string;
   profileImage: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  storeStatus: ApiStoreStatus;
 };
 
 const Setting = () => {
@@ -35,6 +42,7 @@ const Setting = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [storeStatus, setStoreStatus] = useState<'Open' | 'Close'>('Open');
+  const [isUpdatingStoreStatus, setIsUpdatingStoreStatus] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [businessName, setBusinessName] = useState('');
@@ -62,6 +70,11 @@ const Setting = () => {
     setPhoneNumber(data.phoneNumber);
     setLocation(data.location);
     setProfileImage(data.profileImage ?? null);
+    setStoreStatus(
+      data.status === 'APPROVED'
+        ? toDisplayStoreStatus(data.storeStatus ?? 'OPEN')
+        : 'Open',
+    );
   };
 
   useEffect(() => {
@@ -135,10 +148,25 @@ const Setting = () => {
     }
   };
 
-  const handleStoreStatusChange = (nextStatus: 'Open' | 'Close') => {
+  const handleStoreStatusChange = async (nextStatus: 'Open' | 'Close') => {
+    if (!vendor) return;
     const confirmed = window.confirm(`Do you want to change store status to ${nextStatus}?`);
     if (!confirmed) return;
-    setStoreStatus(nextStatus);
+
+    setIsUpdatingStoreStatus(true);
+    try {
+      const { data } = await updateVendorStoreStatus(vendor.id, toApiStoreStatus(nextStatus));
+      applyVendor(data);
+      toast.success(nextStatus === 'Close' ? 'Your shop is now closed.' : 'Your shop is now open.');
+    } catch (e) {
+      if (e instanceof ApiRequestError) {
+        toast.error('Failed to update store status.');
+      } else {
+        toast.error('Could not reach the server.');
+      }
+    } finally {
+      setIsUpdatingStoreStatus(false);
+    }
   };
 
   const updateVendor = async (
@@ -596,13 +624,14 @@ const Setting = () => {
               <h2 className="text-base font-semibold text-slate-900">Store Status</h2>
               <div className="mt-3">
                 <button
-                  className={`w-full rounded-lg px-4 py-1.5 text-center text-sm font-semibold text-white ${
+                  className={`w-full rounded-lg px-4 py-1.5 text-center text-sm font-semibold text-white disabled:opacity-60 ${
                     storeStatus === 'Open' ? 'bg-emerald-600' : 'bg-rose-600'
                   }`}
-                  onClick={() => handleStoreStatusChange(storeStatus === 'Open' ? 'Close' : 'Open')}
+                  disabled={isUpdatingStoreStatus || vendor.status !== 'APPROVED'}
+                  onClick={() => void handleStoreStatusChange(storeStatus === 'Open' ? 'Close' : 'Open')}
                   type="button"
                 >
-                  {storeStatus}
+                  {isUpdatingStoreStatus ? 'Updating…' : storeStatus}
                 </button>
               </div>
             </section>

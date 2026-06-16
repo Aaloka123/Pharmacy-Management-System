@@ -20,9 +20,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.mednexus.mednexus.security.PlatformUser;
 import com.mednexus.mednexus.vendor.dto.PublicVendorResponse;
+import com.mednexus.mednexus.vendor.dto.UpdateStoreStatusRequest;
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
 import com.mednexus.mednexus.vendor.dto.VendorChangePasswordRequest;
 import com.mednexus.mednexus.vendor.dto.VendorResponse;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/vendors")
@@ -112,6 +115,14 @@ public class VendorController {
 			@PathVariable Long id,
 			@RequestParam("image") MultipartFile image) {
 		return ResponseEntity.ok(vendorService.updateProfileImage(id, image));
+	}
+
+	@PutMapping("/{id}/store-status")
+	@PreAuthorize("hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId")
+	public ResponseEntity<VendorResponse> updateStoreStatus(
+			@PathVariable Long id,
+			@Valid @RequestBody UpdateStoreStatusRequest request) {
+		return ResponseEntity.ok(vendorService.updateStoreStatus(id, request));
 	}
 
 	@PostMapping("/{id}/approve")

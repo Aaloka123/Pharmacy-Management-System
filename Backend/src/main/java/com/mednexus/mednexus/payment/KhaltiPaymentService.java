@@ -32,6 +32,7 @@ import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserNotFoundException;
 import com.mednexus.mednexus.user.UserRepository;
 import com.mednexus.mednexus.vendor.VendorStatus;
+import com.mednexus.mednexus.vendor.StoreStatus;
 
 @Service
 public class KhaltiPaymentService {
@@ -83,7 +84,8 @@ public class KhaltiPaymentService {
 					.orElseThrow(CartItemNotFoundException::new);
 			Product product = cart.getProduct();
 			if (product.getStatus() != ProductStatus.ACTIVE
-					|| product.getVendor().getStatus() != VendorStatus.APPROVED) {
+					|| product.getVendor().getStatus() != VendorStatus.APPROVED
+					|| product.getVendor().getStoreStatus() != StoreStatus.OPEN) {
 				throw new IllegalArgumentException("Product is no longer available: " + product.getProductName());
 			}
 			if (cart.getQuantity() > product.getStock()) {

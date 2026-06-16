@@ -17,6 +17,7 @@ import com.mednexus.mednexus.vendor.Vendor;
 import com.mednexus.mednexus.vendor.VendorNotApprovedException;
 import com.mednexus.mednexus.vendor.VendorRepository;
 import com.mednexus.mednexus.vendor.VendorStatus;
+import com.mednexus.mednexus.vendor.StoreStatus;
 
 @Service
 public class ProductService {
@@ -41,7 +42,7 @@ public class ProductService {
 	public List<ProductResponse> listCatalog(String category) {
 		String normalizedCategory = normalizeCategoryFilter(category);
 		return productRepository
-				.findCatalog(VendorStatus.APPROVED, ProductStatus.ACTIVE, normalizedCategory)
+				.findCatalog(VendorStatus.APPROVED, StoreStatus.OPEN, ProductStatus.ACTIVE, normalizedCategory)
 				.stream()
 				.map(this::toResponse)
 				.toList();
@@ -51,7 +52,7 @@ public class ProductService {
 	public List<ProductResponse> listNewArrivals(int limit) {
 		int capped = Math.min(Math.max(limit, 1), 20);
 		return productRepository
-				.findCatalog(VendorStatus.APPROVED, ProductStatus.ACTIVE, null)
+				.findCatalog(VendorStatus.APPROVED, StoreStatus.OPEN, ProductStatus.ACTIVE, null)
 				.stream()
 				.limit(capped)
 				.map(this::toResponse)
@@ -61,7 +62,7 @@ public class ProductService {
 	@Transactional(readOnly = true)
 	public ProductResponse getCatalogProduct(Long id) {
 		Product product = productRepository
-				.findCatalogById(id, VendorStatus.APPROVED, ProductStatus.ACTIVE)
+				.findCatalogById(id, VendorStatus.APPROVED, StoreStatus.OPEN, ProductStatus.ACTIVE)
 				.orElseThrow(ProductNotFoundException::new);
 		return toResponse(product);
 	}
@@ -80,8 +81,11 @@ public class ProductService {
 		if (vendor.getStatus() != VendorStatus.APPROVED) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vendor not found");
 		}
+		if (vendor.getStoreStatus() != StoreStatus.OPEN) {
+			return List.of();
+		}
 		return productRepository
-				.findCatalogByVendorId(vendorId, VendorStatus.APPROVED, ProductStatus.ACTIVE)
+				.findCatalogByVendorId(vendorId, VendorStatus.APPROVED, StoreStatus.OPEN, ProductStatus.ACTIVE)
 				.stream()
 				.map(this::toResponse)
 				.toList();

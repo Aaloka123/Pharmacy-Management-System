@@ -3,6 +3,7 @@ package com.mednexus.mednexus.vendor.dto;
 import java.time.Instant;
 
 import com.mednexus.mednexus.vendor.VendorStatus;
+import com.mednexus.mednexus.vendor.StoreStatus;
 
 public record VendorResponse(
 		Long id,
@@ -18,6 +19,7 @@ public record VendorResponse(
 		String panVatCertificate,
 		String profileImage,
 		VendorStatus status,
+		StoreStatus storeStatus,
 		Instant createdAt,
 		Instant decidedAt) {
 }

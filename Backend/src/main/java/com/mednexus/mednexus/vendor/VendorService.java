@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.otp.EmailService;
 import com.mednexus.mednexus.vendor.dto.PublicVendorResponse;
+import com.mednexus.mednexus.vendor.dto.UpdateStoreStatusRequest;
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
 import com.mednexus.mednexus.auth.RefreshTokenService;
 import com.mednexus.mednexus.vendor.dto.VendorChangePasswordRequest;
@@ -86,6 +87,7 @@ public class VendorService {
 		vendor.setPharmacyManagementCertificate(pharmacyCertUrl);
 		vendor.setPanVatCertificate(panCertUrl);
 		vendor.setStatus(VendorStatus.PENDING);
+		vendor.setStoreStatus(StoreStatus.OPEN);
 		vendor.setCreatedAt(Instant.now());
 
 		Vendor saved = vendorRepository.save(vendor);
@@ -191,6 +193,19 @@ public class VendorService {
 	}
 
 	@Transactional
+	public VendorResponse updateStoreStatus(Long id, UpdateStoreStatusRequest request) {
+		if (request == null || request.storeStatus() == null) {
+			throw new InvalidVendorStateException("Store status is required");
+		}
+		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		if (vendor.getStatus() != VendorStatus.APPROVED) {
+			throw new InvalidVendorStateException("Only approved vendors can change store status");
+		}
+		vendor.setStoreStatus(request.storeStatus());
+		return toResponse(vendor);
+	}
+
+	@Transactional
 	public void resetPassword(Long id, String newPassword) {
 		if (newPassword == null || newPassword.length() < 6) {
 			throw new InvalidVendorStateException("Password must be at least 6 characters");
@@ -223,6 +238,7 @@ public class VendorService {
 			throw new InvalidVendorStateException("Vendor is not pending approval");
 		}
 		vendor.setStatus(VendorStatus.APPROVED);
+		vendor.setStoreStatus(StoreStatus.OPEN);
 		vendor.setDecidedAt(Instant.now());
 		String recipient = vendor.getEmail();
 		String vendorName = vendor.getName();
@@ -265,6 +281,7 @@ public class VendorService {
 				vendor.getPanVatCertificate(),
 				vendor.getProfileImage(),
 				vendor.getStatus(),
+				vendor.getStoreStatus(),
 				vendor.getCreatedAt(),
 				vendor.getDecidedAt());
 	}
@@ -280,6 +297,7 @@ public class VendorService {
 				vendor.getEmail(),
 				vendor.getPharmacyLicense(),
 				vendor.getProfileImage(),
+				vendor.getStoreStatus(),
 				vendor.getCreatedAt());
 	}
 }

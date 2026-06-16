@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.mednexus.mednexus.vendor.VendorStatus;
+import com.mednexus.mednexus.vendor.StoreStatus;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
@@ -23,12 +24,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 			SELECT p FROM Product p
 			JOIN FETCH p.vendor v
 			WHERE v.status = :vendorStatus
+			AND v.storeStatus = :storeStatus
 			AND p.status = :productStatus
 			AND (:category IS NULL OR LOWER(p.category) = LOWER(:category))
 			ORDER BY p.createdAt DESC
 			""")
 	List<Product> findCatalog(
 			@Param("vendorStatus") VendorStatus vendorStatus,
+			@Param("storeStatus") StoreStatus storeStatus,
 			@Param("productStatus") ProductStatus productStatus,
 			@Param("category") String category);
 
@@ -37,12 +40,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 			JOIN FETCH p.vendor v
 			WHERE v.id = :vendorId
 			AND v.status = :vendorStatus
+			AND v.storeStatus = :storeStatus
 			AND p.status = :productStatus
 			ORDER BY p.createdAt DESC
 			""")
 	List<Product> findCatalogByVendorId(
 			@Param("vendorId") Long vendorId,
 			@Param("vendorStatus") VendorStatus vendorStatus,
+			@Param("storeStatus") StoreStatus storeStatus,
 			@Param("productStatus") ProductStatus productStatus);
 
 	@Query("""
@@ -50,10 +55,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 			JOIN FETCH p.vendor v
 			WHERE p.id = :id
 			AND v.status = :vendorStatus
+			AND v.storeStatus = :storeStatus
 			AND p.status = :productStatus
 			""")
 	Optional<Product> findCatalogById(
 			@Param("id") Long id,
 			@Param("vendorStatus") VendorStatus vendorStatus,
+			@Param("storeStatus") StoreStatus storeStatus,
 			@Param("productStatus") ProductStatus productStatus);
 }

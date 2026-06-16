@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { api, resolveBackendUrl } from '../lib/api'
 import { listVendorProductsByVendorId, type ProductDto } from '../lib/productsApi'
+import { toDisplayStoreStatus, type ApiStoreStatus } from '../lib/vendorsApi'
 
 type VendorDetail = {
   id: number
@@ -20,6 +21,7 @@ type VendorDetail = {
   panVatCertificate: string
   profileImage: string | null
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  storeStatus: ApiStoreStatus
   createdAt: string
   decidedAt: string | null
 }
@@ -88,7 +90,6 @@ const AdminVendorProfile = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCertificate, setSelectedCertificate] = useState<{ title: string; src: string } | null>(null)
-  const [storeStatus, setStoreStatus] = useState<'Open' | 'Close'>('Open')
   const [profileImageFailed, setProfileImageFailed] = useState(false)
   const [vendorProducts, setVendorProducts] = useState<VendorProductRow[]>([])
   const [productsLoading, setProductsLoading] = useState(false)
@@ -181,13 +182,7 @@ const AdminVendorProfile = () => {
   const profileImageUrl =
     vendor?.profileImage?.trim() ? resolveBackendUrl(vendor.profileImage) : null
   const showProfileImage = Boolean(profileImageUrl) && !profileImageFailed
-
-  const handleStoreStatusChange = () => {
-    const nextStatus = storeStatus === 'Open' ? 'Close' : 'Open'
-    const confirmed = window.confirm(`Do you want to change store status to ${nextStatus}?`)
-    if (!confirmed) return
-    setStoreStatus(nextStatus)
-  }
+  const storeStatus = vendor ? toDisplayStoreStatus(vendor.storeStatus ?? 'OPEN') : 'Open'
 
   const handlePrintCertificate = () => {
     if (!selectedCertificate) return
@@ -499,15 +494,20 @@ const AdminVendorProfile = () => {
             <div className="border-t border-slate-200 px-5 py-5">
               <h3 className="text-sm font-semibold text-slate-900">Store Status</h3>
               <div className="mt-3">
-                <button
-                  className={`w-full rounded-lg px-4 py-2 text-center text-sm font-semibold text-white ${
-                    storeStatus === 'Open' ? 'bg-emerald-600' : 'bg-rose-600'
+                <span
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
+                    storeStatus === 'Open'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-rose-100 text-rose-700'
                   }`}
-                  onClick={handleStoreStatusChange}
-                  type="button"
                 >
-                  {storeStatus === 'Open' ? 'Temporarily Close Shop' : 'Open Shop'}
-                </button>
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      storeStatus === 'Open' ? 'bg-emerald-500' : 'bg-rose-500'
+                    }`}
+                  />
+                  {storeStatus}
+                </span>
               </div>
             </div>
           </section>

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { api } from '../lib/api'
+import { toDisplayStoreStatus, type ApiStoreStatus } from '../lib/vendorsApi'
 
 type VendorApi = {
   id: number
@@ -13,6 +14,7 @@ type VendorApi = {
   businessName: string
   businessLocation: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  storeStatus: ApiStoreStatus
 }
 
 type VendorRow = {
@@ -27,18 +29,14 @@ type VendorRow = {
 
 const APPROVED_VENDORS_URL = '/api/vendors?status=APPROVED'
 
-/** Placeholder until store open/close is backed by the API. */
-const placeholderStoreStatus = (index: number): 'Open' | 'Close' =>
-  index % 2 === 0 ? 'Open' : 'Close'
-
-const toRow = (vendor: VendorApi, index: number): VendorRow => ({
+const toRow = (vendor: VendorApi): VendorRow => ({
   id: vendor.id,
   shopName: vendor.businessName,
   ownerName: vendor.name,
   location: vendor.businessLocation,
   email: vendor.email,
   phone: vendor.phoneNumber,
-  storeStatus: placeholderStoreStatus(index),
+  storeStatus: toDisplayStoreStatus(vendor.storeStatus ?? 'OPEN'),
 })
 
 const AdminVendors = () => {
@@ -56,7 +54,7 @@ const AdminVendors = () => {
       try {
         const { data } = await api.get<VendorApi[]>(APPROVED_VENDORS_URL)
         if (!cancelled) {
-          setVendors(data.map((vendor, index) => toRow(vendor, index)))
+          setVendors(data.map((vendor) => toRow(vendor)))
         }
       } catch (err) {
         if (!cancelled) {
