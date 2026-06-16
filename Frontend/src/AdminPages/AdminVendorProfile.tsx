@@ -1,5 +1,5 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
-import { AdminMain, FadeInOnScroll } from '../components/PortalMain'
+import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { useEffect, useState } from 'react'
 import { FaStar } from 'react-icons/fa'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -267,7 +267,7 @@ const AdminVendorProfile = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <AdminLayout>
       <AdminNavbar />
       <AdminMain>
       <FadeInOnScroll>
@@ -585,7 +585,7 @@ const AdminVendorProfile = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   )
 }
 

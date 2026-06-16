@@ -1,5 +1,5 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
-import { AdminMain, FadeInOnScroll } from '../components/PortalMain'
+import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -177,7 +177,7 @@ const AdminUserProfile = () => {
   }, 0)
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <AdminLayout>
       <AdminNavbar />
       <AdminMain>
       <FadeInOnScroll>
@@ -362,7 +362,7 @@ const AdminUserProfile = () => {
         )}
       </FadeInOnScroll>
       </AdminMain>
-    </div>
+    </AdminLayout>
   )
 }
 

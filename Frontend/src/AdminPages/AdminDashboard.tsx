@@ -11,7 +11,7 @@ import {
 } from 'react-icons/lu'
 import { Link } from 'react-router-dom'
 import AdminNavbar from '../AdminComponents/AdminNavbar'
-import { AdminMain, FadeInOnScroll } from '../components/PortalMain'
+import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { getStoredUser } from '../lib/auth'
 
 const STATS = [
@@ -222,7 +222,7 @@ const AdminDashboard = () => {
   const adminName = getStoredUser()?.fullName?.trim() || 'Admin'
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <AdminLayout>
       <AdminNavbar />
       <AdminMain className="flex-1 overflow-y-auto p-6 lg:p-8">
         <FadeInOnScroll>
@@ -436,7 +436,7 @@ const AdminDashboard = () => {
         </section>
         </FadeInOnScroll>
       </AdminMain>
-    </div>
+    </AdminLayout>
   )
 }
 

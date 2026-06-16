@@ -1,16 +1,16 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
-import { AdminMain, FadeInOnScroll } from '../components/PortalMain'
+import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain'
 
 const AdminProducts = () => {
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <AdminLayout>
       <AdminNavbar />
       <AdminMain>
       <FadeInOnScroll>
         <h1 className="text-2xl font-bold text-slate-900">Admin Products</h1>
       </FadeInOnScroll>
       </AdminMain>
-    </div>
+    </AdminLayout>
   )
 }
 

@@ -36,7 +36,7 @@ const Header = () => {
     'rounded-lg px-3.5 py-2 text-[14px] font-medium text-slate-700 transition duration-200 hover:text-teal-700'
   const activeLinkClass = 'text-teal-700'
   const mobileLinkClass =
-    'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium text-slate-800 transition hover:bg-slate-50 hover:text-teal-700'
+    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-teal-700 transition hover:bg-teal-50'
 
   const [user, setUser] = useState<AuthUser | null>(() => getStoredUser())
   const [cartCount, setCartCount] = useState(0)
@@ -115,7 +115,7 @@ const Header = () => {
             id="mobile-nav"
           >
             <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4">
-              <p className="text-sm font-semibold text-slate-900">Menu</p>
+              <p className="text-sm font-medium text-teal-700">Menu</p>
               <button
                 aria-label="Close menu"
                 className="inline-flex h-9 w-9 cursor-pointer items-center justify-center text-slate-700 transition hover:text-teal-700"
@@ -181,7 +181,7 @@ const Header = () => {
                   return (
                     <NavLink
                       className={({ isActive }) =>
-                        `${mobileLinkClass} ${isActive ? 'bg-teal-50 font-semibold text-teal-700' : ''}`
+                        `${mobileLinkClass} ${isActive ? 'bg-teal-50' : ''}`
                       }
                       end={link.end}
                       key={link.to}
@@ -209,7 +209,7 @@ const Header = () => {
                   {isCartUserLoggedIn() ? (
                     <NavLink
                       className={({ isActive }) =>
-                        `${mobileLinkClass} ${isActive ? 'bg-teal-50 font-semibold text-teal-700' : ''}`
+                        `${mobileLinkClass} ${isActive ? 'bg-teal-50' : ''}`
                       }
                       onClick={closeMenu}
                       to="/cart"
@@ -220,7 +220,7 @@ const Header = () => {
                   ) : null}
                   <NavLink
                     className={({ isActive }) =>
-                      `${mobileLinkClass} ${isActive ? 'bg-teal-50 font-semibold text-teal-700' : ''}`
+                      `${mobileLinkClass} ${isActive ? 'bg-teal-50' : ''}`
                     }
                     onClick={closeMenu}
                     to="/ordertracking"
@@ -270,7 +270,7 @@ const Header = () => {
           ))}
         </div>
 
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-2">
           <div className="relative hidden md:block">
             <svg
               aria-hidden="true"
@@ -295,35 +295,31 @@ const Header = () => {
           </div>
 
           {isLoggedIn ? (
-            <>
-              {isCartUserLoggedIn() ? (
-                <>
-                  <UserNotificationBell />
-                  <NavLink
-                    aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : 'Cart'}
-                    className={({ isActive }) =>
-                      `relative flex h-10 w-10 shrink-0 items-center justify-center text-slate-700 transition duration-200 hover:text-teal-700 ${
-                        isActive ? 'text-teal-700' : ''
-                      }`
-                    }
-                    onClick={closeMenu}
-                    title="Cart"
-                    to="/cart"
-                  >
-                    <LuShoppingCart className="h-5 w-5" strokeWidth={2} />
-                    {cartCount > 0 ? (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-slate-200 bg-white px-1 text-[10px] font-semibold tabular-nums text-teal-700 shadow-sm">
-                        {cartCount}
-                      </span>
-                    ) : null}
-                  </NavLink>
-                </>
-              ) : null}
-              <div className="hidden lg:block">
+            isCartUserLoggedIn() ? (
+              <div className="flex items-center gap-2">
+                <UserNotificationBell />
+                <NavLink
+                  aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : 'Cart'}
+                  className={({ isActive }) =>
+                    `relative flex h-10 w-10 shrink-0 items-center justify-center text-slate-700 transition duration-200 hover:text-teal-700 ${
+                      isActive ? 'text-teal-700' : ''
+                    }`
+                  }
+                  onClick={closeMenu}
+                  title="Cart"
+                  to="/cart"
+                >
+                  <LuShoppingCart className="h-5 w-5" strokeWidth={2} />
+                  {cartCount > 0 ? (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-slate-200 bg-white px-1 text-[10px] font-semibold tabular-nums text-teal-700 shadow-sm">
+                      {cartCount}
+                    </span>
+                  ) : null}
+                </NavLink>
                 <NavLink
                   aria-label="Profile"
                   className={({ isActive }) =>
-                    `flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold transition duration-200 ${
+                    `hidden h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold transition duration-200 lg:flex ${
                       isActive ? 'border-teal-700 ring-2 ring-teal-600/30' : 'border-slate-200 hover:border-teal-400'
                     }`
                   }
@@ -345,7 +341,32 @@ const Header = () => {
                   )}
                 </NavLink>
               </div>
-            </>
+            ) : (
+              <NavLink
+                aria-label="Profile"
+                className={({ isActive }) =>
+                  `hidden h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold transition duration-200 lg:flex ${
+                    isActive ? 'border-teal-700 ring-2 ring-teal-600/30' : 'border-slate-200 hover:border-teal-400'
+                  }`
+                }
+                onClick={closeMenu}
+                title={user?.email}
+                to="/profile"
+              >
+                {avatarUrl ? (
+                  <img
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                    src={avatarUrl}
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center bg-linear-to-br from-teal-600 to-teal-700 text-white">
+                    {userInitial}
+                  </span>
+                )}
+              </NavLink>
+            )
           ) : (
             <NavLink
               className="hidden rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-4 py-2 text-[14px] font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800 sm:inline-flex sm:px-5"

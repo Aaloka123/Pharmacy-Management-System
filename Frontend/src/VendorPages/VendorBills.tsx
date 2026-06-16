@@ -1,6 +1,6 @@
 import { useMemo, useState, type ChangeEvent } from 'react';
 import Navbar from '../VendorComponents/Navbar';
-import { VendorMain, FadeInOnScroll } from '../components/PortalMain';
+import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain';
 import mednexuxLogo from '../assets/Mednexux.png';
 
 type InvoiceStatus = 'Unpaid' | 'Paid' | 'Partially Paid';
@@ -166,7 +166,7 @@ const Bills = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <VendorLayout>
       <Navbar />
       <VendorMain>
       <FadeInOnScroll>
@@ -537,7 +537,7 @@ const Bills = () => {
         </div>
       </FadeInOnScroll>
       </VendorMain>
-    </div>
+    </VendorLayout>
   );
 };
 

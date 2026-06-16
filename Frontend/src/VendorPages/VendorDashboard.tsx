@@ -9,7 +9,7 @@ import {
   LuTrendingUp,
 } from 'react-icons/lu'
 import Navbar from '../VendorComponents/Navbar'
-import { VendorMain, FadeInOnScroll } from '../components/PortalMain'
+import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain'
 import { getStoredUser } from '../lib/auth'
 
 const STATS = [
@@ -229,7 +229,7 @@ const VendorDashboard = () => {
   const vendorName = getStoredUser()?.fullName?.trim() || 'Vendor'
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <VendorLayout>
       <Navbar />
       <VendorMain className="flex-1 overflow-y-auto p-6 lg:p-8">
         <FadeInOnScroll>
@@ -413,7 +413,7 @@ const VendorDashboard = () => {
         </section>
         </FadeInOnScroll>
       </VendorMain>
-    </div>
+    </VendorLayout>
   )
 }
 

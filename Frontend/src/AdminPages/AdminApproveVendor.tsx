@@ -1,5 +1,5 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
-import { AdminMain, FadeInOnScroll } from '../components/PortalMain'
+import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { api } from '../lib/api'
@@ -154,7 +154,7 @@ const AdminApproveVendor = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <AdminLayout>
       <AdminNavbar />
       <AdminMain>
       <FadeInOnScroll>
@@ -354,7 +354,7 @@ const AdminApproveVendor = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   )
 }
 

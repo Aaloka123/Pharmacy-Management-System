@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Navbar from '../VendorComponents/Navbar';
-import { VendorMain, FadeInOnScroll } from '../components/PortalMain';
+import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain';
 import fallbackImage from '../assets/Hero1.png';
 import { resolveBackendUrl } from '../lib/api';
 import {
@@ -164,7 +164,7 @@ const Order = () => {
     status === 'Confirmed' || status === 'Shipped' || status === 'Delivered';
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <VendorLayout>
       <Navbar />
       <VendorMain>
       <FadeInOnScroll>
@@ -381,7 +381,7 @@ const Order = () => {
         </section>
       </FadeInOnScroll>
       </VendorMain>
-    </div>
+    </VendorLayout>
   );
 };
 

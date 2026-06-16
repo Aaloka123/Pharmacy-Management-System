@@ -1,5 +1,5 @@
 import Navbar from '../VendorComponents/Navbar';
-import { VendorMain, FadeInOnScroll } from '../components/PortalMain';
+import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -300,7 +300,7 @@ const Setting = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <VendorLayout>
       <Navbar />
       <VendorMain>
       <FadeInOnScroll>
@@ -664,7 +664,7 @@ const Setting = () => {
         )}
       </FadeInOnScroll>
       </VendorMain>
-    </div>
+    </VendorLayout>
   );
 };
 
