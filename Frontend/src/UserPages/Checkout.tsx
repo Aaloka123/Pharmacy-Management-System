@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { LuBanknote } from 'react-icons/lu'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import esewaLogo from '../assets/E-sewa.png'
 import khaltiLogo from '../assets/Khalti.png'
@@ -9,6 +9,7 @@ import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
 import { fetchCart } from '../lib/cartApi'
 import { isCartUserLoggedIn, notifyCartChanged, type CartLine } from '../lib/cartStorage'
+import { initiateEsewaPayment, submitEsewaPaymentForm } from '../lib/paymentApi'
 import { placeOrder, toApiPaymentMethod } from '../lib/orderApi'
 import { ApiRequestError } from '../lib/api'
 
@@ -34,7 +35,7 @@ const PAYMENT_OPTIONS: Array<{
     id: 'esewa',
     label: 'eSewa',
     description: 'Pay securely using your eSewa wallet.',
-    available: false,
+    available: true,
   },
   {
     id: 'khalti',
@@ -73,10 +74,18 @@ const renderPaymentIcon = (id: PaymentMethod) => {
 const Checkout = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [lines, setLines] = useState<CartLine[]>([])
   const [loading, setLoading] = useState(true)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod')
   const [placingOrder, setPlacingOrder] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('payment') === 'failed') {
+      toast.error('eSewa payment was not completed. Please try again or choose another payment method.')
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   useEffect(() => {
     const loadCheckoutItems = async () => {
@@ -120,6 +129,12 @@ const Checkout = () => {
 
     setPlacingOrder(true)
     try {
+      if (paymentMethod === 'esewa') {
+        const esewa = await initiateEsewaPayment(lines.map((line) => Number(line.id)))
+        submitEsewaPaymentForm(esewa.formUrl, esewa.fields)
+        return
+      }
+
       await placeOrder({
         paymentMethod: toApiPaymentMethod(paymentMethod),
         cartItemIds: lines.map((line) => Number(line.id)),
@@ -230,10 +245,14 @@ const Checkout = () => {
                 <p className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
                   You will pay the total amount in cash when your medicines are delivered.
                 </p>
+              ) : paymentMethod === 'esewa' ? (
+                <p className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
+                  You will be redirected to eSewa to complete payment. For testing, use eSewa ID{' '}
+                  <strong>9711111111</strong> and password <strong>Nepal@123</strong>.
+                </p>
               ) : (
                 <p className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
-                  You will be redirected to complete payment with{' '}
-                  {paymentMethod === 'esewa' ? 'eSewa' : 'Khalti'} after placing the order.
+                  You will be redirected to complete payment with Khalti after placing the order.
                 </p>
               )}
             </section>
@@ -289,7 +308,13 @@ const Checkout = () => {
                 onClick={() => void handlePlaceOrder()}
                 type="button"
               >
-                {placingOrder ? 'Placing order…' : 'Place order'}
+                {placingOrder
+                  ? paymentMethod === 'esewa'
+                    ? 'Redirecting to eSewa…'
+                    : 'Placing order…'
+                  : paymentMethod === 'esewa'
+                    ? 'Pay with eSewa'
+                    : 'Place order'}
               </button>
             </aside>
           </div>

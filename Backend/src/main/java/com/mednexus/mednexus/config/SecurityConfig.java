@@ -69,6 +69,10 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/vendors/signup").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/payments/esewa/success", "/api/payments/esewa/failure")
+						.permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/payments/esewa/success", "/api/payments/esewa/failure")
+						.permitAll()
 						.requestMatchers("/uploads/**").permitAll()
 						.requestMatchers("/api/**").authenticated());
 		return http.build();

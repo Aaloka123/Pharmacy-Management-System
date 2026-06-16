@@ -26,3 +26,13 @@ spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 spring.mail.properties.mail.smtp.starttls.required=true
 mednexus.mail.from=${EMAIL_USER}
+
+# Backend URL used in eSewa success/failure callbacks (must match how clients reach the API)
+mednexus.backend.base-url=http://localhost:8080
+
+# eSewa ePay v2 (UAT / test credentials)
+mednexus.esewa.product-code=EPAYTEST
+mednexus.esewa.secret-key=8gBm/:&EnhH.1/q
+mednexus.esewa.form-url=https://rc-epay.esewa.com.np/api/epay/main/v2/form
+mednexus.esewa.status-url=https://rc-epay.esewa.com.np/api/epay/transaction/status/
+mednexus.esewa.frontend-base-url=http://localhost:5173

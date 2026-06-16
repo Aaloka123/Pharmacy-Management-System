@@ -18,6 +18,7 @@ import ProductsDetail from './UserPages/ProductsDetail'
 import Profile from './UserPages/Profile'
 import Cart from './UserPages/Cart'
 import Checkout from './UserPages/Checkout'
+import PaymentSuccess from './UserPages/PaymentSuccess'
 import OrderTracking from './UserPages/OrderTracking'
 import Dashboard from './VendorPages/VendorDashboard'
 import Message from './VendorPages/VendorMessage'
@@ -66,6 +67,7 @@ const AppContent = () => {
         <Route path="/profile" element={<RequireAuth roles={['USER']}><Profile /></RequireAuth>} />
         <Route path="/cart" element={<RequireAuth roles={['USER']}><Cart /></RequireAuth>} />
         <Route path="/checkout" element={<RequireAuth roles={['USER']}><Checkout /></RequireAuth>} />
+        <Route path="/payment/success" element={<RequireAuth roles={['USER']}><PaymentSuccess /></RequireAuth>} />
         <Route path="/ordertracking" element={<RequireAuth roles={['USER']}><OrderTracking /></RequireAuth>} />
         <Route path="/prescription" element={<RequireAuth roles={['USER']}><Prescription /></RequireAuth>} />
         
