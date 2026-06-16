@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { LuShoppingCart } from 'react-icons/lu'
+import { LuBell, LuShoppingCart } from 'react-icons/lu'
 import mednexuxLogo from '../assets/Mednexux.png'
 import { resolveProfileImageUrl } from '../lib/api'
-import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
+import { getAccessToken, getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
 import { fetchCart } from '../lib/cartApi'
 import { isCartUserLoggedIn, onCartChanged } from '../lib/cartStorage'
 
@@ -15,6 +15,7 @@ const Header = () => {
 
   const [user, setUser] = useState<AuthUser | null>(() => getStoredUser())
   const [cartCount, setCartCount] = useState(0)
+  const isLoggedIn = Boolean(user && getAccessToken())
   const avatarUrl = user ? resolveProfileImageUrl(user.profileImage) : null
 
   const refreshCartCount = useCallback(async () => {
@@ -98,25 +99,37 @@ const Header = () => {
               type="text"
             />
           </div>
-          {user ? (
-            <>
-              <NavLink
-                aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : 'Cart'}
-                title="Cart"
-                to="/cart"
-                className={({ isActive }) =>
-                  `relative flex h-10 w-10 shrink-0 items-center justify-center text-slate-700 transition duration-200 hover:text-teal-700 ${
-                    isActive ? 'text-teal-700' : ''
-                  }`
-                }
-              >
-                <LuShoppingCart className="h-5 w-5" strokeWidth={2} />
-                {cartCount > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-slate-200 bg-white px-1 text-[10px] font-semibold tabular-nums text-teal-700 shadow-sm">
-                    {cartCount}
-                  </span>
-                ) : null}
-              </NavLink>
+          {isLoggedIn ? (
+            <div className="flex items-center gap-3">
+              {isCartUserLoggedIn() ? (
+                <div className="flex items-center gap-0.5">
+                  <button
+                    aria-label="Notifications"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center text-slate-700 transition duration-200 hover:text-teal-700"
+                    title="Notifications"
+                    type="button"
+                  >
+                    <LuBell className="h-5 w-5" strokeWidth={2} />
+                  </button>
+                  <NavLink
+                    aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : 'Cart'}
+                    title="Cart"
+                    to="/cart"
+                    className={({ isActive }) =>
+                      `relative flex h-10 w-10 shrink-0 items-center justify-center text-slate-700 transition duration-200 hover:text-teal-700 ${
+                        isActive ? 'text-teal-700' : ''
+                      }`
+                    }
+                  >
+                    <LuShoppingCart className="h-5 w-5" strokeWidth={2} />
+                    {cartCount > 0 ? (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-slate-200 bg-white px-1 text-[10px] font-semibold tabular-nums text-teal-700 shadow-sm">
+                        {cartCount}
+                      </span>
+                    ) : null}
+                  </NavLink>
+                </div>
+              ) : null}
               <NavLink
                 aria-label="Profile"
                 title={user.email}
@@ -142,7 +155,7 @@ const Header = () => {
                   </span>
                 )}
               </NavLink>
-            </>
+            </div>
           ) : (
             <NavLink
               className="rounded-lg border border-transparent bg-linear-to-br from-teal-600 to-teal-700 px-5 py-2 text-[14px] font-semibold text-white shadow-sm shadow-teal-900/20 transition duration-200 hover:from-teal-700 hover:to-teal-800"
