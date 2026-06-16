@@ -26,6 +26,7 @@ import com.mednexus.mednexus.cart.Cart;
 import com.mednexus.mednexus.cart.CartItemNotFoundException;
 import com.mednexus.mednexus.cart.CartRepository;
 import com.mednexus.mednexus.cart.InsufficientStockException;
+import com.mednexus.mednexus.cart.VendorStoreClosedException;
 import com.mednexus.mednexus.order.dto.PaymentMethodDto;
 import com.mednexus.mednexus.order.dto.PlaceOrderRequest;
 import com.mednexus.mednexus.order.VendorOrderService;
@@ -84,10 +85,12 @@ public class EsewaPaymentService {
 			Cart cart = cartRepository.findByIdAndUserId(cartItemId, userId)
 					.orElseThrow(CartItemNotFoundException::new);
 			Product product = cart.getProduct();
-			if (product.getStatus() != ProductStatus.ACTIVE
-					|| product.getVendor().getStatus() != VendorStatus.APPROVED
-					|| product.getVendor().getStoreStatus() != StoreStatus.OPEN) {
+			if (product.getStatus() != ProductStatus.ACTIVE) {
 				throw new IllegalArgumentException("Product is no longer available: " + product.getProductName());
+			}
+			if (product.getVendor().getStatus() != VendorStatus.APPROVED
+					|| product.getVendor().getStoreStatus() != StoreStatus.OPEN) {
+				throw new VendorStoreClosedException(product.getVendor().getBusinessName());
 			}
 			if (cart.getQuantity() > product.getStock()) {
 				throw new InsufficientStockException(product.getStock());

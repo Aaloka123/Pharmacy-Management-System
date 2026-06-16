@@ -6,7 +6,14 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { fetchCart, removeCartItem, removeCartItems, updateCartItemQuantity } from '../lib/cartApi'
-import { isCartApiError, isCartUserLoggedIn, notifyCartChanged, type CartLine } from '../lib/cartStorage'
+import {
+  closedVendorNames,
+  hasClosedVendorItems,
+  isCartApiError,
+  isCartUserLoggedIn,
+  notifyCartChanged,
+  type CartLine,
+} from '../lib/cartStorage'
 
 const Cart = () => {
   const navigate = useNavigate()
@@ -30,7 +37,7 @@ const Cart = () => {
     try {
       const data = await fetchCart()
       setLines(data)
-      setSelectedIds(data.map((line) => line.id))
+      setSelectedIds([])
       notifyCartChanged()
     } catch (err) {
       console.error(err)
@@ -52,18 +59,27 @@ const Cart = () => {
   }, [lines])
 
   const selectedLines = useMemo(() => lines.filter((line) => selectedIds.includes(line.id)), [lines, selectedIds])
+  const selectedClosedVendors = useMemo(() => closedVendorNames(selectedLines), [selectedLines])
+  const cartHasClosedVendors = useMemo(() => lines.some((line) => !line.vendorStoreOpen), [lines])
   const selectedProductNames = useMemo(() => selectedLines.map((line) => line.name), [selectedLines])
   const subtotal = useMemo(() => selectedLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0), [selectedLines])
   const tax = useMemo(() => subtotal * 0.13, [subtotal])
   const total = useMemo(() => subtotal + tax, [subtotal, tax])
   const itemCount = useMemo(() => selectedLines.length, [selectedLines])
-  const allSelected = lines.length > 0 && selectedIds.length === lines.length
+  const allSelected = useMemo(() => {
+    const openLines = lines.filter((line) => line.vendorStoreOpen)
+    return openLines.length > 0 && openLines.every((line) => selectedIds.includes(line.id))
+  }, [lines, selectedIds])
   const loggedIn = isCartUserLoggedIn()
 
   const updateQty = async (id: string, qty: number) => {
     if (qty < 1) return
     const line = lines.find((item) => item.id === id)
     if (!line) return
+    if (!line.vendorStoreOpen) {
+      toast.warn(`${line.vendorName} is currently closed. Remove this item to continue.`)
+      return
+    }
     if (qty > line.stock) {
       toast.warn(line.stock <= 0 ? 'This product is out of stock.' : `Only ${line.stock} units available in stock.`)
       return
@@ -117,6 +133,11 @@ const Cart = () => {
   }
 
   const toggleSelect = (id: string) => {
+    const line = lines.find((item) => item.id === id)
+    if (line && !line.vendorStoreOpen) {
+      toast.warn(`${line.vendorName} is currently closed. Remove this item to continue.`)
+      return
+    }
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]))
   }
 
@@ -125,7 +146,20 @@ const Cart = () => {
       setSelectedIds([])
       return
     }
-    setSelectedIds(lines.map((line) => line.id))
+    setSelectedIds(lines.filter((line) => line.vendorStoreOpen).map((line) => line.id))
+  }
+
+  const handleProceedToCheckout = () => {
+    if (hasClosedVendorItems(selectedLines)) {
+      const vendors = closedVendorNames(selectedLines)
+      toast.error(
+        vendors.length === 1
+          ? `${vendors[0]} is currently closed. Remove those items to continue.`
+          : 'Some items are from closed vendors. Remove them to continue.',
+      )
+      return
+    }
+    navigate('/checkout', { state: { lines: selectedLines } })
   }
 
   return (
@@ -201,6 +235,11 @@ const Cart = () => {
         ) : (
           <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
             <section className="space-y-4">
+              {cartHasClosedVendors ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Some items are from vendors that are currently closed. Remove them before checkout.
+                </div>
+              ) : null}
               <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
                 <div className="inline-flex items-center gap-3">
                   <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-semibold text-slate-700">
@@ -236,13 +275,20 @@ const Cart = () => {
               </div>
               {lines.map((line) => (
                 <article
-                  className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md sm:flex-row sm:items-center sm:p-5"
+                  className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm transition sm:flex-row sm:items-center sm:p-5 ${
+                    line.vendorStoreOpen
+                      ? 'border-slate-200 hover:border-slate-300 hover:shadow-md'
+                      : 'border-rose-200 bg-rose-50/40'
+                  }`}
                   key={line.id}
                 >
-                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-slate-600 sm:mr-1">
+                  <label className={`inline-flex items-center gap-2 text-sm text-slate-600 sm:mr-1 ${
+                    line.vendorStoreOpen ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                  }`}>
                     <input
                       checked={selectedIds.includes(line.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-700"
+                      className="h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-700 disabled:cursor-not-allowed"
+                      disabled={!line.vendorStoreOpen}
                       onChange={() => toggleSelect(line.id)}
                       type="checkbox"
                     />
@@ -261,6 +307,10 @@ const Cart = () => {
                     <p className="mt-2 text-sm font-semibold text-teal-700">NRP {(line.unitPrice * line.qty).toLocaleString()}</p>
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-600">
                       <span>
+                        <span className="text-slate-400">Vendor</span>{' '}
+                        <span className="font-medium">{line.vendorName}</span>
+                      </span>
+                      <span>
                         <span className="text-slate-400">Strength</span> <span className="font-medium">{line.strength}</span>
                       </span>
                       <span>
@@ -270,6 +320,11 @@ const Cart = () => {
                         <span className="text-slate-400">Pack</span> <span className="font-medium">{line.pack}</span>
                       </span>
                     </div>
+                    {!line.vendorStoreOpen ? (
+                      <p className="mt-2 text-sm font-medium text-rose-700">
+                        {line.vendorName} is currently closed. Remove this item to continue.
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex items-center justify-center gap-6 border-t border-slate-100 pt-4 sm:min-w-[180px] sm:self-center sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
                     <div>
@@ -278,7 +333,7 @@ const Cart = () => {
                         <button
                           aria-label="Decrease quantity"
                           className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
-                          disabled={line.qty <= 1 || actionId === line.id}
+                          disabled={line.qty <= 1 || actionId === line.id || !line.vendorStoreOpen}
                           onClick={() => void updateQty(line.id, line.qty - 1)}
                           type="button"
                         >
@@ -288,7 +343,7 @@ const Cart = () => {
                         <button
                           aria-label="Increase quantity"
                           className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
-                          disabled={actionId === line.id || line.qty >= line.stock || line.stock <= 0}
+                          disabled={actionId === line.id || line.qty >= line.stock || line.stock <= 0 || !line.vendorStoreOpen}
                           onClick={() => void updateQty(line.id, line.qty + 1)}
                           type="button"
                         >
@@ -351,10 +406,17 @@ const Cart = () => {
                   <dd className="text-base font-bold text-teal-700">NRP {total.toLocaleString()}</dd>
                 </div>
               </dl>
+              {selectedClosedVendors.length > 0 ? (
+                <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                  {selectedClosedVendors.length === 1
+                    ? `${selectedClosedVendors[0]} is currently closed.`
+                    : 'Selected items include closed vendors.'}
+                </p>
+              ) : null}
               <button
                 className="mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={selectedLines.length === 0}
-                onClick={() => navigate('/checkout', { state: { lines: selectedLines } })}
+                disabled={selectedLines.length === 0 || hasClosedVendorItems(selectedLines)}
+                onClick={handleProceedToCheckout}
                 type="button"
               >
                 Proceed to checkout

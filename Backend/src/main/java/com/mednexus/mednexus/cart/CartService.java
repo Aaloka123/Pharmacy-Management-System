@@ -16,6 +16,7 @@ import com.mednexus.mednexus.product.ProductStatus;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserNotFoundException;
 import com.mednexus.mednexus.user.UserRepository;
+import com.mednexus.mednexus.vendor.Vendor;
 import com.mednexus.mednexus.vendor.VendorStatus;
 import com.mednexus.mednexus.vendor.StoreStatus;
 
@@ -80,6 +81,7 @@ public class CartService {
 		Cart cart = cartRepository.findByIdAndUserId(cartItemId, userId)
 				.orElseThrow(CartItemNotFoundException::new);
 		Product product = cart.getProduct();
+		ensureVendorStoreOpen(product);
 		ensureQuantityWithinStock(product, request.quantity());
 		cart.setQuantity(request.quantity());
 		return toResponse(cartRepository.save(cart));
@@ -100,6 +102,13 @@ public class CartService {
 		cartRepository.deleteByUserIdAndIdIn(userId, cartItemIds);
 	}
 
+	private void ensureVendorStoreOpen(Product product) {
+		Vendor vendor = product.getVendor();
+		if (vendor.getStatus() != VendorStatus.APPROVED || vendor.getStoreStatus() != StoreStatus.OPEN) {
+			throw new VendorStoreClosedException(vendor.getBusinessName());
+		}
+	}
+
 	private void ensureQuantityWithinStock(Product product, int requestedQty) {
 		if (requestedQty > product.getStock()) {
 			throw new InsufficientStockException(product.getStock());
@@ -108,7 +117,10 @@ public class CartService {
 
 	private CartItemResponse toResponse(Cart cart) {
 		Product product = cart.getProduct();
+		Vendor vendor = product.getVendor();
 		String image = product.getImages().isEmpty() ? null : product.getImages().get(0);
+		boolean vendorStoreOpen = vendor.getStatus() == VendorStatus.APPROVED
+				&& vendor.getStoreStatus() == StoreStatus.OPEN;
 		return new CartItemResponse(
 				cart.getId(),
 				product.getId(),
@@ -120,6 +132,8 @@ public class CartService {
 				product.getPrice(),
 				image,
 				cart.getQuantity(),
-				product.getStock());
+				product.getStock(),
+				vendor.getBusinessName(),
+				vendorStoreOpen);
 	}
 }

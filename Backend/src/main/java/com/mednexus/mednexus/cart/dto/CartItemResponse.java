@@ -13,5 +13,7 @@ public record CartItemResponse(
 		BigDecimal unitPrice,
 		String image,
 		int qty,
-		int stock) {
+		int stock,
+		String vendorName,
+		boolean vendorStoreOpen) {
 }

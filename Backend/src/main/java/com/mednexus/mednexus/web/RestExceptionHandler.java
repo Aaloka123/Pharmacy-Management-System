@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.mednexus.mednexus.auth.InvalidGoogleTokenException;
 import com.mednexus.mednexus.cart.CartItemNotFoundException;
 import com.mednexus.mednexus.cart.InsufficientStockException;
+import com.mednexus.mednexus.cart.VendorStoreClosedException;
 import com.mednexus.mednexus.order.OrderNotFoundException;
 import com.mednexus.mednexus.otp.InvalidOtpException;
 import com.mednexus.mednexus.product.DuplicateProductSkuException;
@@ -59,6 +60,13 @@ public class RestExceptionHandler {
 	public ProblemDetail handleInsufficientStock(InsufficientStockException ex) {
 		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
 		pd.setTitle("Insufficient stock");
+		return pd;
+	}
+
+	@ExceptionHandler(VendorStoreClosedException.class)
+	public ProblemDetail handleVendorStoreClosed(VendorStoreClosedException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+		pd.setTitle("Vendor closed");
 		return pd;
 	}
 

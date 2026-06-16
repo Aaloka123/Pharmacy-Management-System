@@ -13,6 +13,8 @@ export type CartItemDto = {
   image: string | null
   qty: number
   stock: number
+  vendorName: string
+  vendorStoreOpen: boolean
 }
 
 export function mapCartItemToLine(item: CartItemDto): CartLine {
@@ -30,6 +32,8 @@ export function mapCartItemToLine(item: CartItemDto): CartLine {
     image,
     qty: item.qty,
     stock: item.stock,
+    vendorName: item.vendorName ?? 'Vendor',
+    vendorStoreOpen: item.vendorStoreOpen ?? true,
   }
 }
 

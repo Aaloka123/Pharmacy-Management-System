@@ -14,6 +14,8 @@ export type CartLine = {
   image: string
   qty: number
   stock: number
+  vendorName: string
+  vendorStoreOpen: boolean
 }
 
 export class CartAuthRequiredError extends Error {
@@ -51,4 +53,12 @@ export async function addToCart(input: { productId: number; quantity?: number })
 
 export function isCartApiError(error: unknown): error is ApiRequestError {
   return error instanceof ApiRequestError
+}
+
+export function hasClosedVendorItems(lines: CartLine[]): boolean {
+  return lines.some((line) => line.vendorStoreOpen === false)
+}
+
+export function closedVendorNames(lines: CartLine[]): string[] {
+  return [...new Set(lines.filter((line) => !line.vendorStoreOpen).map((line) => line.vendorName))]
 }

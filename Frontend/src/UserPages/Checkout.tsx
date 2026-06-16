@@ -8,7 +8,13 @@ import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
 import { fetchCart } from '../lib/cartApi'
-import { isCartUserLoggedIn, notifyCartChanged, type CartLine } from '../lib/cartStorage'
+import {
+  closedVendorNames,
+  hasClosedVendorItems,
+  isCartUserLoggedIn,
+  notifyCartChanged,
+  type CartLine,
+} from '../lib/cartStorage'
 import { initiateEsewaPayment, initiateKhaltiPayment, redirectToPaymentUrl, submitEsewaPaymentForm } from '../lib/paymentApi'
 import { placeOrder, toApiPaymentMethod } from '../lib/orderApi'
 import { ApiRequestError } from '../lib/api'
@@ -96,15 +102,13 @@ const Checkout = () => {
       }
 
       const state = location.state as CheckoutLocationState | null
-      if (state?.lines && state.lines.length > 0) {
-        setLines(state.lines)
-        setLoading(false)
-        return
-      }
-
       try {
         const cartLines = await fetchCart()
-        setLines(cartLines)
+        const selectedIds = state?.lines?.map((line) => line.id)
+        const checkoutLines = selectedIds
+          ? cartLines.filter((line) => selectedIds.includes(line.id))
+          : cartLines
+        setLines(checkoutLines)
       } catch {
         setLines([])
       } finally {
@@ -119,11 +123,22 @@ const Checkout = () => {
   const tax = useMemo(() => subtotal * 0.13, [subtotal])
   const total = useMemo(() => subtotal + tax, [subtotal, tax])
   const itemCount = useMemo(() => lines.reduce((sum, line) => sum + line.qty, 0), [lines])
+  const closedVendors = useMemo(() => closedVendorNames(lines), [lines])
+  const checkoutBlocked = useMemo(() => hasClosedVendorItems(lines), [lines])
   const loggedIn = isCartUserLoggedIn()
 
   const handlePlaceOrder = async () => {
     if (lines.length === 0) {
       toast.warn('Your cart is empty.')
+      return
+    }
+
+    if (checkoutBlocked) {
+      toast.error(
+        closedVendors.length === 1
+          ? `${closedVendors[0]} is currently closed. Remove those items from your cart.`
+          : 'Some items are from closed vendors. Remove them from your cart to continue.',
+      )
       return
     }
 
@@ -151,7 +166,7 @@ const Checkout = () => {
       navigate('/ordertracking', { replace: true })
     } catch (err) {
       if (err instanceof ApiRequestError && err.response.status === 400) {
-        toast.error('Some items are out of stock or unavailable. Please review your cart.')
+        toast.error('Some items are unavailable or from closed vendors. Please review your cart.')
       } else {
         toast.error('Could not place your order. Please try again.')
       }
@@ -282,6 +297,11 @@ const Checkout = () => {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-slate-900">{line.name}</p>
                       <p className="text-xs text-slate-500">Qty: {line.qty}</p>
+                      {!line.vendorStoreOpen ? (
+                        <p className="mt-1 text-xs font-medium text-rose-700">
+                          {line.vendorName} is currently closed.
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-sm font-semibold text-teal-700">
                         NRP {(line.unitPrice * line.qty).toLocaleString()}
                       </p>
@@ -289,6 +309,14 @@ const Checkout = () => {
                   </div>
                 ))}
               </div>
+
+              {checkoutBlocked ? (
+                <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                  {closedVendors.length === 1
+                    ? `${closedVendors[0]} is currently closed. Remove those items from your cart to place an order.`
+                    : 'Some items are from vendors that are currently closed. Remove them from your cart to continue.'}
+                </p>
+              ) : null}
 
               <dl className="mt-5 space-y-3 border-t border-slate-100 pt-4 text-sm">
                 <div className="flex justify-between text-slate-600">
@@ -311,7 +339,7 @@ const Checkout = () => {
 
               <button
                 className="mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={placingOrder}
+                disabled={placingOrder || checkoutBlocked}
                 onClick={() => void handlePlaceOrder()}
                 type="button"
               >
