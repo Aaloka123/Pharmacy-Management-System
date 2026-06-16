@@ -109,3 +109,38 @@ body {
     animation: none;
   }
 }
+
+@keyframes mobile-menu-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mobile-menu-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.mobile-menu-backdrop {
+  animation: mobile-menu-backdrop-in 0.28s ease-out both;
+}
+
+.mobile-menu-panel {
+  animation: mobile-menu-panel-in 0.32s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu-backdrop,
+  .mobile-menu-panel {
+    animation: none;
+  }
+}

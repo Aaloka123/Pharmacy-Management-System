@@ -1,6 +1,6 @@
 const AboutText = () => {
   return (
-    <section className="px-[80px]">
+    <section className="px-4 md:px-8 lg:px-[80px]">
       <div className="mt-12 pb-14">
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Our Commitment to Better Care Access</h2>
         <p className="mt-4 w-full text-[14px] leading-7 text-slate-600">

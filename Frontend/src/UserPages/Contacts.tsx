@@ -9,7 +9,7 @@ const Contacts = () => {
   return (
     <div className="bg-white">
       <Header />
-      <main className="px-[80px] py-12">
+      <main className="px-4 py-12 md:px-8 lg:px-[80px]">
         <section className="p-2 md:p-4">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.1fr]">
             <FadeInOnScroll>

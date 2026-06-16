@@ -166,7 +166,7 @@ const Cart = () => {
   return (
     <div className="bg-white">
       <Header />
-      <main className="px-[80px] pb-12 pt-6">
+      <main className="px-4 pb-12 pt-6 md:px-8 lg:px-[80px]">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Your cart</h1>
@@ -242,7 +242,7 @@ const Cart = () => {
                   Some items are from vendors that are currently closed. Remove them before checkout.
                 </div>
               ) : null}
-              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="inline-flex items-center gap-3">
                   <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-semibold text-slate-700">
                     <input

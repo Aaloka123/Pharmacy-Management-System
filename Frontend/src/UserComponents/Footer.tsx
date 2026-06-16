@@ -4,7 +4,7 @@ import mednexuxLogo from '../assets/Mednexux.png'
 const Footer = () => {
   return (
     <footer className="border-t border-slate-200 bg-[#F8FAFC]">
-      <div className="py-12 pl-[90px] pr-[90px]">
+      <div className="px-4 py-12 md:px-8 lg:px-[80px]">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:pr-8">
             <img alt="MedNexus logo" className="h-12 w-auto object-contain" src={mednexuxLogo} />

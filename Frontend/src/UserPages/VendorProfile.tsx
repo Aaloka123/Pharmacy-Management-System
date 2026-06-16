@@ -132,7 +132,7 @@ const VendorProfile = () => {
     return (
       <div className="bg-white">
         <Header />
-        <main className="px-4 py-16 text-center text-slate-600 md:px-8">Loading vendor profile...</main>
+        <main className="px-4 py-16 text-center text-slate-600 md:px-8 lg:px-[80px]">Loading vendor profile...</main>
         <Footer />
         <Copyright />
       </div>
@@ -143,7 +143,7 @@ const VendorProfile = () => {
     return (
       <div className="bg-white">
         <Header />
-        <main className="px-4 py-16 text-center md:px-8">
+        <main className="px-4 py-16 text-center md:px-8 lg:px-[80px]">
           <p className="text-slate-600">{error ?? 'Vendor not found.'}</p>
           <button
             className="mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
@@ -163,7 +163,7 @@ const VendorProfile = () => {
     <div className="bg-slate-50">
       <Header />
 
-      <main className="px-4 py-8 md:px-8">
+      <main className="px-4 py-8 md:px-8 lg:px-[80px]">
         <div className="mx-auto max-w-[1200px]">
           <div className="mb-5 text-sm text-slate-500">
             <Link to="/">Home</Link>

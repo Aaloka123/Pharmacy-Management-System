@@ -178,7 +178,7 @@ const Profile = () => {
   return (
     <div className="bg-white">
       <Header />
-      <main className="px-[80px] py-10">
+      <main className="px-4 py-10 md:px-8 lg:px-[80px]">
         <section className="mx-auto max-w-[1100px]">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
@@ -187,7 +187,7 @@ const Profile = () => {
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
             <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6">
-              <h2 className="text-lg font-bold text-slate-900">Profile Picture</h2>
+              <h2 className="text-lg font-bold text-slate-900">User Profile</h2>
 
               <div className="mt-5 flex items-center justify-center">
                 <div className="relative">
@@ -225,6 +225,12 @@ const Profile = () => {
               </div>
               <p className="mt-4 text-center text-[16px] font-bold text-slate-900">{fullName || '—'}</p>
               <p className="mt-1 text-center text-sm text-slate-600">{email || '—'}</p>
+              {phoneNumber ? (
+                <p className="mt-2 text-center text-sm text-slate-600">{phoneNumber}</p>
+              ) : null}
+              {location ? (
+                <p className="mt-1 text-center text-sm text-slate-500">{location}</p>
+              ) : null}
             </aside>
 
             <div className="space-y-6">

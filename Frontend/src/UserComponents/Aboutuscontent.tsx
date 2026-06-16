@@ -4,15 +4,15 @@ import { FiClock } from 'react-icons/fi'
 
 const Aboutuscontent = () => {
   return (
-    <main className="px-[80px] py-10">
+    <main className="px-4 py-10 md:px-8 lg:px-[80px]">
       <section>
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
           <div className="overflow-hidden rounded-2xl">
-            <img alt="Doctors and pharmacy team" className="h-[560px] w-full object-cover" src={DoctorsImage} />
+            <img alt="Doctors and pharmacy team" className="h-64 w-full object-cover sm:h-80 md:h-[560px]" src={DoctorsImage} />
           </div>
 
           <div>
-            <h1 className="mt-2 text-4xl font-bold tracking-tight text-slate-900">Your Trusted Multi-Vendor Pharmacy Platform</h1>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">Your Trusted Multi-Vendor Pharmacy Platform</h1>
             <p className="mt-4 text-base leading-7 text-slate-600">
               We are a multi-vendor pharmacy platform connecting customers with verified medicine providers in one secure marketplace. Our
               mission is to make healthcare products easier to access, compare, and order from home.
