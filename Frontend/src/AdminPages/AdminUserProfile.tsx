@@ -44,6 +44,20 @@ const paymentLabel: Record<ApiPaymentMethod, string> = {
   KHALTI: 'Khalti',
 }
 
+const paymentBadgeLabel: Record<ApiPaymentMethod, string> = {
+  COD: 'COD',
+  ESEWA: 'e-sewa',
+  KHALTI: 'khalti',
+}
+
+const paymentBadgeClass: Record<ApiPaymentMethod, string> = {
+  COD: 'bg-slate-200 text-slate-800',
+  ESEWA: 'bg-emerald-100 text-emerald-800',
+  KHALTI: 'bg-violet-100 text-violet-800',
+}
+
+type PaymentFilter = 'ALL' | ApiPaymentMethod
+
 const statusLabel: Record<ApiOrderStatus, string> = {
   PENDING: 'Pending',
   CONFIRMED: 'Confirmed',
@@ -79,6 +93,7 @@ const AdminUserProfile = () => {
   const [ordersLoading, setOrdersLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [profileImageFailed, setProfileImageFailed] = useState(false)
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('ALL')
 
   useEffect(() => {
     setProfileImageFailed(false)
@@ -150,7 +165,11 @@ const AdminUserProfile = () => {
   const profileImageUrl = user ? resolveProfileImageUrl(user.profileImage) : null
   const showProfileImage = Boolean(profileImageUrl) && !profileImageFailed
 
-  const totalOrders = orders.length
+  const filteredOrders = useMemo(() => {
+    if (paymentFilter === 'ALL') return orders
+    return orders.filter((item) => item.paymentMethod === paymentFilter)
+  }, [orders, paymentFilter])
+
   const totalSpent = orders.reduce((sum, item) => {
     if (item.status === 'CANCELED') return sum
     return sum + item.quantity * Number(item.unitPrice)
@@ -236,13 +255,25 @@ const AdminUserProfile = () => {
             <div className="border-t border-slate-200 px-6 py-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-base font-semibold text-slate-900">Product Purchase History</h3>
-                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                  <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-700">
-                    {totalOrders} orders
-                  </span>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                    Total spent: NPR {totalSpent.toLocaleString()}
-                  </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-teal-600"
+                    value={paymentFilter}
+                    onChange={(event) => setPaymentFilter(event.target.value as PaymentFilter)}
+                  >
+                    <option value="ALL">All payments</option>
+                    <option value="KHALTI">{paymentLabel.KHALTI}</option>
+                    <option value="ESEWA">{paymentLabel.ESEWA}</option>
+                    <option value="COD">{paymentLabel.COD}</option>
+                  </select>
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                    <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-700">
+                      {filteredOrders.length} orders
+                    </span>
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                      Total spent: NPR {totalSpent.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -251,6 +282,10 @@ const AdminUserProfile = () => {
               ) : orders.length === 0 ? (
                 <p className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-600">
                   No purchases yet.
+                </p>
+              ) : filteredOrders.length === 0 ? (
+                <p className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-600">
+                  No purchases found for this payment method.
                 </p>
               ) : (
                 <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200">
@@ -271,7 +306,7 @@ const AdminUserProfile = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders.map((item, index) => {
+                      {filteredOrders.map((item, index) => {
                         const unitPrice = Number(item.unitPrice)
                         const lineTotal = item.quantity * unitPrice
                         const imageUrl = item.productImage ? resolveBackendUrl(item.productImage) : null
@@ -295,7 +330,13 @@ const AdminUserProfile = () => {
                             <td className="px-4 py-3 text-sm text-slate-700">ORD-{item.id}</td>
                             <td className="px-4 py-3 text-sm font-medium text-slate-800">{item.productName}</td>
                             <td className="px-4 py-3 text-sm text-slate-700">{item.vendorName}</td>
-                            <td className="px-4 py-3 text-sm text-slate-700">{paymentLabel[item.paymentMethod]}</td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${paymentBadgeClass[item.paymentMethod]}`}
+                              >
+                                {paymentBadgeLabel[item.paymentMethod]}
+                              </span>
+                            </td>
                             <td className="px-4 py-3 text-sm text-slate-700">{item.orderDate.slice(0, 10)}</td>
                             <td className="px-4 py-3 text-sm text-slate-700">{item.quantity}</td>
                             <td className="px-4 py-3 text-sm text-slate-700">{unitPrice.toLocaleString()}</td>
