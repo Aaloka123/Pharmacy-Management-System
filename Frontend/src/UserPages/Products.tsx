@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartStorage'
 import { listPublicProducts, getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
+import FadeInOnScroll from '../components/FadeInOnScroll'
 
 const ALL_CATEGORY = 'All Medications'
 
@@ -135,6 +136,7 @@ const Products = () => {
       <Header />
       <main className="bg-white px-[80px] pb-10 pt-4">
         <section className="w-full bg-white p-2 md:p-4">
+          <FadeInOnScroll>
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="mt-2 text-[30px] font-bold leading-tight tracking-tight text-slate-900">Product</h1>
@@ -161,8 +163,10 @@ const Products = () => {
               ))}
             </div>
           </div>
+          </FadeInOnScroll>
 
           <div className="mt-8 grid grid-cols-1 gap-7 lg:grid-cols-[280px_1fr]">
+            <FadeInOnScroll delay={80}>
             <aside className="h-fit rounded-3xl bg-slate-100 p-5">
               <h2 className="text-lg font-semibold text-slate-900">Filters</h2>
 
@@ -197,6 +201,7 @@ const Products = () => {
                 </div>
               </div>
             </aside>
+            </FadeInOnScroll>
 
             <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 xl:grid-cols-3">
               {loading ? (
@@ -208,10 +213,10 @@ const Products = () => {
               {!loading && !loadError && filteredProducts.length === 0 ? (
                 <p className="col-span-full text-sm text-slate-500">No products available yet.</p>
               ) : null}
-              {filteredProducts.map((product) => (
+              {filteredProducts.map((product, index) => (
+              <FadeInOnScroll delay={(index % 6) * 70} key={product.id}>
               <article
                 className="group cursor-pointer overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
-                key={product.id}
                 onClick={() => navigate(`/productsdetail?id=${product.id}`)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
@@ -269,6 +274,7 @@ const Products = () => {
                   </button>
                 </div>
               </article>
+              </FadeInOnScroll>
             ))}
             </div>
           </div>

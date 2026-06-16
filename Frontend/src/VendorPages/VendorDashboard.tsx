@@ -9,6 +9,7 @@ import {
   LuTrendingUp,
 } from 'react-icons/lu'
 import Navbar from '../VendorComponents/Navbar'
+import { VendorMain, FadeInOnScroll } from '../components/PortalMain'
 import { getStoredUser } from '../lib/auth'
 
 const STATS = [
@@ -230,7 +231,8 @@ const VendorDashboard = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Navbar />
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+      <VendorMain className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <FadeInOnScroll>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-teal-700">Vendor Portal</p>
@@ -259,7 +261,9 @@ const VendorDashboard = () => {
             </span>
           </div>
         </div>
+        </FadeInOnScroll>
 
+        <FadeInOnScroll delay={80}>
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {STATS.map((stat) => (
             <article
@@ -285,7 +289,9 @@ const VendorDashboard = () => {
             </article>
           ))}
         </section>
+        </FadeInOnScroll>
 
+        <FadeInOnScroll delay={120}>
         <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
             <div className="mb-4 flex items-center justify-between">
@@ -308,7 +314,9 @@ const VendorDashboard = () => {
             <OrderStatusDonut />
           </article>
         </section>
+        </FadeInOnScroll>
 
+        <FadeInOnScroll delay={140}>
         <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900">Weekly Orders</h2>
@@ -338,7 +346,9 @@ const VendorDashboard = () => {
             </div>
           </article>
         </section>
+        </FadeInOnScroll>
 
+        <FadeInOnScroll delay={160}>
         <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
             <div className="border-b border-slate-100 px-5 py-4">
@@ -401,7 +411,8 @@ const VendorDashboard = () => {
             </ul>
           </article>
         </section>
-      </main>
+        </FadeInOnScroll>
+      </VendorMain>
     </div>
   )
 }

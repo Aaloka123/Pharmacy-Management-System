@@ -40,6 +40,7 @@ import Prescription from './UserPages/Prescription'
 import VendorUserProfile from './VendorPages/VendorUserProfile'
 import RequireAuth from './lib/RequireAuth'
 import AdminUserProfile from './AdminPages/AdminUserProfile'
+import PageTransition from './components/PageTransition'
 
 const AppContent = () => {
   const { pathname } = useLocation()
@@ -54,6 +55,7 @@ const AppContent = () => {
 
   return (
     <>
+      <PageTransition>
       <Routes>
         {/* Public browseable pages */}
         <Route path="/" element={<Home />} />
@@ -104,6 +106,7 @@ const AppContent = () => {
         <Route path="/adminuserprofile" element={<RequireAuth roles={['ADMIN']}><AdminUserProfile /></RequireAuth>} />
 
       </Routes>
+      </PageTransition>
 
       {showChatbot && <ChatbotButton />}
     </>

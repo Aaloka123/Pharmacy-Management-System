@@ -1,4 +1,5 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
+import { AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { api } from '../lib/api'
@@ -155,7 +156,8 @@ const AdminApproveVendor = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <AdminNavbar />
-      <main className="flex-1 p-6">
+      <AdminMain>
+      <FadeInOnScroll>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Admin Approve Vendor</h1>
@@ -309,7 +311,8 @@ const AdminApproveVendor = () => {
             ))
           )}
         </section>
-      </main>
+      </FadeInOnScroll>
+      </AdminMain>
 
       {selectedCertificate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">

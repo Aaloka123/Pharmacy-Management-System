@@ -3,6 +3,7 @@ import { FiImage, FiMoreHorizontal, FiTrash2 } from 'react-icons/fi'
 import { HiOutlineMagnifyingGlass, HiOutlineShieldCheck } from 'react-icons/hi2'
 import { LuBan, LuBell, LuBellOff, LuMailOpen, LuPin, LuPinOff } from 'react-icons/lu'
 import Navbar from '../VendorComponents/Navbar'
+import { VendorMain, FadeInOnScroll } from '../components/PortalMain'
 import MednexuxLogo from '../assets/Mednexux.png'
 
 const CHATBOT_USER_ID = 'chatbot'
@@ -284,7 +285,8 @@ const VendorMessage = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Navbar />
-      <main className="flex-1 p-6">
+      <VendorMain>
+      <FadeInOnScroll>
         <div style={{ marginBottom: '14px', flexShrink: 0 }}>
           <h1 className="text-2xl font-bold text-slate-900">Message</h1>
         </div>
@@ -1022,7 +1024,8 @@ const VendorMessage = () => {
             </div>
           </section>
         </div>
-      </main>
+      </FadeInOnScroll>
+      </VendorMain>
 
       {previewImageUrl ? (
         <div

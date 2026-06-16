@@ -14,6 +14,7 @@ import {
   notifyCartChanged,
   type CartLine,
 } from '../lib/cartStorage'
+import FadeInOnScroll from '../components/FadeInOnScroll'
 
 const Cart = () => {
   const navigate = useNavigate()
@@ -234,6 +235,7 @@ const Cart = () => {
           </section>
         ) : (
           <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
+            <FadeInOnScroll>
             <section className="space-y-4">
               {cartHasClosedVendors ? (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -372,7 +374,9 @@ const Cart = () => {
                 </article>
               ))}
             </section>
+            </FadeInOnScroll>
 
+            <FadeInOnScroll delay={100}>
             <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-24">
               <h2 className="text-lg font-bold text-slate-900">Order summary</h2>
               <dl className="mt-5 space-y-3 text-sm">
@@ -428,6 +432,7 @@ const Cart = () => {
                 Continue shopping
               </Link>
             </aside>
+            </FadeInOnScroll>
           </div>
         )}
       </main>

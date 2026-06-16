@@ -8,6 +8,7 @@ import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartSto
 import { getPublicProduct, getProductImageUrls, type ProductDto } from '../lib/productsApi'
 import { FaStar } from 'react-icons/fa'
 import TopProduct from '../UserComponents/TopProduct'
+import FadeInOnScroll from '../components/FadeInOnScroll'
 
 type Review = {
   id: string
@@ -216,6 +217,7 @@ const ProductsDetail = () => {
           <span className="mx-2 text-slate-400">/</span>
           <span className="font-medium text-slate-700">{product.productName}</span>
         </div>
+        <FadeInOnScroll>
         <section className="mx-[70px] p-1 md:p-2">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div>
@@ -453,8 +455,9 @@ const ProductsDetail = () => {
             </div>
           </section>
         </section>
+        </FadeInOnScroll>
       </main>
-      <TopProduct />
+      <FadeInOnScroll delay={100}><TopProduct /></FadeInOnScroll>
       <Footer />
       <Copyright />
     </div>

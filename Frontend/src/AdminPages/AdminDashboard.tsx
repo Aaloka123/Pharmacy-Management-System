@@ -11,6 +11,7 @@ import {
 } from 'react-icons/lu'
 import { Link } from 'react-router-dom'
 import AdminNavbar from '../AdminComponents/AdminNavbar'
+import { AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { getStoredUser } from '../lib/auth'
 
 const STATS = [
@@ -223,7 +224,8 @@ const AdminDashboard = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <AdminNavbar />
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+      <AdminMain className="flex-1 overflow-y-auto p-6 lg:p-8">
+        <FadeInOnScroll>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-teal-700">Admin Portal</p>
@@ -252,7 +254,9 @@ const AdminDashboard = () => {
             </span>
           </div>
         </div>
+        </FadeInOnScroll>
 
+        <FadeInOnScroll delay={80}>
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {STATS.map((stat) => (
             <article
@@ -274,7 +278,9 @@ const AdminDashboard = () => {
             </article>
           ))}
         </section>
+        </FadeInOnScroll>
 
+        <FadeInOnScroll delay={100}>
         <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Link
             className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm transition hover:border-amber-300 hover:shadow-md"
@@ -313,7 +319,9 @@ const AdminDashboard = () => {
             </div>
           </Link>
         </section>
+        </FadeInOnScroll>
 
+        <FadeInOnScroll delay={120}>
         <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
             <div className="mb-4 flex items-center justify-between">
@@ -334,7 +342,9 @@ const AdminDashboard = () => {
             <VendorStatusDonut />
           </article>
         </section>
+        </FadeInOnScroll>
 
+        <FadeInOnScroll delay={140}>
         <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900">User Growth</h2>
@@ -360,7 +370,9 @@ const AdminDashboard = () => {
             </ul>
           </article>
         </section>
+        </FadeInOnScroll>
 
+        <FadeInOnScroll delay={160}>
         <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -422,7 +434,8 @@ const AdminDashboard = () => {
             </ul>
           </article>
         </section>
-      </main>
+        </FadeInOnScroll>
+      </AdminMain>
     </div>
   )
 }

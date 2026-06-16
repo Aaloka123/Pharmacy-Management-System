@@ -18,6 +18,7 @@ import {
 import { initiateEsewaPayment, initiateKhaltiPayment, redirectToPaymentUrl, submitEsewaPaymentForm } from '../lib/paymentApi'
 import { placeOrder, toApiPaymentMethod } from '../lib/orderApi'
 import { ApiRequestError } from '../lib/api'
+import FadeInOnScroll from '../components/FadeInOnScroll'
 
 type PaymentMethod = 'cod' | 'esewa' | 'khalti'
 
@@ -220,6 +221,7 @@ const Checkout = () => {
           </section>
         ) : (
           <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
+            <FadeInOnScroll>
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="border-b border-slate-100 pb-4">
                 <h2 className="text-lg font-bold text-slate-900">Payment method</h2>
@@ -278,7 +280,9 @@ const Checkout = () => {
                 </p>
               )}
             </section>
+            </FadeInOnScroll>
 
+            <FadeInOnScroll delay={100}>
             <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:sticky lg:top-24">
               <div className="border-b border-slate-100 pb-4">
                 <h2 className="text-lg font-bold text-slate-900">Purchase details</h2>
@@ -356,6 +360,7 @@ const Checkout = () => {
                       : 'Place order'}
               </button>
             </aside>
+            </FadeInOnScroll>
           </div>
         )}
       </main>

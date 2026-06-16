@@ -1,4 +1,5 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
+import { AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -60,7 +61,8 @@ const AdminUsers = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <AdminNavbar />
-      <main className="flex-1 p-6">
+      <AdminMain>
+      <FadeInOnScroll>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Admin Users</h1>
@@ -144,7 +146,8 @@ const AdminUsers = () => {
             </table>
           </div>
         </section>
-      </main>
+      </FadeInOnScroll>
+      </AdminMain>
     </div>
   )
 }

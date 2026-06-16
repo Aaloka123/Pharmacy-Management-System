@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { toast } from 'react-toastify';
 import Navbar from '../VendorComponents/Navbar';
+import { VendorMain, FadeInOnScroll } from '../components/PortalMain';
 import { invalidatePublicProductsCache } from '../hooks/usePublicProducts';
 import {
   buildProductFormData,
@@ -354,7 +355,8 @@ const VendorProduct = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Navbar />
-      <main className="flex-1 overflow-x-hidden p-6">
+      <VendorMain className="flex-1 overflow-x-hidden p-6">
+      <FadeInOnScroll>
         <h1 className="text-2xl font-bold text-slate-900">Product</h1>
         <p className="mt-1 text-sm text-slate-600">Manage products with ease</p>
 
@@ -802,7 +804,8 @@ const VendorProduct = () => {
             </table>
           </div>
         </section>
-      </main>
+      </FadeInOnScroll>
+      </VendorMain>
     </div>
   );
 };

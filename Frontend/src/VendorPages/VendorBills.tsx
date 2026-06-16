@@ -1,5 +1,6 @@
 import { useMemo, useState, type ChangeEvent } from 'react';
 import Navbar from '../VendorComponents/Navbar';
+import { VendorMain, FadeInOnScroll } from '../components/PortalMain';
 import mednexuxLogo from '../assets/Mednexux.png';
 
 type InvoiceStatus = 'Unpaid' | 'Paid' | 'Partially Paid';
@@ -167,7 +168,8 @@ const Bills = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Navbar />
-      <main className="flex-1 p-6">
+      <VendorMain>
+      <FadeInOnScroll>
         <style>{`
           @media print {
             @page {
@@ -533,7 +535,8 @@ const Bills = () => {
             )}
           </section>
         </div>
-      </main>
+      </FadeInOnScroll>
+      </VendorMain>
     </div>
   );
 };

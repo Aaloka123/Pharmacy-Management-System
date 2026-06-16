@@ -1,4 +1,5 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
+import { AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { useEffect, useState } from 'react'
 import { FaStar } from 'react-icons/fa'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -268,7 +269,8 @@ const AdminVendorProfile = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <AdminNavbar />
-      <main className="flex-1 p-6">
+      <AdminMain>
+      <FadeInOnScroll>
         <Link
           to="/adminvendors"
           className="inline-flex items-center gap-2 text-sm font-semibold text-teal-700 transition hover:text-teal-800"
@@ -540,7 +542,8 @@ const AdminVendorProfile = () => {
             </div>
           </section>
         )}
-      </main>
+      </FadeInOnScroll>
+      </AdminMain>
 
       {selectedCertificate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
