@@ -119,6 +119,7 @@ public class EsewaPaymentService {
 		payment.setTotalAmount(totalAmount);
 		payment.setCartItemIds(distinctIds.stream().map(String::valueOf).collect(Collectors.joining(",")));
 		payment.setStatus(PaymentStatus.PENDING);
+		payment.setProvider(PaymentProvider.ESEWA);
 		paymentTransactionRepository.save(payment);
 
 		Map<String, String> fields = new LinkedHashMap<>();

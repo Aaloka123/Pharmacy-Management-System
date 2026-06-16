@@ -5,9 +5,22 @@ export type EsewaInitiateResponse = {
   fields: Record<string, string>
 }
 
+export type KhaltiInitiateResponse = {
+  paymentUrl: string
+}
+
 export async function initiateEsewaPayment(cartItemIds: number[]): Promise<EsewaInitiateResponse> {
   const { data } = await api.post<EsewaInitiateResponse>('/api/payments/esewa/initiate', { cartItemIds })
   return data
+}
+
+export async function initiateKhaltiPayment(cartItemIds: number[]): Promise<KhaltiInitiateResponse> {
+  const { data } = await api.post<KhaltiInitiateResponse>('/api/payments/khalti/initiate', { cartItemIds })
+  return data
+}
+
+export function redirectToPaymentUrl(paymentUrl: string): void {
+  window.location.href = paymentUrl
 }
 
 export function submitEsewaPaymentForm(formUrl: string, fields: Record<string, string>): void {

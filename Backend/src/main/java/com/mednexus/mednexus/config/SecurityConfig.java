@@ -73,6 +73,8 @@ public class SecurityConfig {
 						.permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/payments/esewa/success", "/api/payments/esewa/failure")
 						.permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/payments/khalti/callback")
+						.permitAll()
 						.requestMatchers("/uploads/**").permitAll()
 						.requestMatchers("/api/**").authenticated());
 		return http.build();

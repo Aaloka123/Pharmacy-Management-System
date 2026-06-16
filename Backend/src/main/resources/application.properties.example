@@ -36,3 +36,8 @@ mednexus.esewa.secret-key=8gBm/:&EnhH.1/q
 mednexus.esewa.form-url=https://rc-epay.esewa.com.np/api/epay/main/v2/form
 mednexus.esewa.status-url=https://rc-epay.esewa.com.np/api/epay/transaction/status/
 mednexus.esewa.frontend-base-url=http://localhost:5173
+
+# Khalti ePayment (sandbox — get live_secret_key from test-admin.khalti.com)
+mednexus.khalti.secret-key=${KHALTI_SECRET_KEY:}
+mednexus.khalti.api-base-url=https://dev.khalti.com/api/v2
+mednexus.khalti.frontend-base-url=http://localhost:5173

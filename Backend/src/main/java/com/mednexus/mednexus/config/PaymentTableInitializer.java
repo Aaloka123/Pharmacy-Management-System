@@ -29,6 +29,8 @@ public class PaymentTableInitializer implements ApplicationRunner {
 				Integer.class);
 		if (count == null || count == 0) {
 			createPaymentTable();
+		} else {
+			migratePaymentTable();
 		}
 	}
 
@@ -44,6 +46,8 @@ public class PaymentTableInitializer implements ApplicationRunner {
 				  `total_amount` decimal(12,2) NOT NULL,
 				  `cart_item_ids` varchar(2000) NOT NULL,
 				  `status` varchar(20) NOT NULL,
+				  `provider` varchar(20) NOT NULL DEFAULT 'ESEWA',
+				  `pidx` varchar(64) DEFAULT NULL,
 				  `created_at` datetime(6) NOT NULL,
 				  `completed_at` datetime(6) DEFAULT NULL,
 				  PRIMARY KEY (`id`),
@@ -53,5 +57,25 @@ public class PaymentTableInitializer implements ApplicationRunner {
 				) ENGINE=InnoDB
 				""");
 		log.info("`payment_transaction` table created.");
+	}
+
+	private void migratePaymentTable() {
+		if (!columnExists("payment_transaction", "provider")) {
+			log.info("Migrating `payment_transaction` for Khalti support...");
+			jdbc.execute("ALTER TABLE `payment_transaction` ADD COLUMN `provider` varchar(20) NOT NULL DEFAULT 'ESEWA'");
+		}
+		if (!columnExists("payment_transaction", "pidx")) {
+			jdbc.execute("ALTER TABLE `payment_transaction` ADD COLUMN `pidx` varchar(64) DEFAULT NULL");
+		}
+	}
+
+	private boolean columnExists(String tableName, String columnName) {
+		Integer count = jdbc.queryForObject(
+				"SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+						+ "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+				Integer.class,
+				tableName,
+				columnName);
+		return count != null && count > 0;
 	}
 }

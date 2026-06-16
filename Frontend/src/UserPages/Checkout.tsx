@@ -9,7 +9,7 @@ import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
 import { fetchCart } from '../lib/cartApi'
 import { isCartUserLoggedIn, notifyCartChanged, type CartLine } from '../lib/cartStorage'
-import { initiateEsewaPayment, submitEsewaPaymentForm } from '../lib/paymentApi'
+import { initiateEsewaPayment, initiateKhaltiPayment, redirectToPaymentUrl, submitEsewaPaymentForm } from '../lib/paymentApi'
 import { placeOrder, toApiPaymentMethod } from '../lib/orderApi'
 import { ApiRequestError } from '../lib/api'
 
@@ -41,7 +41,7 @@ const PAYMENT_OPTIONS: Array<{
     id: 'khalti',
     label: 'Khalti',
     description: 'Pay securely using your Khalti wallet.',
-    available: false,
+    available: true,
   },
 ]
 
@@ -82,7 +82,7 @@ const Checkout = () => {
 
   useEffect(() => {
     if (searchParams.get('payment') === 'failed') {
-      toast.error('eSewa payment was not completed. Please try again or choose another payment method.')
+      toast.error('Payment was not completed. Please try again or choose another payment method.')
       setSearchParams({}, { replace: true })
     }
   }, [searchParams, setSearchParams])
@@ -132,6 +132,12 @@ const Checkout = () => {
       if (paymentMethod === 'esewa') {
         const esewa = await initiateEsewaPayment(lines.map((line) => Number(line.id)))
         submitEsewaPaymentForm(esewa.formUrl, esewa.fields)
+        return
+      }
+
+      if (paymentMethod === 'khalti') {
+        const khalti = await initiateKhaltiPayment(lines.map((line) => Number(line.id)))
+        redirectToPaymentUrl(khalti.paymentUrl)
         return
       }
 
@@ -252,7 +258,8 @@ const Checkout = () => {
                 </p>
               ) : (
                 <p className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
-                  You will be redirected to complete payment with Khalti after placing the order.
+                  You will be redirected to Khalti to complete payment. For testing, use Khalti ID{' '}
+                  <strong>9800000000</strong>, MPIN <strong>1111</strong>, and OTP <strong>987654</strong>.
                 </p>
               )}
             </section>
@@ -311,10 +318,14 @@ const Checkout = () => {
                 {placingOrder
                   ? paymentMethod === 'esewa'
                     ? 'Redirecting to eSewa…'
-                    : 'Placing order…'
+                    : paymentMethod === 'khalti'
+                      ? 'Redirecting to Khalti…'
+                      : 'Placing order…'
                   : paymentMethod === 'esewa'
                     ? 'Pay with eSewa'
-                    : 'Place order'}
+                    : paymentMethod === 'khalti'
+                      ? 'Pay with Khalti'
+                      : 'Place order'}
               </button>
             </aside>
           </div>

@@ -27,7 +27,7 @@ const PaymentSuccess = () => {
               </div>
               <h1 className="mt-6 text-xl font-bold text-slate-900">Confirming your payment</h1>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                Please wait while we verify your eSewa payment and place your order.
+                Please wait while we verify your payment and place your order.
               </p>
             </>
           ) : (

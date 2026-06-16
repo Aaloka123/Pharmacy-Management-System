@@ -49,6 +49,13 @@ public class PaymentTransaction {
 	@Column(name = "status", nullable = false, length = 20)
 	private PaymentStatus status = PaymentStatus.PENDING;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "provider", nullable = false, length = 20)
+	private PaymentProvider provider = PaymentProvider.ESEWA;
+
+	@Column(name = "pidx", length = 64)
+	private String pidx;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -127,6 +134,22 @@ public class PaymentTransaction {
 
 	public void setStatus(PaymentStatus status) {
 		this.status = status;
+	}
+
+	public PaymentProvider getProvider() {
+		return provider;
+	}
+
+	public void setProvider(PaymentProvider provider) {
+		this.provider = provider;
+	}
+
+	public String getPidx() {
+		return pidx;
+	}
+
+	public void setPidx(String pidx) {
+		this.pidx = pidx;
 	}
 
 	public Instant getCreatedAt() {
