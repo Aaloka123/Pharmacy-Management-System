@@ -74,6 +74,7 @@ const AdminNavbar = () => {
       menuId="admin-mobile-nav"
       menuItems={menuItems}
       onLogout={handleLogout}
+      settingsPath="/adminsettings"
       subtitle="MedNexus Admin"
     />
   )

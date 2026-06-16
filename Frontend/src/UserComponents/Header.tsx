@@ -36,7 +36,7 @@ const Header = () => {
     'rounded-lg px-3.5 py-2 text-[14px] font-medium text-slate-700 transition duration-200 hover:text-teal-700'
   const activeLinkClass = 'text-teal-700'
   const mobileLinkClass =
-    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-teal-700 transition hover:bg-teal-50'
+    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-black transition hover:bg-slate-100'
 
   const [user, setUser] = useState<AuthUser | null>(() => getStoredUser())
   const [cartCount, setCartCount] = useState(0)
@@ -169,8 +169,8 @@ const Header = () => {
                     </span>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-900">{user.fullName || 'User'}</p>
-                    <p className="truncate text-xs text-slate-500">{user.email}</p>
+                    <p className="truncate text-sm font-semibold text-black">{user.fullName || 'User'}</p>
+                    <p className="truncate text-xs text-black">{user.email}</p>
                   </div>
                 </NavLink>
               ) : null}
@@ -181,14 +181,14 @@ const Header = () => {
                   return (
                     <NavLink
                       className={({ isActive }) =>
-                        `${mobileLinkClass} ${isActive ? 'bg-teal-50' : ''}`
+                        `${mobileLinkClass} ${isActive ? 'bg-slate-100' : ''}`
                       }
                       end={link.end}
                       key={link.to}
                       onClick={closeMenu}
                       to={link.to}
                     >
-                      <Icon className="h-5 w-5 shrink-0 text-teal-700" strokeWidth={2} />
+                      <Icon className="h-5 w-5 shrink-0 text-black" strokeWidth={2} />
                       <span>{link.label}</span>
                     </NavLink>
                   )
@@ -209,23 +209,23 @@ const Header = () => {
                   {isCartUserLoggedIn() ? (
                     <NavLink
                       className={({ isActive }) =>
-                        `${mobileLinkClass} ${isActive ? 'bg-teal-50' : ''}`
+                        `${mobileLinkClass} ${isActive ? 'bg-slate-100' : ''}`
                       }
                       onClick={closeMenu}
                       to="/cart"
                     >
-                      <LuShoppingCart className="h-5 w-5 shrink-0 text-teal-700" strokeWidth={2} />
+                      <LuShoppingCart className="h-5 w-5 shrink-0 text-black" strokeWidth={2} />
                       <span>Cart{cartCount > 0 ? ` (${cartCount})` : ''}</span>
                     </NavLink>
                   ) : null}
                   <NavLink
                     className={({ isActive }) =>
-                      `${mobileLinkClass} ${isActive ? 'bg-teal-50' : ''}`
+                      `${mobileLinkClass} ${isActive ? 'bg-slate-100' : ''}`
                     }
                     onClick={closeMenu}
                     to="/ordertracking"
                   >
-                    <LuPackageSearch className="h-5 w-5 shrink-0 text-teal-700" strokeWidth={2} />
+                    <LuPackageSearch className="h-5 w-5 shrink-0 text-black" strokeWidth={2} />
                     <span>Order Tracking</span>
                   </NavLink>
                 </div>
@@ -235,7 +235,7 @@ const Header = () => {
             {isLoggedIn ? (
               <div className="shrink-0 border-t border-slate-200 px-5 py-4">
                 <button
-                  className={`${mobileLinkClass} w-full cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700`}
+                  className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-red-600 transition hover:bg-red-50"
                   onClick={handleLogout}
                   type="button"
                 >

@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { LuLogOut, LuMenu, LuX } from 'react-icons/lu'
 import mednexuxLogo from '../assets/Mednexux.png'
+import { resolveProfileImageUrl, api } from '../lib/api'
+import { getStoredUser, onAuthChange } from '../lib/auth'
 
 export type PortalMenuItem = {
   label: string
@@ -16,6 +18,7 @@ type PortalSidebarProps = {
   menuItems: PortalMenuItem[]
   onLogout: () => void
   menuId: string
+  settingsPath: string
 }
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -24,12 +27,12 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   }`
 
 const mobileLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-teal-700 transition hover:bg-teal-50 ${
-    isActive ? 'bg-teal-50' : ''
+  `flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-black transition hover:bg-slate-100 ${
+    isActive ? 'bg-slate-100' : ''
   }`
 
 const mobileLogoutClass =
-  'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-rose-600 transition hover:bg-rose-50 hover:text-rose-700'
+  'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-red-600 transition hover:bg-red-50'
 
 function MenuLinks({
   items,
@@ -43,7 +46,7 @@ function MenuLinks({
   variant?: 'desktop' | 'mobile'
 }) {
   const iconClass =
-    variant === 'mobile' ? 'h-5 w-5 shrink-0 text-teal-700' : 'h-[18px] w-[18px] shrink-0 text-teal-700'
+    variant === 'mobile' ? 'h-5 w-5 shrink-0 text-black' : 'h-[18px] w-[18px] shrink-0 text-teal-700'
 
   return (
     <>
@@ -65,9 +68,56 @@ function MenuLinks({
   )
 }
 
-export default function PortalSidebar({ subtitle, menuItems, onLogout, menuId }: PortalSidebarProps) {
+export default function PortalSidebar({ subtitle, menuItems, onLogout, menuId, settingsPath }: PortalSidebarProps) {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [user, setUser] = useState(() => getStoredUser())
+  const [vendorShopName, setVendorShopName] = useState<string | null>(null)
+
+  useEffect(() => {
+    const unsubscribe = onAuthChange(() => setUser(getStoredUser()))
+    return unsubscribe
+  }, [])
+
+  useEffect(() => {
+    if (user?.role !== 'VENDOR' || !user.id) {
+      setVendorShopName(null)
+      return undefined
+    }
+
+    let cancelled = false
+
+    const loadVendorShop = async () => {
+      try {
+        const { data } = await api.get<{ businessName: string }>(`/api/vendors/${user.id}`)
+        if (!cancelled) {
+          setVendorShopName(data.businessName?.trim() || null)
+        }
+      } catch {
+        if (!cancelled) {
+          setVendorShopName(null)
+        }
+      }
+    }
+
+    void loadVendorShop()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, user?.role])
+
+  const avatarUrl = user?.profileImage ? resolveProfileImageUrl(user.profileImage) : null
+  const isAdmin = user?.role === 'ADMIN'
+  const isVendor = user?.role === 'VENDOR'
+  const profileTitle = isAdmin ? 'Admin' : isVendor ? vendorShopName || 'Shop' : user?.fullName || 'User'
+  const profileInitial = (
+    isAdmin
+      ? 'A'
+      : isVendor
+        ? vendorShopName?.trim().charAt(0) || user?.email?.trim().charAt(0) || 'S'
+        : user?.fullName?.trim().charAt(0) || user?.email?.trim().charAt(0) || 'U'
+  ).toUpperCase()
 
   useEffect(() => {
     setMenuOpen(false)
@@ -120,6 +170,31 @@ export default function PortalSidebar({ subtitle, menuItems, onLogout, menuId }:
             </div>
 
             <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-5 py-5">
+              {user ? (
+                <NavLink
+                  className="mb-4 flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-teal-200 hover:bg-teal-50/50"
+                  onClick={closeMenu}
+                  to={settingsPath}
+                >
+                  {avatarUrl ? (
+                    <img
+                      alt=""
+                      className="h-12 w-12 shrink-0 rounded-full border border-slate-200 object-cover"
+                      referrerPolicy="no-referrer"
+                      src={avatarUrl}
+                    />
+                  ) : (
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-teal-600 to-teal-700 text-lg font-bold text-white">
+                      {profileInitial}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-black">{profileTitle}</p>
+                    <p className="truncate text-xs text-black">{user.email}</p>
+                  </div>
+                </NavLink>
+              ) : null}
+
               <MenuLinks
                 items={menuItems}
                 linkClassName={mobileLinkClass}

@@ -36,6 +36,7 @@ const Navbar = () => {
       menuId="vendor-mobile-nav"
       menuItems={menuItems}
       onLogout={handleLogout}
+      settingsPath="/vendorsetting"
       subtitle="MedNexus Vendor"
     />
   )
