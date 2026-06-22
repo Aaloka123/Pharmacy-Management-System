@@ -74,6 +74,9 @@ public class EsewaPaymentService {
 	@Transactional
 	public EsewaInitiateResponse initiate(Long userId, List<Long> cartItemIds) {
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+		if (!user.hasDeliveryLocation()) {
+			throw new IllegalArgumentException("Please put location first");
+		}
 		List<Long> distinctIds = cartItemIds.stream().distinct().toList();
 		if (distinctIds.isEmpty()) {
 			throw new IllegalArgumentException("At least one cart item is required");

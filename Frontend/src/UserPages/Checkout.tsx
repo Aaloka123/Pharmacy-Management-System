@@ -17,6 +17,7 @@ import {
 } from '../lib/cartStorage'
 import { initiateEsewaPayment, initiateKhaltiPayment, redirectToPaymentUrl, submitEsewaPaymentForm } from '../lib/paymentApi'
 import { placeOrder, toApiPaymentMethod } from '../lib/orderApi'
+import { getStoredUser, hasUserLocation, LOCATION_REQUIRED_MESSAGE, onAuthChange } from '../lib/auth'
 import { ApiRequestError } from '../lib/api'
 import FadeInOnScroll from '../components/FadeInOnScroll'
 
@@ -86,6 +87,12 @@ const Checkout = () => {
   const [loading, setLoading] = useState(true)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod')
   const [placingOrder, setPlacingOrder] = useState(false)
+  const [user, setUser] = useState(() => getStoredUser())
+
+  useEffect(() => {
+    const unsubscribe = onAuthChange(() => setUser(getStoredUser()))
+    return unsubscribe
+  }, [])
 
   useEffect(() => {
     if (searchParams.get('payment') === 'failed') {
@@ -126,6 +133,8 @@ const Checkout = () => {
   const itemCount = useMemo(() => lines.reduce((sum, line) => sum + line.qty, 0), [lines])
   const closedVendors = useMemo(() => closedVendorNames(lines), [lines])
   const checkoutBlocked = useMemo(() => hasClosedVendorItems(lines), [lines])
+  const missingLocation = !hasUserLocation(user)
+  const orderBlocked = checkoutBlocked || missingLocation
   const loggedIn = isCartUserLoggedIn()
 
   const handlePlaceOrder = async () => {
@@ -135,11 +144,10 @@ const Checkout = () => {
     }
 
     if (checkoutBlocked) {
-      toast.error(
-        closedVendors.length === 1
-          ? `${closedVendors[0]} is currently closed. Remove those items from your cart.`
-          : 'Some items are from closed vendors. Remove them from your cart to continue.',
-      )
+      return
+    }
+
+    if (missingLocation) {
       return
     }
 
@@ -221,6 +229,18 @@ const Checkout = () => {
           </section>
         ) : (
           <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
+            {missingLocation ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 lg:col-span-2">
+                <p className="font-semibold">{LOCATION_REQUIRED_MESSAGE}</p>
+                <p className="mt-1">
+                  Add your delivery location in{' '}
+                  <Link className="font-semibold text-teal-700 underline hover:text-teal-800" to="/profile">
+                    Profile
+                  </Link>{' '}
+                  before placing an order.
+                </p>
+              </div>
+            ) : null}
             <FadeInOnScroll>
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="border-b border-slate-100 pb-4">
@@ -343,7 +363,7 @@ const Checkout = () => {
 
               <button
                 className="mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={placingOrder || checkoutBlocked}
+                disabled={placingOrder || orderBlocked}
                 onClick={() => void handlePlaceOrder()}
                 type="button"
               >

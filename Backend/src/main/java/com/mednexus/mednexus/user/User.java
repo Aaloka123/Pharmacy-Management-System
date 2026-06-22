@@ -108,6 +108,10 @@ public class User {
 		this.location = location;
 	}
 
+	public boolean hasDeliveryLocation() {
+		return location != null && !location.isBlank();
+	}
+
 	public String getProfileImage() {
 		return profileImage;
 	}

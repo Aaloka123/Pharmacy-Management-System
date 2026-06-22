@@ -49,6 +49,9 @@ public class VendorOrderService {
 	@Transactional
 	public List<VendorOrderResponse> placeOrder(Long userId, PlaceOrderRequest request) {
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+		if (!user.hasDeliveryLocation()) {
+			throw new IllegalArgumentException("Please put location first");
+		}
 		List<Long> cartItemIds = request.cartItemIds().stream().distinct().toList();
 		if (cartItemIds.isEmpty()) {
 			throw new IllegalArgumentException("At least one cart item is required");

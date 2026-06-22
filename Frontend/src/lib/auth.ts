@@ -22,6 +22,10 @@ export const homePathForRole = (role: Role): string => {
   }
 }
 
+export const LOCATION_REQUIRED_MESSAGE = 'Please put location first'
+
+export const hasUserLocation = (user?: AuthUser | null): boolean => Boolean(user?.location?.trim())
+
 const STORAGE_KEY = 'mednexus.user'
 const ACCESS_TOKEN_KEY = 'mednexus.accessToken'
 const REFRESH_TOKEN_KEY = 'mednexus.refreshToken'
