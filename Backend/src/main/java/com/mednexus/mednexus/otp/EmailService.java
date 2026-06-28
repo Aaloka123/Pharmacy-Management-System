@@ -19,15 +19,18 @@ public class EmailService {
 	private final JavaMailSender mailSender;
 	private final String fromAddress;
 	private final String frontendBaseUrl;
+	private final EmailLogoService emailLogoService;
 
 	@Autowired
 	public EmailService(
 			JavaMailSender mailSender,
 			@Value("${mednexus.mail.from:${spring.mail.username}}") String fromAddress,
-			@Value("${mednexus.mail.frontend-base-url:${mednexus.esewa.frontend-base-url:http://localhost:5173}}") String frontendBaseUrl) {
+			@Value("${mednexus.mail.frontend-base-url:${mednexus.esewa.frontend-base-url:http://localhost:5173}}") String frontendBaseUrl,
+			EmailLogoService emailLogoService) {
 		this.mailSender = mailSender;
 		this.fromAddress = fromAddress;
 		this.frontendBaseUrl = frontendBaseUrl.replaceAll("/$", "");
+		this.emailLogoService = emailLogoService;
 	}
 
 	public void sendLoginOtp(String toEmail, String code) {
@@ -67,7 +70,8 @@ public class EmailService {
 	}
 
 	private void sendOtpEmail(String toEmail, String code, String subject, String headline, String intro) {
-		String html = EmailHtmlBuilder.otpVerification(headline, intro, code, OTP_TTL_MINUTES);
+		String logoUrl = emailLogoService.getLogoUrl();
+		String html = EmailHtmlBuilder.otpVerification(headline, intro, code, OTP_TTL_MINUTES, logoUrl);
 		String plainText = """
 				%s
 
@@ -82,7 +86,7 @@ public class EmailService {
 
 	public void sendWelcomeEmail(String toEmail, String fullName) {
 		String greetingName = fullName == null || fullName.isBlank() ? "there" : fullName.trim();
-		String html = EmailHtmlBuilder.welcomeUser(greetingName, frontendBaseUrl);
+		String html = EmailHtmlBuilder.welcomeUser(greetingName, frontendBaseUrl, emailLogoService.getLogoUrl());
 		String plainText = """
 				Hello %s,
 
@@ -100,7 +104,7 @@ public class EmailService {
 	public void sendVendorPendingApprovalEmail(String toEmail, String vendorName, String businessName) {
 		String greetingName = vendorName == null || vendorName.isBlank() ? "there" : vendorName.trim();
 		String business = businessName == null || businessName.isBlank() ? "your pharmacy" : businessName.trim();
-		String html = EmailHtmlBuilder.vendorPendingApproval(greetingName, business);
+		String html = EmailHtmlBuilder.vendorPendingApproval(greetingName, business, emailLogoService.getLogoUrl());
 		String plainText = """
 				Hello %s,
 
@@ -118,7 +122,7 @@ public class EmailService {
 	public void sendVendorApprovedWelcomeEmail(String toEmail, String vendorName, String businessName) {
 		String greetingName = vendorName == null || vendorName.isBlank() ? "there" : vendorName.trim();
 		String business = businessName == null || businessName.isBlank() ? "your pharmacy" : businessName.trim();
-		String html = EmailHtmlBuilder.vendorApprovedWelcome(greetingName, business, frontendBaseUrl);
+		String html = EmailHtmlBuilder.vendorApprovedWelcome(greetingName, business, frontendBaseUrl, emailLogoService.getLogoUrl());
 		String plainText = """
 				Hello %s,
 

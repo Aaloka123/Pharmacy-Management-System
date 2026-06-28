@@ -11,7 +11,7 @@ final class EmailHtmlBuilder {
 	private EmailHtmlBuilder() {
 	}
 
-	static String welcomeUser(String greetingName, String frontendUrl) {
+	static String welcomeUser(String greetingName, String frontendUrl, String logoUrl) {
 		String safeName = escape(greetingName);
 		String safeUrl = escape(frontendUrl);
 		return layout(
@@ -33,10 +33,11 @@ final class EmailHtmlBuilder {
 				</p>
 				"""
 						.formatted(BRAND, SLATE, safeName, SLATE, BRAND, TEAL, safeUrl, MUTED),
-				"Welcome to " + BRAND);
+				"Welcome to " + BRAND,
+				logoUrl);
 	}
 
-	static String otpVerification(String headline, String intro, String code, int ttlMinutes) {
+	static String otpVerification(String headline, String intro, String code, int ttlMinutes, String logoUrl) {
 		String safeHeadline = escape(headline);
 		String safeIntro = escape(intro);
 		String safeCode = escape(code);
@@ -72,10 +73,11 @@ final class EmailHtmlBuilder {
 								BRAND,
 								MUTED,
 								BRAND),
-				headline);
+				headline,
+				logoUrl);
 	}
 
-	static String vendorPendingApproval(String greetingName, String businessName) {
+	static String vendorPendingApproval(String greetingName, String businessName, String logoUrl) {
 		String safeName = escape(greetingName);
 		String safeBusiness = escape(businessName);
 		return layout(
@@ -97,10 +99,11 @@ final class EmailHtmlBuilder {
 				<p style="margin:0;font-size:14px;line-height:1.6;color:%s;">We appreciate your interest in joining the %s vendor network.</p>
 				"""
 						.formatted(SLATE, safeName, SLATE, BRAND, safeBusiness, MUTED, BRAND),
-				"Vendor application under review");
+				"Vendor application under review",
+				logoUrl);
 	}
 
-	static String vendorApprovedWelcome(String greetingName, String businessName, String frontendUrl) {
+	static String vendorApprovedWelcome(String greetingName, String businessName, String frontendUrl, String logoUrl) {
 		String safeName = escape(greetingName);
 		String safeBusiness = escape(businessName);
 		String safeUrl = escape(frontendUrl);
@@ -124,35 +127,25 @@ final class EmailHtmlBuilder {
 				<p style="margin:0;font-size:14px;line-height:1.6;color:%s;">Thank you for partnering with %s.</p>
 				"""
 						.formatted(SLATE, safeName, SLATE, safeBusiness, BRAND, SLATE, TEAL, safeUrl, MUTED, BRAND),
-				"Welcome to the " + BRAND + " vendor portal");
+				"Welcome to the " + BRAND + " vendor portal",
+				logoUrl);
 	}
 
-	private static String brandHeader() {
+	private static String brandHeader(String logoUrl) {
+		if (logoUrl != null && !logoUrl.isBlank()) {
+			return """
+					<img src="%s" alt="%s" width="168" style="display:block;width:168px;max-width:100%%;height:auto;margin:0 auto;border:0;" />
+					"""
+					.formatted(escape(logoUrl), BRAND);
+		}
 		return """
-				<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto;">
-				  <tr>
-				    <td align="center" style="padding-bottom:10px;">
-				      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
-				        <tr>
-				          <td align="center" style="width:52px;height:52px;border-radius:50%%;background-color:%s;font-size:28px;line-height:52px;color:#ffffff;font-weight:700;">
-				            +
-				          </td>
-				        </tr>
-				      </table>
-				    </td>
-				  </tr>
-				  <tr>
-				    <td align="center">
-				      <p style="margin:0;font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-0.03em;color:%s;">%s</p>
-				      <p style="margin:8px 0 0;font-size:13px;line-height:1.4;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:%s;">Pharmacy Management</p>
-				    </td>
-				  </tr>
-				</table>
+				<p style="margin:0;font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-0.03em;color:%s;">%s</p>
+				<p style="margin:8px 0 0;font-size:13px;line-height:1.4;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:%s;">Pharmacy Management</p>
 				"""
-				.formatted(TEAL, TEAL, BRAND, MUTED);
+				.formatted(TEAL, BRAND, MUTED);
 	}
 
-	private static String layout(String bodyContent, String preheader) {
+	private static String layout(String bodyContent, String preheader, String logoUrl) {
 		String safePreheader = escape(preheader);
 		return """
 				<!DOCTYPE html>
@@ -192,7 +185,7 @@ final class EmailHtmlBuilder {
 				</body>
 				</html>
 				"""
-				.formatted(BRAND, safePreheader, brandHeader(), bodyContent, MUTED, BRAND);
+				.formatted(BRAND, safePreheader, brandHeader(logoUrl), bodyContent, MUTED, BRAND);
 	}
 
 	private static String escape(String value) {
