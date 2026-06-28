@@ -1,8 +1,10 @@
 package com.mednexus.mednexus.product;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -68,11 +70,16 @@ public class ProductService {
 		return toResponse(product);
 	}
 
-	@Transactional(readOnly = true)
+	@Transactional
 	public List<ProductResponse> listForVendor(Long vendorId) {
-		return productRepository.findByVendorIdOrderByCreatedAtDesc(vendorId).stream()
-				.map(this::toResponse)
-				.toList();
+		List<Product> products = productRepository.findByVendorIdOrderByCreatedAtDesc(vendorId);
+		deactivateExpiredInMemory(products);
+		return products.stream().map(this::toResponse).toList();
+	}
+
+	@Transactional
+	public void deactivateExpiredProducts() {
+		productRepository.deactivateExpiredActiveProducts(LocalDate.now());
 	}
 
 	@Transactional(readOnly = true)
@@ -107,19 +114,40 @@ public class ProductService {
 	@Transactional
 	public ProductResponse update(Long vendorId, Long productId, ProductWriteRequest request, MultipartFile[] imageFiles) {
 		requireApprovedVendor(vendorId);
-		Product product = productRepository.findByIdAndVendorId(productId, vendorId)
+		Product product = productRepository.findByIdAndVendorIdWithVendor(productId, vendorId)
 				.orElseThrow(ProductNotFoundException::new);
 		ValidatedProductFields fields = validateWriteRequest(request, vendorId, productId);
 
 		List<String> previousImages = new ArrayList<>(product.getImages());
+		if (!hasNewImageFiles(imageFiles) && imagesUnchanged(previousImages, request.existingImages())) {
+			applyFields(product, fields);
+			return toResponse(productRepository.save(product));
+		}
+
 		List<String> nextImages = resolveImages(previousImages, request.existingImages(), imageFiles, vendorId, productId);
 		applyFields(product, fields);
 		product.setImages(nextImages);
 
 		List<String> removed = new ArrayList<>(previousImages);
 		removed.removeAll(nextImages);
-		fileStorage.deleteByPublicUrls(removed);
+		Product saved = productRepository.save(product);
+		deleteImagesAsync(removed);
+		return toResponse(saved);
+	}
 
+	@Transactional
+	public ProductResponse updateStatus(Long vendorId, Long productId, ProductStatus status) {
+		requireApprovedVendor(vendorId);
+		Product product = productRepository.findByIdAndVendorIdWithVendor(productId, vendorId)
+				.orElseThrow(ProductNotFoundException::new);
+		if (ProductExpiryUtils.isExpired(product.getExpiryDate()) && status == ProductStatus.ACTIVE) {
+			throw new IllegalArgumentException(
+					"This product has expired. Update the expiry date before activating it.");
+		}
+		if (status == ProductStatus.ACTIVE && product.getStock() <= 0) {
+			throw new IllegalArgumentException("Cannot activate a product with zero stock.");
+		}
+		product.setStatus(status);
 		return toResponse(productRepository.save(product));
 	}
 
@@ -195,9 +223,7 @@ public class ProductService {
 			throw new IllegalArgumentException("At least one side effect is required");
 		}
 
-		ProductStatus status = request.status() != null
-				? request.status()
-				: (request.stock() > 0 ? ProductStatus.ACTIVE : ProductStatus.INACTIVE);
+		ProductStatus status = resolveProductStatus(request, request.expiryDate());
 
 		return new ValidatedProductFields(
 				request.productName().trim(),
@@ -276,6 +302,74 @@ public class ProductService {
 			return null;
 		}
 		return category.trim();
+	}
+
+	private ProductStatus resolveProductStatus(ProductWriteRequest request, java.time.LocalDate expiryDate) {
+		if (ProductExpiryUtils.isExpired(expiryDate)) {
+			if (request.status() == ProductStatus.ACTIVE) {
+				throw new IllegalArgumentException(
+						"This product has expired. Update the expiry date before activating it.");
+			}
+			return ProductStatus.INACTIVE;
+		}
+		if (request.status() != null) {
+			if (request.status() == ProductStatus.ACTIVE && request.stock() <= 0) {
+				return ProductStatus.INACTIVE;
+			}
+			return request.status();
+		}
+		return request.stock() > 0 ? ProductStatus.ACTIVE : ProductStatus.INACTIVE;
+	}
+
+	private void deactivateExpiredInMemory(List<Product> products) {
+		List<Product> expiredActive = products.stream()
+				.filter(product -> product.getStatus() == ProductStatus.ACTIVE)
+				.filter(product -> ProductExpiryUtils.isExpired(product.getExpiryDate()))
+				.toList();
+		if (expiredActive.isEmpty()) {
+			return;
+		}
+		for (Product product : expiredActive) {
+			product.setStatus(ProductStatus.INACTIVE);
+		}
+		productRepository.saveAll(expiredActive);
+	}
+
+	private boolean hasNewImageFiles(MultipartFile[] imageFiles) {
+		if (imageFiles == null) {
+			return false;
+		}
+		for (MultipartFile file : imageFiles) {
+			if (file != null && !file.isEmpty()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean imagesUnchanged(List<String> storedImages, List<String> existingImagesFromClient) {
+		if (existingImagesFromClient == null) {
+			return false;
+		}
+		if (storedImages.size() != existingImagesFromClient.size()) {
+			return false;
+		}
+		for (int i = 0; i < storedImages.size(); i++) {
+			String stored = normalizeImageUrl(storedImages.get(i));
+			String client = normalizeImageUrl(existingImagesFromClient.get(i));
+			if (stored == null || client == null || !stored.equals(client)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private void deleteImagesAsync(List<String> removed) {
+		if (removed == null || removed.isEmpty()) {
+			return;
+		}
+		List<String> copy = List.copyOf(removed);
+		CompletableFuture.runAsync(() -> fileStorage.deleteByPublicUrls(copy));
 	}
 
 	private ProductResponse toResponse(Product product) {

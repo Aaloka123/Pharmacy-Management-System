@@ -49,7 +49,13 @@ export function buildProductFormData(payload: ProductWritePayload, imageFiles: F
     'product',
     new Blob([JSON.stringify(payload)], { type: 'application/json' }),
   )
-  imageFiles.forEach((file) => formData.append('images', file))
+  const seen = new Set<string>()
+  for (const file of imageFiles) {
+    const key = `${file.name}:${file.size}:${file.lastModified}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    formData.append('images', file)
+  }
   return formData
 }
 
@@ -115,6 +121,14 @@ export function createVendorProduct(formData: FormData) {
 
 export function updateVendorProduct(id: number, formData: FormData) {
   return api.put<ProductDto>(`/api/vendors/me/products/${id}`, formData)
+}
+
+export function updateVendorProductJson(id: number, payload: ProductWritePayload) {
+  return api.put<ProductDto>(`/api/vendors/me/products/${id}`, payload)
+}
+
+export function updateVendorProductStatus(id: number, status: ProductStatus) {
+  return api.patch<ProductDto>(`/api/vendors/me/products/${id}/status`, { status })
 }
 
 export function deleteVendorProduct(id: number) {

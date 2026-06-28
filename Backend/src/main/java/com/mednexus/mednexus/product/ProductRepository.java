@@ -1,9 +1,11 @@
 package com.mednexus.mednexus.product;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -19,6 +21,22 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	boolean existsByVendorIdAndSkuIgnoreCaseAndIdNot(Long vendorId, String sku, Long id);
 
 	Optional<Product> findByIdAndVendorId(Long id, Long vendorId);
+
+	@Query("""
+			SELECT p FROM Product p
+			JOIN FETCH p.vendor v
+			WHERE p.id = :id AND v.id = :vendorId
+			""")
+	Optional<Product> findByIdAndVendorIdWithVendor(@Param("id") Long id, @Param("vendorId") Long vendorId);
+
+	@Modifying
+	@Query("""
+			UPDATE Product p
+			SET p.status = com.mednexus.mednexus.product.ProductStatus.INACTIVE
+			WHERE p.status = com.mednexus.mednexus.product.ProductStatus.ACTIVE
+			AND p.expiryDate < :today
+			""")
+	int deactivateExpiredActiveProducts(@Param("today") LocalDate today);
 
 	@Query("""
 			SELECT p FROM Product p

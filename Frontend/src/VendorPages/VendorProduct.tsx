@@ -12,6 +12,8 @@ import {
   listVendorProducts,
   toStoredImageReference,
   updateVendorProduct,
+  updateVendorProductJson,
+  updateVendorProductStatus,
   type ProductDto,
 } from '../lib/productsApi';
 
@@ -53,32 +55,14 @@ const mapDtoToRow = (dto: ProductDto): ProductRow => ({
   images: getProductImageUrls(dto.images),
 });
 
-const toStoredImagePaths = (images: string[]) => getStoredImageReferences(images);
-
-const rowToWritePayload = (product: ProductRow, status: 'ACTIVE' | 'INACTIVE') => ({
-  productName: product.productName,
-  sku: product.sku,
-  category: product.category,
-  strength: product.strength,
-  form: product.form,
-  quantity: product.quantity,
-  storageRequirements: product.storageRequirements,
-  expiryDate: product.expiryDate,
-  productDescription: product.productDescription,
-  dosageInstructions: product.dosageInstructions,
-  sideEffects: product.sideEffects,
-  price: product.price,
-  stock: product.stock,
-  status,
-  existingImages: toStoredImagePaths(product.images),
-});
-
 const VendorProduct = () => {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productImages, setProductImages] = useState<string[]>([]);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [togglingProductId, setTogglingProductId] = useState<number | null>(null);
   const [showAllDetails, setShowAllDetails] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
@@ -151,25 +135,28 @@ const VendorProduct = () => {
     return { label: 'Valid', classes: 'bg-emerald-100 text-emerald-700' };
   };
 
+  const isProductExpired = (expiryDate: string) => getExpiryStatus(expiryDate).label === 'Expired';
+
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
-    setProductImages((prev) => {
-      const remainingSlots = 4 - prev.length;
-      if (remainingSlots <= 0) {
-        window.alert('You can upload maximum 4 images.');
-        return prev;
-      }
-
-      const filesToAdd = files.slice(0, remainingSlots);
-      if (files.length > remainingSlots) {
-        window.alert('Only 4 images are allowed. Extra images were ignored.');
-      }
-
-      const imageUrls = filesToAdd.map((file) => URL.createObjectURL(file));
-      setUploadFiles((prevFiles) => [...prevFiles, ...filesToAdd]);
-      return [...prev, ...imageUrls];
-    });
     event.target.value = '';
+    if (files.length === 0) return;
+
+    const remainingSlots = 4 - productImages.length;
+    if (remainingSlots <= 0) {
+      window.alert('You can upload maximum 4 images.');
+      return;
+    }
+
+    if (files.length > remainingSlots) {
+      window.alert('Only 4 images are allowed. Extra images were ignored.');
+    }
+
+    const filesToAdd = files.slice(0, remainingSlots);
+    const imageUrls = filesToAdd.map((file) => URL.createObjectURL(file));
+
+    setUploadFiles((prevFiles) => [...prevFiles, ...filesToAdd]);
+    setProductImages((prevImages) => [...prevImages, ...imageUrls]);
   };
 
   const handleRemoveImage = (indexToRemove: number) => {
@@ -212,22 +199,42 @@ const VendorProduct = () => {
     setShowAllDetails(false);
   };
 
-  const countStoredImages = () =>
-    productImages
-      .map((url) => toStoredImageReference(url))
-      .filter((url): url is string => url != null).length;
-
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    const imageCount = countStoredImages() + uploadFiles.length;
-    if (imageCount < 1) {
+    if (productImages.length < 1) {
       toast.error('Please upload at least one product image.');
       return;
     }
 
+    const uniqueUploadFiles = uploadFiles.filter(
+      (file, index, arr) =>
+        arr.findIndex(
+          (candidate) =>
+            candidate.name === file.name
+            && candidate.size === file.size
+            && candidate.lastModified === file.lastModified,
+        ) === index,
+    );
+
     const parsedStock = Number(formData.stock);
     const editingProduct = editingId !== null ? products.find((row) => row.id === editingId) : undefined;
+    const expired = isProductExpired(formData.expiryDate);
+    const expiryWasUpdated =
+      editingProduct != null && formData.expiryDate !== editingProduct.expiryDate;
+    const wasExpired = editingProduct != null && isProductExpired(editingProduct.expiryDate);
+
+    let status: 'ACTIVE' | 'INACTIVE';
+    if (expired) {
+      status = 'INACTIVE';
+    } else if (editingProduct && expiryWasUpdated && wasExpired && parsedStock > 0) {
+      status = 'ACTIVE';
+    } else if (editingProduct?.status === 'Inactive') {
+      status = 'INACTIVE';
+    } else {
+      status = parsedStock > 0 ? 'ACTIVE' : 'INACTIVE';
+    }
+
     const writePayload = {
       productName: formData.productName.trim(),
       sku: formData.sku.trim(),
@@ -248,19 +255,19 @@ const VendorProduct = () => {
         .filter(Boolean),
       price: Number(formData.price),
       stock: parsedStock,
-      status: (editingProduct?.status === 'Inactive'
-        ? 'INACTIVE'
-        : parsedStock > 0
-          ? 'ACTIVE'
-          : 'INACTIVE') as 'ACTIVE' | 'INACTIVE',
+      status,
       existingImages: getStoredImageReferences(productImages),
     };
 
-    const body = buildProductFormData(writePayload, uploadFiles);
+    const body = buildProductFormData(writePayload, uniqueUploadFiles);
 
+    setIsSavingProduct(true);
     try {
       if (editingId !== null) {
-        const { data: updated } = await updateVendorProduct(editingId, body);
+        const { data: updated } =
+          uniqueUploadFiles.length === 0
+            ? await updateVendorProductJson(editingId, writePayload)
+            : await updateVendorProduct(editingId, body);
         setProducts((prev) => prev.map((row) => (row.id === updated.id ? mapDtoToRow(updated) : row)));
         toast.success('Product updated successfully.');
       } else {
@@ -270,10 +277,11 @@ const VendorProduct = () => {
       }
       resetForm();
       invalidatePublicProductsCache();
-      void loadProducts(true);
     } catch (err) {
       toast.error(editingId !== null ? 'Failed to update product.' : 'Failed to add product.');
       console.error(err);
+    } finally {
+      setIsSavingProduct(false);
     }
   };
 
@@ -318,6 +326,11 @@ const VendorProduct = () => {
   };
 
   const handleSetProductLive = async (product: ProductRow, live: boolean) => {
+    if (live && isProductExpired(product.expiryDate)) {
+      toast.error('This product has expired. Update the expiry date before activating it.');
+      return;
+    }
+
     if (!live) {
       const confirmed = window.confirm(
         'Deactivate this product? It will be hidden from the customer site but stay in your product list.',
@@ -326,16 +339,18 @@ const VendorProduct = () => {
     }
 
     const status = live ? 'ACTIVE' : 'INACTIVE';
-    const body = buildProductFormData(rowToWritePayload(product, status), []);
 
+    setTogglingProductId(product.id);
     try {
-      const { data: updated } = await updateVendorProduct(product.id, body);
+      const { data: updated } = await updateVendorProductStatus(product.id, status);
       setProducts((prev) => prev.map((row) => (row.id === updated.id ? mapDtoToRow(updated) : row)));
       toast.success(live ? 'Product is live on the customer site again.' : 'Product deactivated.');
       invalidatePublicProductsCache();
     } catch (err) {
       toast.error(live ? 'Failed to activate product.' : 'Failed to deactivate product.');
       console.error(err);
+    } finally {
+      setTogglingProductId(null);
     }
   };
 
@@ -590,8 +605,18 @@ const VendorProduct = () => {
 
             <div className="md:col-span-2">
               <div className="flex items-center gap-2">
-                <button className="cursor-pointer rounded-lg bg-teal-600 px-6 py-2.5 text-sm font-semibold text-white" type="submit">
-                  {editingId !== null ? 'Update Product' : 'Add Product'}
+                <button
+                  className="cursor-pointer rounded-lg bg-teal-600 px-6 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isSavingProduct}
+                  type="submit"
+                >
+                  {isSavingProduct
+                    ? editingId !== null
+                      ? 'Updating…'
+                      : 'Adding…'
+                    : editingId !== null
+                      ? 'Update Product'
+                      : 'Add Product'}
                 </button>
                 {editingId !== null && (
                   <button
@@ -669,10 +694,11 @@ const VendorProduct = () => {
                   ? filteredProducts.map((product, index) => (
                   (() => {
                     const expiryStatus = getExpiryStatus(product.expiryDate);
+                    const expired = expiryStatus.label === 'Expired';
                     return (
                   <tr
                     className={`border-t border-slate-200 ${
-                      product.status === 'Inactive' ? 'bg-rose-50/70' : ''
+                      product.status === 'Inactive' || expired ? 'bg-rose-50/70' : ''
                     }`}
                     key={product.id}
                   >
@@ -739,12 +765,18 @@ const VendorProduct = () => {
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          product.status === 'Active'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-rose-100 text-rose-700'
+                          expired
+                            ? 'bg-rose-100 text-rose-700'
+                            : product.status === 'Active'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-rose-100 text-rose-700'
                         }`}
                       >
-                        {product.status === 'Active' ? 'Live' : 'Deactivated'}
+                        {expired
+                          ? 'Expired · Deactivated'
+                          : product.status === 'Active'
+                            ? 'Live'
+                            : 'Deactivated'}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm">
@@ -758,19 +790,22 @@ const VendorProduct = () => {
                         </button>
                         {product.status === 'Active' ? (
                           <button
-                            className="cursor-pointer rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800"
+                            className="cursor-pointer rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={togglingProductId === product.id}
                             onClick={() => handleSetProductLive(product, false)}
                             type="button"
                           >
-                            Deactivate
+                            {togglingProductId === product.id ? 'Saving…' : 'Deactivate'}
                           </button>
                         ) : (
                           <button
-                            className="cursor-pointer rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800"
+                            className="cursor-pointer rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            disabled={expired || togglingProductId === product.id}
                             onClick={() => handleSetProductLive(product, true)}
+                            title={expired ? 'Update the expiry date before activating' : undefined}
                             type="button"
                           >
-                            Activate
+                            {togglingProductId === product.id ? 'Saving…' : 'Activate'}
                           </button>
                         )}
                         <button

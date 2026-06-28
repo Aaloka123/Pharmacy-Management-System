@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -21,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.mednexus.mednexus.product.dto.ProductResponse;
 import com.mednexus.mednexus.product.dto.ProductWriteRequest;
+import com.mednexus.mednexus.product.dto.UpdateProductStatusRequest;
 import com.mednexus.mednexus.security.PlatformUser;
 
 @RestController
@@ -90,6 +93,24 @@ public class ProductController {
 			@RequestPart("product") ProductWriteRequest product,
 			@RequestPart(value = "images", required = false) MultipartFile[] images) {
 		return ResponseEntity.ok(productService.update(principal.getSubjectId(), id, product, images));
+	}
+
+	@PutMapping(value = "/vendors/me/products/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PreAuthorize("hasRole('VENDOR') and principal.vendorAccount")
+	public ResponseEntity<ProductResponse> updateJson(
+			@AuthenticationPrincipal PlatformUser principal,
+			@PathVariable Long id,
+			@RequestBody ProductWriteRequest product) {
+		return ResponseEntity.ok(productService.update(principal.getSubjectId(), id, product, null));
+	}
+
+	@PatchMapping("/vendors/me/products/{id}/status")
+	@PreAuthorize("hasRole('VENDOR') and principal.vendorAccount")
+	public ResponseEntity<ProductResponse> updateStatus(
+			@AuthenticationPrincipal PlatformUser principal,
+			@PathVariable Long id,
+			@RequestBody UpdateProductStatusRequest request) {
+		return ResponseEntity.ok(productService.updateStatus(principal.getSubjectId(), id, request.status()));
 	}
 
 	@DeleteMapping("/vendors/me/products/{id}")

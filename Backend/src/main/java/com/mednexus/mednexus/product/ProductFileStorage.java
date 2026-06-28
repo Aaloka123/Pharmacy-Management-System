@@ -1,7 +1,9 @@
 package com.mednexus.mednexus.product;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,9 +26,14 @@ public class ProductFileStorage {
 			return List.of();
 		}
 		List<String> urls = new ArrayList<>();
+		Set<String> seen = new HashSet<>();
 		int count = 0;
 		for (MultipartFile file : files) {
 			if (file == null || file.isEmpty()) {
+				continue;
+			}
+			String dedupeKey = file.getOriginalFilename() + ":" + file.getSize();
+			if (!seen.add(dedupeKey)) {
 				continue;
 			}
 			if (count >= MAX_IMAGES) {
