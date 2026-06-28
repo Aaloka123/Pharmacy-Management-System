@@ -1,5 +1,13 @@
 package com.mednexus.mednexus.otp;
 
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.util.List;
+
+import com.mednexus.mednexus.order.OrderStatus;
+import com.mednexus.mednexus.order.dto.OrderEmailDetails;
+import com.mednexus.mednexus.order.dto.OrderEmailLineItem;
+
 final class EmailHtmlBuilder {
 
 	private static final String BRAND = "MedNexus";
@@ -196,6 +204,222 @@ final class EmailHtmlBuilder {
 				"Update on your MedNexus vendor application",
 				logoUrl,
 				frontendUrl);
+	}
+
+	static String orderStatusUpdate(OrderEmailDetails details, String logoUrl, String frontendUrl) {
+		String safeName = escape(details.customerName());
+		String safeEmail = escape(details.customerEmail());
+		String safePhone = escape(details.phone());
+		String safeAddress = escape(details.deliveryAddress());
+		String safePayment = escape(details.paymentMethodLabel());
+		String headline = orderStatusHeadline(details.status());
+		String intro = orderStatusIntro(details.status(), details.paymentMethodLabel());
+		String trackUrl = escape(frontendUrl + "/ordertracking");
+		String itemsHtml = buildOrderLineItemsHtml(details.lineItems());
+		StatusTheme theme = statusTheme(details.status());
+
+		return layout(
+				"""
+				%s
+				<h1 style="margin:0 0 10px;font-size:24px;line-height:1.3;color:#0f172a;font-weight:700;">%s</h1>
+				<p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>,</p>
+				<p style="margin:0 0 24px;font-size:14px;line-height:1.65;color:%s;">%s</p>
+				<p style="margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:%s;">Delivery details</p>
+				%s
+				<p style="margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:%s;">Order items</p>
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;">
+				  <tr>
+				    <td style="padding:18px 20px;border-radius:12px;background:#ffffff;border:1px solid #e2e8f0;">
+				      %s
+				      <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin-top:8px;padding-top:12px;border-top:1px solid #e2e8f0;">
+				        %s
+				        %s
+				        <tr>
+				          <td style="padding:10px 0 4px;font-size:14px;font-weight:700;color:#0f172a;">Total</td>
+				          <td align="right" style="padding:10px 0 4px;font-size:16px;font-weight:700;color:%s;">%s</td>
+				        </tr>
+				      </table>
+				      <p style="margin:12px 0 0;font-size:12px;color:%s;">Payment method: <strong style="color:#334155;">%s</strong></p>
+				    </td>
+				  </tr>
+				</table>
+				%s
+				"""
+						.formatted(
+								statusBanner(theme.label(), theme.background(), theme.textColor(), theme.borderColor()),
+								escape(headline),
+								SLATE,
+								safeName,
+								MUTED,
+								escape(intro),
+								MUTED,
+								deliveryDetailsTable(safeName, safeEmail, safePhone, safeAddress),
+								MUTED,
+								itemsHtml,
+								summaryRow("Subtotal", formatMoney(details.subtotal())),
+								summaryRow("Tax (13%%)", formatMoney(details.tax())),
+								TEAL,
+								formatMoney(details.total()),
+								MUTED,
+								safePayment,
+								ctaButton(trackUrl, "Track your order", TEAL)),
+				orderStatusPreheader(details.status()),
+				logoUrl,
+				frontendUrl);
+	}
+
+	private record StatusTheme(String label, String background, String textColor, String borderColor) {
+	}
+
+	private static StatusTheme statusTheme(OrderStatus status) {
+		return switch (status) {
+			case PENDING -> new StatusTheme("Pending", "#fffbeb", "#b45309", "#fde68a");
+			case CONFIRMED -> new StatusTheme("Confirmed", TEAL_LIGHT, TEAL, "#99f6e4");
+			case SHIPPED -> new StatusTheme("Shipped", "#ecfeff", "#0e7490", "#a5f3fc");
+			case DELIVERED -> new StatusTheme("Delivered", "#ecfdf5", "#047857", "#a7f3d0");
+			case CANCELED -> new StatusTheme("Canceled", "#f8fafc", "#64748b", "#e2e8f0");
+		};
+	}
+
+	private static String orderStatusHeadline(OrderStatus status) {
+		return switch (status) {
+			case PENDING -> "Your order has been placed and is pending";
+			case CONFIRMED -> "Your order has been confirmed";
+			case SHIPPED -> "Your order has been shipped";
+			case DELIVERED -> "Your order has been delivered";
+			case CANCELED -> "Your order has been canceled";
+		};
+	}
+
+	private static String orderStatusIntro(OrderStatus status, String paymentMethodLabel) {
+		String payment = paymentMethodLabel == null ? "your selected payment method" : paymentMethodLabel;
+		return switch (status) {
+			case PENDING -> paymentIntroPending(payment);
+			case CONFIRMED -> "Your order is confirmed and is being prepared by the pharmacy.";
+			case SHIPPED -> "Your order is on the way. Please keep your phone available for delivery updates.";
+			case DELIVERED -> "Your order has been delivered. Thank you for shopping with " + BRAND + ".";
+			case CANCELED -> "Your order was canceled. If you have questions, contact our support team.";
+		};
+	}
+
+	private static String paymentIntroPending(String paymentMethodLabel) {
+		if (paymentMethodLabel.contains("Cash on Delivery")) {
+			return "Thank you for your order. Please pay the total amount in cash when your medicines are delivered.";
+		}
+		if (paymentMethodLabel.contains("eSewa")) {
+			return "Thank you for your order. Your payment via eSewa was successful and your order is now pending review.";
+		}
+		if (paymentMethodLabel.contains("Khalti")) {
+			return "Thank you for your order. Your payment via Khalti was successful and your order is now pending review.";
+		}
+		return "Thank you for your order. We have received your request and it is pending review.";
+	}
+
+	private static String orderStatusPreheader(OrderStatus status) {
+		return switch (status) {
+			case PENDING -> "Your MedNexus order is pending";
+			case CONFIRMED -> "Your MedNexus order has been confirmed";
+			case SHIPPED -> "Your MedNexus order has been shipped";
+			case DELIVERED -> "Your MedNexus order has been delivered";
+			case CANCELED -> "Your MedNexus order was canceled";
+		};
+	}
+
+	private static String buildOrderLineItemsHtml(List<OrderEmailLineItem> lineItems) {
+		if (lineItems == null || lineItems.isEmpty()) {
+			return """
+					<p style="margin:0;font-size:14px;color:%s;">No items found for this order.</p>
+					""".formatted(MUTED);
+		}
+		StringBuilder builder = new StringBuilder();
+		for (OrderEmailLineItem item : lineItems) {
+			builder.append(orderLineItemRow(item));
+		}
+		return builder.toString();
+	}
+
+	private static String orderLineItemRow(OrderEmailLineItem item) {
+		String imageCell = item.imageUrl() != null && !item.imageUrl().isBlank()
+				? """
+						<img src="%s" alt="" width="56" height="56" style="display:block;width:56px;height:56px;border-radius:8px;border:1px solid #e2e8f0;object-fit:cover;" />
+						""".formatted(escape(item.imageUrl()))
+				: """
+						<div style="width:56px;height:56px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;"></div>
+						""";
+		return """
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid #e2e8f0;">
+				  <tr>
+				    <td width="68" valign="top">%s</td>
+				    <td valign="top" style="padding:0 12px;">
+				      <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#0f172a;">%s</p>
+				      <p style="margin:0 0 2px;font-size:12px;color:%s;">SKU: %s</p>
+				      <p style="margin:0;font-size:12px;color:%s;">Qty: %d</p>
+				    </td>
+				    <td valign="top" align="right" style="white-space:nowrap;">
+				      <p style="margin:0;font-size:15px;font-weight:700;color:#0f172a;">%s</p>
+				    </td>
+				  </tr>
+				</table>
+				"""
+				.formatted(
+						imageCell,
+						escape(item.productName()),
+						MUTED,
+						escape(item.sku()),
+						MUTED,
+						item.quantity(),
+						formatMoney(item.lineTotal()));
+	}
+
+	private static String deliveryDetailsTable(String safeName, String safeEmail, String safePhone, String safeAddress) {
+		return """
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
+				  %s
+				  %s
+				  %s
+				  %s
+				</table>
+				"""
+				.formatted(
+						deliveryDetailRow("Name", safeName, false),
+						deliveryDetailRow("Email", emailLink(safeEmail), false),
+						deliveryDetailRow("Phone", safePhone, false),
+						deliveryDetailRow("Address", safeAddress, true));
+	}
+
+	private static String deliveryDetailRow(String label, String value, boolean isLast) {
+		String rowBorder = isLast ? "" : "border-bottom:1px solid #e2e8f0;";
+		return """
+				<tr>
+				  <td width="110" valign="top" style="padding:14px 16px;background:#f8fafc;%s font-size:14px;font-weight:600;color:#334155;">%s</td>
+				  <td valign="top" style="padding:14px 16px;background:#ffffff;%s font-size:14px;line-height:1.55;color:#334155;">%s</td>
+				</tr>
+				"""
+				.formatted(rowBorder, escape(label), rowBorder, value);
+	}
+
+	private static String emailLink(String safeEmail) {
+		return """
+				<a href="mailto:%s" style="color:#2563eb;text-decoration:underline;">%s</a>
+				""".formatted(safeEmail, safeEmail);
+	}
+
+	private static String summaryRow(String label, String amount) {
+		return """
+				<tr>
+				  <td style="padding:4px 0;font-size:14px;color:%s;">%s</td>
+				  <td align="right" style="padding:4px 0;font-size:14px;font-weight:600;color:#334155;">%s</td>
+				</tr>
+				"""
+				.formatted(MUTED, escape(label), amount);
+	}
+
+	private static String formatMoney(BigDecimal amount) {
+		if (amount == null) {
+			return "Rs. 0";
+		}
+		DecimalFormat formatter = new DecimalFormat("#,##0.##");
+		return "Rs. " + formatter.format(amount);
 	}
 
 	private static String statusBanner(String label, String background, String textColor, String borderColor) {

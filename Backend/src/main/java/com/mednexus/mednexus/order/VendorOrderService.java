@@ -13,6 +13,7 @@ import com.mednexus.mednexus.cart.CartRepository;
 import com.mednexus.mednexus.cart.InsufficientStockException;
 import com.mednexus.mednexus.cart.VendorStoreClosedException;
 import com.mednexus.mednexus.notification.NotificationService;
+import com.mednexus.mednexus.order.OrderEmailService;
 import com.mednexus.mednexus.order.dto.PaymentMethodDto;
 import com.mednexus.mednexus.order.dto.PlaceOrderRequest;
 import com.mednexus.mednexus.order.dto.UpdateOrderStatusRequest;
@@ -33,17 +34,20 @@ public class VendorOrderService {
 	private final CartRepository cartRepository;
 	private final UserRepository userRepository;
 	private final NotificationService notificationService;
+	private final OrderEmailService orderEmailService;
 
 	@Autowired
 	public VendorOrderService(
 			VendorOrderRepository vendorOrderRepository,
 			CartRepository cartRepository,
 			UserRepository userRepository,
-			NotificationService notificationService) {
+			NotificationService notificationService,
+			OrderEmailService orderEmailService) {
 		this.vendorOrderRepository = vendorOrderRepository;
 		this.cartRepository = cartRepository;
 		this.userRepository = userRepository;
 		this.notificationService = notificationService;
+		this.orderEmailService = orderEmailService;
 	}
 
 	@Transactional
@@ -66,6 +70,7 @@ public class VendorOrderService {
 
 		PaymentMethod paymentMethod = toPaymentMethod(request.paymentMethod());
 		List<VendorOrderResponse> created = new ArrayList<>();
+		List<VendorOrder> savedOrders = new ArrayList<>();
 
 		for (Cart cart : cartItems) {
 			Product product = cart.getProduct();
@@ -94,9 +99,12 @@ public class VendorOrderService {
 
 			product.setStock(product.getStock() - cart.getQuantity());
 			VendorOrder saved = vendorOrderRepository.save(order);
+			savedOrders.add(saved);
 			cartRepository.delete(cart);
 			created.add(toResponse(saved));
 		}
+
+		orderEmailService.sendPlacedOrdersEmail(user, savedOrders, paymentMethod);
 
 		return created;
 	}

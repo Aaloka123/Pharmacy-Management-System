@@ -48,15 +48,15 @@ const PaymentSuccess = () => {
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 Your order has been placed. You can track its status anytime from your orders page.
               </p>
-              <button
-                className="mt-8 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition hover:from-teal-700 hover:to-teal-800"
-                onClick={() => navigate('/ordertracking', { replace: true })}
-                type="button"
-              >
-                Track your order
-              </button>
             </>
           )}
+          <button
+            className="mt-8 w-full cursor-pointer rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition hover:from-teal-700 hover:to-teal-800"
+            onClick={() => navigate('/ordertracking', { replace: true })}
+            type="button"
+          >
+            Track your order
+          </button>
         </section>
       </main>
       <Footer />

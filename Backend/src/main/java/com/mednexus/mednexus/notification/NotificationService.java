@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mednexus.mednexus.notification.dto.NotificationResponse;
+import com.mednexus.mednexus.order.OrderEmailService;
 import com.mednexus.mednexus.order.OrderStatus;
 import com.mednexus.mednexus.order.VendorOrder;
 import com.mednexus.mednexus.user.User;
@@ -17,10 +18,14 @@ public class NotificationService {
 	private static final int LIST_LIMIT = 30;
 
 	private final NotificationRepository notificationRepository;
+	private final OrderEmailService orderEmailService;
 
 	@Autowired
-	public NotificationService(NotificationRepository notificationRepository) {
+	public NotificationService(
+			NotificationRepository notificationRepository,
+			OrderEmailService orderEmailService) {
 		this.notificationRepository = notificationRepository;
+		this.orderEmailService = orderEmailService;
 	}
 
 	@Transactional
@@ -39,6 +44,7 @@ public class NotificationService {
 		notification.setProductImage(order.getProductImage());
 		notification.setRead(false);
 		notificationRepository.save(notification);
+		orderEmailService.sendStatusUpdateEmail(order, newStatus);
 	}
 
 	@Transactional(readOnly = true)

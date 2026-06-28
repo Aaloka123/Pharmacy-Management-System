@@ -8,6 +8,10 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.mednexus.mednexus.order.OrderStatus;
+import com.mednexus.mednexus.order.dto.OrderEmailDetails;
+import com.mednexus.mednexus.order.dto.OrderEmailLineItem;
+
 import jakarta.mail.internet.MimeMessage;
 
 @Service
@@ -170,6 +174,86 @@ public class EmailService {
 				— The MedNexus Team
 				""".formatted(greetingName, business, frontendBaseUrl);
 		sendHtmlEmail(toEmail, "Update on your MedNexus vendor application", html, plainText);
+	}
+
+	public void sendOrderStatusEmail(OrderEmailDetails details) {
+		if (details == null || details.toEmail() == null || details.toEmail().isBlank()) {
+			return;
+		}
+		String subject = orderStatusSubject(details.status());
+		String html = EmailHtmlBuilder.orderStatusUpdate(details, emailLogoService.getLogoUrl(), frontendBaseUrl);
+		String plainText = buildOrderStatusPlainText(details, frontendBaseUrl);
+		sendHtmlEmail(details.toEmail(), subject, html, plainText);
+	}
+
+	private static String orderStatusSubject(OrderStatus status) {
+		return switch (status) {
+			case PENDING -> "Your MedNexus order is pending";
+			case CONFIRMED -> "Your MedNexus order has been confirmed";
+			case SHIPPED -> "Your MedNexus order has been shipped";
+			case DELIVERED -> "Your MedNexus order has been delivered";
+			case CANCELED -> "Your MedNexus order was canceled";
+		};
+	}
+
+	private static String buildOrderStatusPlainText(OrderEmailDetails details, String frontendBaseUrl) {
+		StringBuilder items = new StringBuilder();
+		for (OrderEmailLineItem item : details.lineItems()) {
+			items.append("- ")
+					.append(item.productName())
+					.append(" (SKU: ")
+					.append(item.sku())
+					.append(") x")
+					.append(item.quantity())
+					.append(" — Rs. ")
+					.append(item.lineTotal())
+					.append('\n');
+		}
+		return """
+				Hello %s,
+
+				%s
+
+				Delivery details
+				Name: %s
+				Email: %s
+				Phone: %s
+				Address: %s
+
+				Order items
+				%s
+				Subtotal: Rs. %s
+				Tax (13%%): Rs. %s
+				Total: Rs. %s
+				Payment method: %s
+
+				Track your order: %s/ordertracking
+
+				— The MedNexus Team
+				"""
+				.formatted(
+						details.customerName(),
+						orderStatusHeadlinePlain(details.status()),
+						details.customerName(),
+						details.customerEmail(),
+						details.phone(),
+						details.deliveryAddress(),
+						items.toString(),
+						details.subtotal(),
+						details.tax(),
+						details.total(),
+						details.paymentMethodLabel(),
+						frontendBaseUrl);
+	}
+
+	private static String orderStatusHeadlinePlain(OrderStatus status) {
+		return switch (status) {
+			case PENDING -> "Your order has been placed and is pending.";
+			case CONFIRMED -> "Your order has been confirmed.";
+			case SHIPPED -> "Your order has been shipped.";
+			case DELIVERED -> "Your order has been delivered.";
+			case CANCELED -> "Your order has been canceled.";
+		};
 	}
 
 	private void sendHtmlEmail(String toEmail, String subject, String html, String plainText) {
