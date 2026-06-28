@@ -1,7 +1,18 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import mednexuxLogo from '../assets/Mednexux.png'
+import { getStoredUser, onAuthChange } from '../lib/auth'
 
 const Footer = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => getStoredUser() != null)
+
+  useEffect(() => {
+    const unsubscribe = onAuthChange(() => {
+      setIsLoggedIn(getStoredUser() != null)
+    })
+    return unsubscribe
+  }, [])
+
   return (
     <footer className="border-t border-slate-200 bg-[#F8FAFC]">
       <div className="px-4 py-12 md:px-8 lg:px-[80px]">
@@ -58,11 +69,13 @@ const Footer = () => {
                   Blog
                 </a>
               </li>
-              <li>
-                <NavLink className="font-semibold text-teal-700 underline underline-offset-2 transition hover:text-teal-800" to="/vendorsignup">
-                  Become a vendor
-                </NavLink>
-              </li>
+              {!isLoggedIn ? (
+                <li>
+                  <NavLink className="font-semibold text-teal-700 underline underline-offset-2 transition hover:text-teal-800" to="/vendorsignup">
+                    Become a vendor
+                  </NavLink>
+                </li>
+              ) : null}
             </ul>
           </div>
 
