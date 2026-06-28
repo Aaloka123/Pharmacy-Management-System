@@ -110,9 +110,9 @@ public class EmailService {
 
 				Thank you for applying to join MedNexus as a partner pharmacy.
 
-				We have received your application for %s. Your request is currently pending admin review.
+				We have received your application for %s. Our admin team is reviewing your registration and documents.
 
-				Our team will verify your documents and business details. You will receive another email once your account is approved.
+				You will receive a welcome email once your account is approved.
 
 				— The MedNexus Team
 				""".formatted(greetingName, business);
@@ -135,6 +135,24 @@ public class EmailService {
 				— The MedNexus Team
 				""".formatted(greetingName, business, frontendBaseUrl);
 		sendHtmlEmail(toEmail, "Welcome to the MedNexus vendor portal", html, plainText);
+	}
+
+	public void sendVendorRejectedEmail(String toEmail, String vendorName, String businessName) {
+		String greetingName = vendorName == null || vendorName.isBlank() ? "there" : vendorName.trim();
+		String business = businessName == null || businessName.isBlank() ? "your pharmacy" : businessName.trim();
+		String html = EmailHtmlBuilder.vendorRejectedApplication(greetingName, business, emailLogoService.getLogoUrl(), frontendBaseUrl);
+		String plainText = """
+				Hello %s,
+
+				Thank you for applying to join MedNexus as a partner pharmacy.
+
+				After reviewing your application for %s, our admin team was unable to approve it at this time.
+
+				If you believe this was a mistake or would like to apply again with updated documents, you may submit a new vendor registration.
+
+				— The MedNexus Team
+				""".formatted(greetingName, business);
+		sendHtmlEmail(toEmail, "Update on your MedNexus vendor application", html, plainText);
 	}
 
 	private void sendHtmlEmail(String toEmail, String subject, String html, String plainText) {

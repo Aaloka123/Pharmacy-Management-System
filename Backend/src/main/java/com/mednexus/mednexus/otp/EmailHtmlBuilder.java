@@ -93,7 +93,7 @@ final class EmailHtmlBuilder {
 				  <tr>
 				    <td style="padding:16px 18px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;">
 				      <p style="margin:0;font-size:14px;line-height:1.6;color:#92400e;">
-				        Your application is <strong>under admin review</strong>. Our team will verify your documents and business details. You will receive another email once your account is approved.
+				        Our admin team is <strong>reviewing your application</strong>. We will verify your documents and business details. You will receive a welcome email once your account is approved.
 				      </p>
 				    </td>
 				  </tr>
@@ -112,7 +112,7 @@ final class EmailHtmlBuilder {
 		String safeUrl = escape(frontendUrl);
 		return layout(
 				"""
-				<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#0f172a;font-weight:700;">You're approved!</h1>
+				<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#0f172a;font-weight:700;">Welcome to %s!</h1>
 				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>,</p>
 				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">
 				  Great news — your vendor application for <strong>%s</strong> has been approved. Welcome to the %s vendor portal.
@@ -129,8 +129,35 @@ final class EmailHtmlBuilder {
 				</table>
 				<p style="margin:0;font-size:14px;line-height:1.6;color:%s;">Thank you for partnering with %s.</p>
 				"""
-						.formatted(SLATE, safeName, SLATE, safeBusiness, BRAND, SLATE, TEAL, safeUrl, MUTED, BRAND),
+						.formatted(BRAND, SLATE, safeName, SLATE, safeBusiness, BRAND, SLATE, TEAL, safeUrl, MUTED, BRAND),
 				"Welcome to the " + BRAND + " vendor portal",
+				logoUrl,
+				frontendUrl);
+	}
+
+	static String vendorRejectedApplication(String greetingName, String businessName, String logoUrl, String frontendUrl) {
+		String safeName = escape(greetingName);
+		String safeBusiness = escape(businessName);
+		return layout(
+				"""
+				<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#0f172a;font-weight:700;">Application not approved</h1>
+				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>,</p>
+				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">
+				  Thank you for your interest in partnering with %s. After reviewing your application for <strong>%s</strong>, our admin team was unable to approve it at this time.
+				</p>
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 20px;">
+				  <tr>
+				    <td style="padding:16px 18px;border-radius:10px;background:#fff1f2;border:1px solid #fecdd3;">
+				      <p style="margin:0;font-size:14px;line-height:1.6;color:#9f1239;">
+				        Your vendor registration has been <strong>declined</strong>. If you believe this was a mistake or would like to apply again with updated documents, please contact our support team or submit a new application.
+				      </p>
+				    </td>
+				  </tr>
+				</table>
+				<p style="margin:0;font-size:14px;line-height:1.6;color:%s;">We appreciate your interest in the %s vendor network.</p>
+				"""
+						.formatted(SLATE, safeName, SLATE, BRAND, safeBusiness, MUTED, BRAND),
+				"Vendor application declined",
 				logoUrl,
 				frontendUrl);
 	}

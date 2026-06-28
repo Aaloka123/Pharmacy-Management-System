@@ -2,10 +2,8 @@ package com.mednexus.mednexus.vendor;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -13,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.mednexus.mednexus.otp.AfterCommitMailDispatcher;
 import com.mednexus.mednexus.otp.EmailService;
 import com.mednexus.mednexus.vendor.dto.PublicVendorResponse;
 import com.mednexus.mednexus.vendor.dto.UpdateStoreStatusRequest;
@@ -30,7 +29,7 @@ public class VendorService {
 	private final VendorFileStorage fileStorage;
 	private final RefreshTokenService refreshTokenService;
 	private final EmailService emailService;
-	private final Executor mailExecutor;
+	private final AfterCommitMailDispatcher mailDispatcher;
 
 	@Autowired
 	public VendorService(
@@ -39,13 +38,13 @@ public class VendorService {
 			VendorFileStorage fileStorage,
 			RefreshTokenService refreshTokenService,
 			EmailService emailService,
-			@Qualifier("mailExecutor") Executor mailExecutor) {
+			AfterCommitMailDispatcher mailDispatcher) {
 		this.vendorRepository = vendorRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.fileStorage = fileStorage;
 		this.refreshTokenService = refreshTokenService;
 		this.emailService = emailService;
-		this.mailExecutor = mailExecutor;
+		this.mailDispatcher = mailDispatcher;
 	}
 
 	@Transactional
@@ -94,7 +93,8 @@ public class VendorService {
 		String recipient = saved.getEmail();
 		String vendorName = saved.getName();
 		String registeredBusinessName = saved.getBusinessName();
-		mailExecutor.execute(() -> emailService.sendVendorPendingApprovalEmail(recipient, vendorName, registeredBusinessName));
+		mailDispatcher.sendAfterCommit(
+				() -> emailService.sendVendorPendingApprovalEmail(recipient, vendorName, registeredBusinessName));
 		return toResponse(saved);
 	}
 
@@ -282,11 +282,13 @@ public class VendorService {
 		vendor.setStoreStatus(StoreStatus.OPEN);
 		vendor.setStoreLockedByAdmin(false);
 		vendor.setDecidedAt(Instant.now());
-		String recipient = vendor.getEmail();
-		String vendorName = vendor.getName();
-		String approvedBusinessName = vendor.getBusinessName();
-		mailExecutor.execute(() -> emailService.sendVendorApprovedWelcomeEmail(recipient, vendorName, approvedBusinessName));
-		return toResponse(vendor);
+		Vendor saved = vendorRepository.save(vendor);
+		String recipient = saved.getEmail();
+		String vendorName = saved.getName();
+		String approvedBusinessName = saved.getBusinessName();
+		mailDispatcher.sendAfterCommit(
+				() -> emailService.sendVendorApprovedWelcomeEmail(recipient, vendorName, approvedBusinessName));
+		return toResponse(saved);
 	}
 
 	@Transactional
@@ -295,10 +297,15 @@ public class VendorService {
 		if (vendor.getStatus() != VendorStatus.PENDING) {
 			throw new InvalidVendorStateException("Vendor is not pending approval");
 		}
+		String recipient = vendor.getEmail();
+		String vendorName = vendor.getName();
+		String businessName = vendor.getBusinessName();
 		fileStorage.deleteByPublicUrl(vendor.getPharmacyManagementCertificate());
 		fileStorage.deleteByPublicUrl(vendor.getPanVatCertificate());
 		fileStorage.deleteByPublicUrl(vendor.getProfileImage());
 		vendorRepository.delete(vendor);
+		mailDispatcher.sendAfterCommit(
+				() -> emailService.sendVendorRejectedEmail(recipient, vendorName, businessName));
 	}
 
 	private static String requireNonBlank(String value, String message) {

@@ -94,8 +94,8 @@ const AdminApproveVendor = () => {
       window.dispatchEvent(new Event(PENDING_VENDORS_EVENT))
       toast.success(
         decision === 'approve'
-          ? `${vendor.businessName} approved.`
-          : `${vendor.businessName} rejected.`,
+          ? `${vendor.businessName} approved. The vendor will receive a welcome email.`
+          : `${vendor.businessName} rejected. The vendor will be notified by email.`,
       )
     } catch (err) {
       toast.error(
