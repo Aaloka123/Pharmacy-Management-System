@@ -47,13 +47,13 @@ public class Vendor {
 	@Column(name = "password", nullable = false, length = 255)
 	private String password;
 
-	@Column(name = "pharmacy_management_certificate", nullable = false, length = 500)
+	@Column(name = "pharmacy_management_certificate", nullable = false, length = 2048)
 	private String pharmacyManagementCertificate;
 
-	@Column(name = "pan_vat_certificate", nullable = false, length = 500)
+	@Column(name = "pan_vat_certificate", nullable = false, length = 2048)
 	private String panVatCertificate;
 
-	@Column(name = "profile_image", length = 500)
+	@Column(name = "profile_image", length = 2048)
 	private String profileImage;
 
 	@Enumerated(EnumType.STRING)

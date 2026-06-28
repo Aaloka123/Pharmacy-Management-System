@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'r
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
-import { api, ApiRequestError } from '../lib/api';
+import { api, ApiRequestError, resolveProfileImageUrl } from '../lib/api';
 import { getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth';
 import {
   toApiStoreStatus,
@@ -324,7 +324,7 @@ const Setting = () => {
                 <div className="text-center">
                   <div className="relative inline-block">
                     {profileImage ? (
-                      <img alt="Vendor profile preview" className="h-28 w-28 rounded-full border border-slate-200 object-cover" src={profileImage} />
+                      <img alt="Vendor profile preview" className="h-28 w-28 rounded-full border border-slate-200 object-cover" src={resolveProfileImageUrl(profileImage) ?? undefined} />
                     ) : (
                       <div className="flex h-28 w-28 items-center justify-center rounded-full border border-slate-200 bg-linear-to-br from-teal-600 to-teal-700 text-3xl font-bold text-white">
                         {(vendor.businessName.trim().charAt(0) || vendor.name.trim().charAt(0) || 'V').toUpperCase()}

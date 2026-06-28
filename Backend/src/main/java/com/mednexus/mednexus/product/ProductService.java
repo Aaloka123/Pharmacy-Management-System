@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.product.dto.ProductResponse;
 import com.mednexus.mednexus.product.dto.ProductWriteRequest;
+import com.mednexus.mednexus.storage.MediaUrlUtils;
 import com.mednexus.mednexus.vendor.Vendor;
 import com.mednexus.mednexus.vendor.VendorNotApprovedException;
 import com.mednexus.mednexus.vendor.VendorRepository;
@@ -267,18 +268,7 @@ public class ProductService {
 	}
 
 	private String normalizeImageUrl(String url) {
-		if (url == null || url.isBlank() || url.startsWith("blob:") || url.startsWith("data:")) {
-			return null;
-		}
-		String trimmed = url.trim();
-		int uploadsIndex = trimmed.indexOf("/uploads/");
-		if (uploadsIndex >= 0) {
-			return trimmed.substring(uploadsIndex);
-		}
-		if (trimmed.startsWith("/uploads/")) {
-			return trimmed;
-		}
-		return null;
+		return MediaUrlUtils.normalizeStoredUrl(url);
 	}
 
 	private String normalizeCategoryFilter(String category) {

@@ -8,7 +8,9 @@ import {
   createVendorProduct,
   deleteVendorProduct,
   getProductImageUrls,
+  getStoredImageReferences,
   listVendorProducts,
+  toStoredImageReference,
   updateVendorProduct,
   type ProductDto,
 } from '../lib/productsApi';
@@ -51,13 +53,7 @@ const mapDtoToRow = (dto: ProductDto): ProductRow => ({
   images: getProductImageUrls(dto.images),
 });
 
-const toStoredImagePaths = (images: string[]) =>
-  images
-    .map((url) => {
-      const uploadsIndex = url.indexOf('/uploads/');
-      return uploadsIndex >= 0 ? url.slice(uploadsIndex) : url;
-    })
-    .filter((url) => url.startsWith('/uploads/'));
+const toStoredImagePaths = (images: string[]) => getStoredImageReferences(images);
 
 const rowToWritePayload = (product: ProductRow, status: 'ACTIVE' | 'INACTIVE') => ({
   productName: product.productName,
@@ -218,12 +214,8 @@ const VendorProduct = () => {
 
   const countStoredImages = () =>
     productImages
-      .filter((url) => !url.startsWith('blob:'))
-      .map((url) => {
-        const uploadsIndex = url.indexOf('/uploads/');
-        return uploadsIndex >= 0 ? url.slice(uploadsIndex) : url;
-      })
-      .filter((url) => url.startsWith('/uploads/')).length;
+      .map((url) => toStoredImageReference(url))
+      .filter((url): url is string => url != null).length;
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -261,12 +253,7 @@ const VendorProduct = () => {
         : parsedStock > 0
           ? 'ACTIVE'
           : 'INACTIVE') as 'ACTIVE' | 'INACTIVE',
-      existingImages: productImages
-        .filter((url) => !url.startsWith('blob:'))
-        .map((url) => {
-          const uploadsIndex = url.indexOf('/uploads/');
-          return uploadsIndex >= 0 ? url.slice(uploadsIndex) : url;
-        }),
+      existingImages: getStoredImageReferences(productImages),
     };
 
     const body = buildProductFormData(writePayload, uploadFiles);

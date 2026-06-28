@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.auth.GoogleTokenVerifierService.VerifiedGoogleIdentity;
 import com.mednexus.mednexus.otp.EmailService;
+import com.mednexus.mednexus.storage.MediaUrlUtils;
 import com.mednexus.mednexus.user.Role;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserRepository;
@@ -78,8 +79,8 @@ public class GoogleAuthService {
 		String current = user.getProfileImage();
 		boolean noImage = current == null || current.isBlank();
 		boolean isGoogleImage = current != null && current.contains("googleusercontent.com");
-		boolean isLocalUpload = current != null && current.startsWith("/uploads/");
-		if ((noImage || isGoogleImage) && !isLocalUpload) {
+		boolean isCustomUpload = MediaUrlUtils.isCustomProfileUpload(current);
+		if ((noImage || isGoogleImage) && !isCustomUpload) {
 			user.setProfileImage(googlePictureUrl);
 		}
 	}
@@ -111,7 +112,7 @@ public class GoogleAuthService {
 				phoneNumber,
 				passwordEncoder.encode("google-oauth:" + UUID.randomUUID()));
 		user.setGoogleId(google.googleId());
-		if (profileImage != null && profileImage.startsWith("/uploads/")) {
+		if (MediaUrlUtils.isCustomProfileUpload(profileImage)) {
 			user.setProfileImage(profileImage);
 		} else {
 			applyGoogleProfileImage(user, google.profileImageUrl());

@@ -118,8 +118,12 @@ public class UserService {
 	@Transactional
 	public UserResponse updateProfileImage(Long id, MultipartFile image) {
 		User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+		String previous = user.getProfileImage();
 		String url = fileStorage.storeProfileImage(image, id);
 		user.setProfileImage(url);
+		if (previous != null && !previous.isBlank() && !previous.equals(url)) {
+			fileStorage.deleteByUrl(previous);
+		}
 		return toResponse(user);
 	}
 

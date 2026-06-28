@@ -41,6 +41,22 @@ public class VendorTableInitializer implements ApplicationRunner {
 					"ALTER TABLE `vendor` ADD COLUMN `store_locked_by_admin` tinyint(1) NOT NULL DEFAULT 0");
 		}
 		jdbc.execute("UPDATE `vendor` SET `store_status` = 'OPEN' WHERE `status` = 'PENDING'");
+		widenColumnIfNeeded("vendor", "pharmacy_management_certificate", 2048);
+		widenColumnIfNeeded("vendor", "pan_vat_certificate", 2048);
+		widenColumnIfNeeded("vendor", "profile_image", 2048);
+	}
+
+	private void widenColumnIfNeeded(String table, String column, int length) {
+		Integer currentLength = jdbc.queryForObject(
+				"SELECT CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS "
+						+ "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+				Integer.class,
+				table,
+				column);
+		if (currentLength != null && currentLength < length) {
+			log.info("Widening `{}`.`{}` to VARCHAR({})", table, column, length);
+			jdbc.execute("ALTER TABLE `" + table + "` MODIFY COLUMN `" + column + "` varchar(" + length + ")");
+		}
 	}
 
 	private boolean columnExists(String table, String column) {

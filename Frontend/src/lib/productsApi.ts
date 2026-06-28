@@ -1,4 +1,4 @@
-import { api, resolveBackendUrl } from './api'
+import { api, resolveMediaUrl } from './api'
 
 export type ProductStatus = 'ACTIVE' | 'INACTIVE'
 
@@ -53,16 +53,26 @@ export function buildProductFormData(payload: ProductWritePayload, imageFiles: F
   return formData
 }
 
-/** Returns a display URL only when the product has a stored upload path. */
+export function toStoredImageReference(url: string): string | null {
+  const trimmed = url.trim()
+  if (!trimmed || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) return null
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  const uploadsIndex = trimmed.indexOf('/uploads/')
+  if (uploadsIndex >= 0) return trimmed.slice(uploadsIndex)
+  if (trimmed.startsWith('/uploads/')) return trimmed
+  return null
+}
+
+export function getStoredImageReferences(images: string[]): string[] {
+  return images.map(toStoredImageReference).filter((url): url is string => url != null)
+}
+
+/** Returns a display URL for the first stored product image. */
 export function getFirstProductImageUrl(images: string[] | null | undefined): string | null {
   if (!images?.length) return null
   for (const raw of images) {
-    const trimmed = raw?.trim()
-    if (!trimmed || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) continue
-    const uploadsIndex = trimmed.indexOf('/uploads/')
-    if (uploadsIndex < 0) continue
-    const path = trimmed.slice(uploadsIndex)
-    return resolveBackendUrl(path)
+    const url = resolveMediaUrl(raw)
+    if (url) return url
   }
   return null
 }
@@ -70,13 +80,7 @@ export function getFirstProductImageUrl(images: string[] | null | undefined): st
 export function getProductImageUrls(images: string[] | null | undefined): string[] {
   if (!images?.length) return []
   return images
-    .map((raw) => {
-      const trimmed = raw?.trim()
-      if (!trimmed || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) return null
-      const uploadsIndex = trimmed.indexOf('/uploads/')
-      if (uploadsIndex < 0) return null
-      return resolveBackendUrl(trimmed.slice(uploadsIndex))
-    })
+    .map((raw) => resolveMediaUrl(raw))
     .filter((url): url is string => url != null)
 }
 

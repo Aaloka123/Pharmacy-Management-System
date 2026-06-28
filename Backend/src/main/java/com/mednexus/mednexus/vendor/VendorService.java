@@ -187,8 +187,12 @@ public class VendorService {
 	@Transactional
 	public VendorResponse updateProfileImage(Long id, MultipartFile image) {
 		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		String previous = vendor.getProfileImage();
 		String url = fileStorage.storeProfileImage(image, id);
 		vendor.setProfileImage(url);
+		if (previous != null && !previous.isBlank() && !previous.equals(url)) {
+			fileStorage.deleteByPublicUrl(previous);
+		}
 		return toResponse(vendor);
 	}
 

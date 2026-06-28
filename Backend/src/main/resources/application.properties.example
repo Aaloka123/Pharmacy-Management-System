@@ -26,6 +26,13 @@ spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 spring.mail.properties.mail.smtp.starttls.required=true
 mednexus.mail.from=${EMAIL_USER}
+mednexus.mail.frontend-base-url=http://localhost:5173
+
+# Cloudinary (all user, vendor, and product images)
+cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME:}
+cloudinary.api-key=${CLOUDINARY_API_KEY:}
+cloudinary.api-secret=${CLOUDINARY_API_SECRET:}
+cloudinary.folder=mednexus
 
 # Backend URL used in eSewa success/failure callbacks (must match how clients reach the API)
 mednexus.backend.base-url=http://localhost:8080

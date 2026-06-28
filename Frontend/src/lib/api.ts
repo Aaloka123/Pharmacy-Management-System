@@ -28,16 +28,24 @@ export function resolveBackendUrl(path: string | null | undefined): string {
   return path
 }
 
-/** Profile image URL for display (Google HTTPS URLs or {@code /uploads/...} paths). */
-export function resolveProfileImageUrl(path: string | null | undefined): string | null {
+/** Resolves stored media URLs (Cloudinary HTTPS, legacy /uploads/, or API paths). */
+export function resolveMediaUrl(path: string | null | undefined): string | null {
   if (path == null || path === '') {
     return null
   }
-  if (path.startsWith('blob:')) {
+  if (path.startsWith('blob:') || path.startsWith('data:')) {
+    return path
+  }
+  if (/^https?:\/\//i.test(path)) {
     return path
   }
   const resolved = resolveBackendUrl(path)
   return resolved || null
+}
+
+/** Profile image URL for display (Google HTTPS URLs or {@code /uploads/...} paths). */
+export function resolveProfileImageUrl(path: string | null | undefined): string | null {
+  return resolveMediaUrl(path)
 }
 
 /** Thrown by {@link api} when the response status is not 2xx (axios-compatible shape). */

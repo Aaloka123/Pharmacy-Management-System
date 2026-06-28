@@ -229,18 +229,6 @@ const Checkout = () => {
           </section>
         ) : (
           <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-8">
-            {missingLocation ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 lg:col-span-2">
-                <p className="font-semibold">{LOCATION_REQUIRED_MESSAGE}</p>
-                <p className="mt-1">
-                  Add your delivery location in{' '}
-                  <Link className="font-semibold text-teal-700 underline hover:text-teal-800" to="/profile">
-                    Profile
-                  </Link>{' '}
-                  before placing an order.
-                </p>
-              </div>
-            ) : null}
             <FadeInOnScroll>
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="border-b border-slate-100 pb-4">
@@ -379,6 +367,19 @@ const Checkout = () => {
                       ? 'Pay with Khalti'
                       : 'Place order'}
               </button>
+
+              {missingLocation ? (
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <p className="font-semibold">{LOCATION_REQUIRED_MESSAGE}</p>
+                  <p className="mt-1">
+                    Add your delivery location in{' '}
+                    <Link className="font-semibold text-teal-700 underline hover:text-teal-800" to="/profile">
+                      Profile
+                    </Link>{' '}
+                    before placing an order.
+                  </p>
+                </div>
+              ) : null}
             </aside>
             </FadeInOnScroll>
           </div>
