@@ -34,10 +34,11 @@ final class EmailHtmlBuilder {
 				"""
 						.formatted(BRAND, SLATE, safeName, SLATE, BRAND, TEAL, safeUrl, MUTED),
 				"Welcome to " + BRAND,
-				logoUrl);
+				logoUrl,
+				frontendUrl);
 	}
 
-	static String otpVerification(String headline, String intro, String code, int ttlMinutes, String logoUrl) {
+	static String otpVerification(String headline, String intro, String code, int ttlMinutes, String logoUrl, String frontendUrl) {
 		String safeHeadline = escape(headline);
 		String safeIntro = escape(intro);
 		String safeCode = escape(code);
@@ -74,10 +75,11 @@ final class EmailHtmlBuilder {
 								MUTED,
 								BRAND),
 				headline,
-				logoUrl);
+				logoUrl,
+				frontendUrl);
 	}
 
-	static String vendorPendingApproval(String greetingName, String businessName, String logoUrl) {
+	static String vendorPendingApproval(String greetingName, String businessName, String logoUrl, String frontendUrl) {
 		String safeName = escape(greetingName);
 		String safeBusiness = escape(businessName);
 		return layout(
@@ -100,7 +102,8 @@ final class EmailHtmlBuilder {
 				"""
 						.formatted(SLATE, safeName, SLATE, BRAND, safeBusiness, MUTED, BRAND),
 				"Vendor application under review",
-				logoUrl);
+				logoUrl,
+				frontendUrl);
 	}
 
 	static String vendorApprovedWelcome(String greetingName, String businessName, String frontendUrl, String logoUrl) {
@@ -128,7 +131,8 @@ final class EmailHtmlBuilder {
 				"""
 						.formatted(SLATE, safeName, SLATE, safeBusiness, BRAND, SLATE, TEAL, safeUrl, MUTED, BRAND),
 				"Welcome to the " + BRAND + " vendor portal",
-				logoUrl);
+				logoUrl,
+				frontendUrl);
 	}
 
 	private static String brandHeader(String logoUrl) {
@@ -145,8 +149,9 @@ final class EmailHtmlBuilder {
 				.formatted(TEAL, BRAND, MUTED);
 	}
 
-	private static String layout(String bodyContent, String preheader, String logoUrl) {
+	private static String layout(String bodyContent, String preheader, String logoUrl, String frontendUrl) {
 		String safePreheader = escape(preheader);
+		String safeWebsiteUrl = escape(frontendUrl == null || frontendUrl.isBlank() ? "/" : frontendUrl.replaceAll("/$", ""));
 		return """
 				<!DOCTYPE html>
 				<html lang="en">
@@ -173,7 +178,12 @@ final class EmailHtmlBuilder {
 				            </td>
 				          </tr>
 				          <tr>
-				            <td align="center" style="padding:24px 12px 0;">
+				            <td align="center" style="padding:24px 12px 8px;">
+				              <a href="%s" style="font-size:14px;font-weight:600;color:%s;text-decoration:underline;">Visit our website</a>
+				            </td>
+				          </tr>
+				          <tr>
+				            <td align="center" style="padding:8px 12px 0;">
 				              <p style="margin:0 0 8px;font-size:12px;line-height:1.5;color:%s;">&copy; %s. All rights reserved.</p>
 				              <p style="margin:0;font-size:12px;line-height:1.5;color:#94a3b8;">This is an automated message. Please do not reply to this email.</p>
 				            </td>
@@ -185,7 +195,7 @@ final class EmailHtmlBuilder {
 				</body>
 				</html>
 				"""
-				.formatted(BRAND, safePreheader, brandHeader(logoUrl), bodyContent, MUTED, BRAND);
+				.formatted(BRAND, safePreheader, brandHeader(logoUrl), bodyContent, safeWebsiteUrl, TEAL, MUTED, BRAND);
 	}
 
 	private static String escape(String value) {

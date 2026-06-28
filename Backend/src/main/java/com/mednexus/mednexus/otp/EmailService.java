@@ -71,7 +71,7 @@ public class EmailService {
 
 	private void sendOtpEmail(String toEmail, String code, String subject, String headline, String intro) {
 		String logoUrl = emailLogoService.getLogoUrl();
-		String html = EmailHtmlBuilder.otpVerification(headline, intro, code, OTP_TTL_MINUTES, logoUrl);
+		String html = EmailHtmlBuilder.otpVerification(headline, intro, code, OTP_TTL_MINUTES, logoUrl, frontendBaseUrl);
 		String plainText = """
 				%s
 
@@ -104,7 +104,7 @@ public class EmailService {
 	public void sendVendorPendingApprovalEmail(String toEmail, String vendorName, String businessName) {
 		String greetingName = vendorName == null || vendorName.isBlank() ? "there" : vendorName.trim();
 		String business = businessName == null || businessName.isBlank() ? "your pharmacy" : businessName.trim();
-		String html = EmailHtmlBuilder.vendorPendingApproval(greetingName, business, emailLogoService.getLogoUrl());
+		String html = EmailHtmlBuilder.vendorPendingApproval(greetingName, business, emailLogoService.getLogoUrl(), frontendBaseUrl);
 		String plainText = """
 				Hello %s,
 
