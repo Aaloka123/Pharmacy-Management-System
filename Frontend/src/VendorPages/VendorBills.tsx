@@ -2,6 +2,7 @@ import { useMemo, useState, type ChangeEvent } from 'react';
 import Navbar from '../VendorComponents/Navbar';
 import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain';
 import mednexuxLogo from '../assets/Mednexux.png';
+import { phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils';
 
 type InvoiceStatus = 'Unpaid' | 'Paid' | 'Partially Paid';
 type InvoiceLine = {
@@ -101,7 +102,8 @@ const Bills = () => {
 
   const handleDraftChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
-    setDraftInvoice((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === 'billToPhone' ? sanitizePhoneInput(value) : value;
+    setDraftInvoice((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   const handleLineChange = (lineId: number, field: keyof InvoiceLine, value: string) => {
@@ -381,7 +383,7 @@ const Bills = () => {
                     <div className="mt-3 space-y-2">
                       <input name="billToName" value={draftInvoice.billToName} onChange={handleDraftChange} placeholder="Customer name" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-teal-600" />
                       <input name="billToEmail" value={draftInvoice.billToEmail} onChange={handleDraftChange} placeholder="Email" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
-                      <input name="billToPhone" value={draftInvoice.billToPhone} onChange={handleDraftChange} placeholder="Phone" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
+                      <input name="billToPhone" value={draftInvoice.billToPhone} onChange={handleDraftChange} placeholder="10 digit number" {...phoneInputProps} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
                       <textarea name="billToAddress" value={draftInvoice.billToAddress} onChange={handleDraftChange} rows={3} placeholder="Address" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
                     </div>
                   </div>

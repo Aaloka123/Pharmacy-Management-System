@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import { FiMail, FiPhone } from 'react-icons/fi'
+import { phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils'
 
 const ContactForm = () => {
+  const [phone, setPhone] = useState('')
+
   return (
     <form className="space-y-6">
       <h2 className="text-2xl font-bold tracking-tight text-slate-900">Get in Touch</h2>
@@ -13,8 +17,10 @@ const ContactForm = () => {
         />
         <input
           className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-[14px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-700"
-          placeholder="Phone"
-          type="tel"
+          onChange={(event) => setPhone(sanitizePhoneInput(event.target.value))}
+          placeholder="10 digit number"
+          value={phone}
+          {...phoneInputProps}
         />
         <div className="md:col-span-2">
           <input

@@ -7,6 +7,7 @@ import Header from '../UserComponents/Header'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { clearAuthSession, getAccessToken, getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
 import { api, resolveProfileImageUrl } from '../lib/api'
+import { isValidPhoneNumber, phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils'
 
 const Profile = () => {
   const navigate = useNavigate()
@@ -110,6 +111,10 @@ const Profile = () => {
     if (!userId) {
       toast.error('You must be logged in to update your profile.')
       navigate('/login')
+      return
+    }
+    if (!isValidPhoneNumber(phoneNumber)) {
+      toast.error('Phone number must be exactly 10 digits.')
       return
     }
     setIsSavingProfile(true)
@@ -270,9 +275,10 @@ const Profile = () => {
                     <input
                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
                       disabled={!isEditingProfile}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      type="tel"
+                      onChange={(e) => setPhoneNumber(sanitizePhoneInput(e.target.value))}
+                      placeholder="10 digit number"
                       value={phoneNumber}
+                      {...phoneInputProps}
                     />
                   </label>
                   <label className="block">

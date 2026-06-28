@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.otp.AfterCommitMailDispatcher;
 import com.mednexus.mednexus.otp.EmailService;
+import com.mednexus.mednexus.util.PhoneNumberUtils;
 import com.mednexus.mednexus.vendor.dto.PublicVendorResponse;
 import com.mednexus.mednexus.vendor.dto.UpdateStoreStatusRequest;
 import com.mednexus.mednexus.vendor.dto.UpdateVendorProfileRequest;
@@ -76,7 +77,9 @@ public class VendorService {
 		Vendor vendor = new Vendor();
 		vendor.setName(requireNonBlank(name, "Name is required").trim());
 		vendor.setEmail(trimmedEmail);
-		vendor.setPhoneNumber(requireNonBlank(phoneNumber, "Phone Number is required").trim());
+		String phone = requireNonBlank(phoneNumber, "Phone Number is required").trim();
+		PhoneNumberUtils.requireValid(phone, "Phone number");
+		vendor.setPhoneNumber(phone);
 		vendor.setLocation(requireNonBlank(location, "Location is required").trim());
 		vendor.setBusinessPanVatId(trimmedPan);
 		vendor.setBusinessName(requireNonBlank(businessName, "Business Name is required").trim());
@@ -167,7 +170,9 @@ public class VendorService {
 			vendor.setName(request.name().trim());
 		}
 		if (request.phoneNumber() != null && !request.phoneNumber().isBlank()) {
-			vendor.setPhoneNumber(request.phoneNumber().trim());
+			String phone = PhoneNumberUtils.normalize(request.phoneNumber());
+			PhoneNumberUtils.requireValidIfPresent(phone);
+			vendor.setPhoneNumber(phone);
 		}
 		if (request.location() != null && !request.location().isBlank()) {
 			vendor.setLocation(request.location().trim());

@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import medicineBackground from '../assets/medicineBG.png'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
+import { isValidPhoneNumber, phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils'
 
 const VENDOR_SIGNUP_URL = '/api/vendors/signup'
 
@@ -62,6 +63,11 @@ const VendorSignup = () => {
 
     if (!formData.pharmacyManagementCertificate || !formData.panVatCertificate) {
       setFormError('Please upload both required certificates.')
+      return
+    }
+
+    if (!isValidPhoneNumber(formData.locationPhoneNumber)) {
+      setFormError('Phone number must be exactly 10 digits.')
       return
     }
 
@@ -174,16 +180,11 @@ const VendorSignup = () => {
                 <label className="space-y-1">
                   <span className="text-sm font-medium text-slate-700">Phone Number</span>
                   <input
-                    type="tel"
+                    {...phoneInputProps}
                     required
-                    inputMode="numeric"
-                    pattern="\d{10}"
-                    maxLength={10}
-                    minLength={10}
-                    title="Phone number must be exactly 10 digits"
                     value={formData.locationPhoneNumber}
                     onChange={(event) =>
-                      updateField('locationPhoneNumber', event.target.value.replace(/\D/g, '').slice(0, 10))
+                      updateField('locationPhoneNumber', sanitizePhoneInput(event.target.value))
                     }
                     className="w-full border-0 border-b border-slate-300 bg-transparent px-0 py-2 text-sm outline-none focus:border-teal-600"
                     placeholder="10 digit number"

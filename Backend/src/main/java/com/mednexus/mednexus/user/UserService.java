@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.mednexus.mednexus.auth.RefreshTokenService;
 import com.mednexus.mednexus.otp.EmailService;
+import com.mednexus.mednexus.util.PhoneNumberUtils;
 import com.mednexus.mednexus.user.dto.ChangePasswordRequest;
 import com.mednexus.mednexus.user.dto.SignupRequest;
 import com.mednexus.mednexus.user.dto.UpdateProfileRequest;
@@ -56,6 +57,8 @@ public class UserService {
 		if (request.phoneNumber() == null || request.phoneNumber().isBlank()) {
 			throw new IllegalArgumentException("Phone number is required");
 		}
+		String phone = PhoneNumberUtils.normalize(request.phoneNumber());
+		PhoneNumberUtils.requireValid(phone, "Phone number");
 		if (request.password() == null || request.password().length() < 6) {
 			throw new IllegalArgumentException("Password must be at least 6 characters");
 		}
@@ -66,7 +69,7 @@ public class UserService {
 		User user = new User(
 				request.fullName().trim(),
 				email,
-				request.phoneNumber().trim(),
+				phone,
 				passwordEncoder.encode(request.password()));
 		User saved = userRepository.save(user);
 		String recipient = saved.getEmail();
@@ -134,7 +137,9 @@ public class UserService {
 			user.setFullName(request.fullName().trim());
 		}
 		if (request.phoneNumber() != null && !request.phoneNumber().isBlank()) {
-			user.setPhoneNumber(request.phoneNumber().trim());
+			String phone = PhoneNumberUtils.normalize(request.phoneNumber());
+			PhoneNumberUtils.requireValidIfPresent(phone);
+			user.setPhoneNumber(phone);
 		}
 		if (request.location() != null) {
 			String loc = request.location().trim();

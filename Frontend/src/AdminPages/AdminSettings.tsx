@@ -6,6 +6,7 @@ import { toast } from 'react-toastify'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { api, ApiRequestError } from '../lib/api'
 import { getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
+import { isValidPhoneNumber, phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils'
 
 const AdminSettings = () => {
   const navigate = useNavigate()
@@ -50,6 +51,10 @@ const AdminSettings = () => {
     if (!adminId) {
       toast.error('Session expired. Please log in again.')
       navigate('/login')
+      return
+    }
+    if (!isValidPhoneNumber(adminPhone)) {
+      toast.error('Phone number must be exactly 10 digits.')
       return
     }
     setIsSavingProfile(true)
@@ -182,12 +187,11 @@ const AdminSettings = () => {
                     isProfileEditing ? 'focus:border-teal-600' : 'cursor-not-allowed bg-slate-100'
                   }`}
                   value={adminPhone}
-                  onChange={(event) => setAdminPhone(event.target.value.replace(/\D/g, '').slice(0, 10))}
+                  onChange={(event) => setAdminPhone(sanitizePhoneInput(event.target.value))}
                   id="adminPhone"
                   readOnly={!isProfileEditing}
-                  inputMode="numeric"
-                  maxLength={10}
-                  type="text"
+                  placeholder="10 digit number"
+                  {...phoneInputProps}
                 />
               </div>
               {isProfileEditing && (

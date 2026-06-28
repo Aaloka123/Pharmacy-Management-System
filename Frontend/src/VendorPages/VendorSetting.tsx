@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import { api, ApiRequestError, resolveMediaUrl, resolveProfileImageUrl } from '../lib/api';
 import { getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth';
+import { isValidPhoneNumber, phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils';
 import {
   toApiStoreStatus,
   toDisplayStoreStatus,
@@ -298,6 +299,10 @@ const Setting = () => {
   const handleSaveProfile = async (event: FormEvent) => {
     event.preventDefault();
     if (!vendor) return;
+    if (!isValidPhoneNumber(phoneNumber)) {
+      toast.error('Phone number must be exactly 10 digits.');
+      return;
+    }
     setIsSavingProfile(true);
     try {
       await updateVendor(
@@ -550,14 +555,11 @@ const Setting = () => {
                         isProfileEditing ? 'focus:border-teal-600' : 'cursor-not-allowed bg-slate-100'
                       }`}
                       value={phoneNumber}
-                      onChange={(event) =>
-                        setPhoneNumber(event.target.value.replace(/\D/g, '').slice(0, 10))
-                      }
-                      inputMode="numeric"
-                      maxLength={10}
+                      onChange={(event) => setPhoneNumber(sanitizePhoneInput(event.target.value))}
                       id="vendorPhone"
                       readOnly={!isProfileEditing}
-                      type="tel"
+                      placeholder="10 digit number"
+                      {...phoneInputProps}
                     />
                   </div>
                   <div>

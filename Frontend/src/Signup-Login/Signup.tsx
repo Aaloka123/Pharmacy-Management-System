@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
 import { resolveBackendUrl } from '../lib/api'
+import { isValidPhoneNumber, phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils'
 
 const SIGNUP_URL = '/api/auth/register'
 
@@ -26,6 +27,11 @@ const Signup = () => {
 
     if (password !== confirmPassword) {
       toast.error('Passwords do not match.')
+      return
+    }
+
+    if (!isValidPhoneNumber(phoneNumber)) {
+      toast.error('Phone number must be exactly 10 digits.')
       return
     }
 
@@ -118,13 +124,10 @@ const Signup = () => {
                   placeholder="Phone number"
                   type="tel"
                   value={phoneNumber}
-                  onChange={(ev) => setPhoneNumber(ev.target.value.replace(/\D/g, '').slice(0, 10))}
+                  onChange={(ev) => setPhoneNumber(sanitizePhoneInput(ev.target.value))}
                   required
-                  inputMode="numeric"
-                  pattern="\d{10}"
-                  minLength={10}
-                  maxLength={10}
-                  title="Phone number must be exactly 10 digits"
+                  {...phoneInputProps}
+                  placeholder="10 digit number"
                   autoComplete="tel"
                 />
               </div>
