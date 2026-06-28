@@ -28,7 +28,7 @@ spring.mail.properties.mail.smtp.starttls.required=true
 mednexus.mail.from=${EMAIL_USER}
 mednexus.mail.frontend-base-url=http://localhost:5173
 
-# Cloudinary (all user, vendor, and product images)
+# Cloudinary (mednexus/users, mednexus/vendor, mednexus/vendor-certificates, mednexus/products, …)
 cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME:}
 cloudinary.api-key=${CLOUDINARY_API_KEY:}
 cloudinary.api-secret=${CLOUDINARY_API_SECRET:}

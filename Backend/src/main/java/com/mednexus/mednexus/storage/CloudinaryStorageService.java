@@ -80,8 +80,9 @@ public class CloudinaryStorageService {
 			log.warn("Could not parse Cloudinary public_id from URL: {}", url);
 			return;
 		}
+		String resourceType = MediaUrlUtils.resourceTypeFromCloudinaryUrl(url);
 		try {
-			cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "image"));
+			cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceType));
 		} catch (Exception ex) {
 			log.warn("Failed to delete Cloudinary asset {}: {}", publicId, ex.getMessage());
 		}

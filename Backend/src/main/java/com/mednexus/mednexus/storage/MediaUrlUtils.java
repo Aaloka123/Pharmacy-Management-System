@@ -58,4 +58,17 @@ public final class MediaUrlUtils {
 		}
 		return afterUpload.isBlank() ? null : afterUpload;
 	}
+
+	public static String resourceTypeFromCloudinaryUrl(String url) {
+		if (!isCloudinaryUrl(url)) {
+			return "image";
+		}
+		if (url.contains("/raw/upload/")) {
+			return "raw";
+		}
+		if (url.contains("/video/upload/")) {
+			return "video";
+		}
+		return "image";
+	}
 }

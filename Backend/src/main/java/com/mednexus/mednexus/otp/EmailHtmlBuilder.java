@@ -84,24 +84,38 @@ final class EmailHtmlBuilder {
 		String safeBusiness = escape(businessName);
 		return layout(
 				"""
-				<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#0f172a;font-weight:700;">Application received</h1>
-				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>,</p>
-				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">
-				  Thank you for applying to partner with %s. We have received your application for <strong>%s</strong>.
-				</p>
-				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 20px;">
+				%s
+				<h1 style="margin:0 0 10px;font-size:26px;line-height:1.25;color:#0f172a;font-weight:700;">Application is under review</h1>
+				<p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>, thank you for applying to partner with %s.</p>
+				%s
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;">
 				  <tr>
-				    <td style="padding:16px 18px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;">
-				      <p style="margin:0;font-size:14px;line-height:1.6;color:#92400e;">
-				        Our admin team is <strong>reviewing your application</strong>. We will verify your documents and business details. You will receive a welcome email once your account is approved.
-				      </p>
+				    <td style="padding:20px 22px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;">
+				      <p style="margin:0 0 14px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#b45309;">What happens next</p>
+				      %s
+				      %s
+				      %s
 				    </td>
 				  </tr>
 				</table>
-				<p style="margin:0;font-size:14px;line-height:1.6;color:%s;">We appreciate your interest in joining the %s vendor network.</p>
+				<p style="margin:0 0 8px;font-size:14px;line-height:1.65;color:%s;">
+				  We will email you again once the review is complete. No action is needed from you right now.
+				</p>
+				<p style="margin:0;font-size:14px;line-height:1.65;color:%s;">Thank you for choosing %s.</p>
 				"""
-						.formatted(SLATE, safeName, SLATE, BRAND, safeBusiness, MUTED, BRAND),
-				"Vendor application under review",
+						.formatted(
+								statusBanner("Under review", "#fffbeb", "#b45309", "#fde68a"),
+								SLATE,
+								safeName,
+								BRAND,
+								businessCard(safeBusiness),
+								stepRow("1", "Our admin team verifies your certificates and business details."),
+								stepRow("2", "We confirm your pharmacy license and registration information."),
+								stepRow("3", "You receive an approval or update email within a few business days."),
+								MUTED,
+								MUTED,
+								BRAND),
+				"Your MedNexus vendor application is under review",
 				logoUrl,
 				frontendUrl);
 	}
@@ -110,26 +124,38 @@ final class EmailHtmlBuilder {
 		String safeName = escape(greetingName);
 		String safeBusiness = escape(businessName);
 		String safeUrl = escape(frontendUrl);
+		String loginUrl = safeUrl + "/vendorlogin";
 		return layout(
 				"""
-				<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#0f172a;font-weight:700;">Welcome to %s!</h1>
-				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>,</p>
-				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">
-				  Great news — your vendor application for <strong>%s</strong> has been approved. Welcome to the %s vendor portal.
-				</p>
-				<p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:%s;">
-				  You can now log in to manage products, track orders, and serve customers online.
-				</p>
-				<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px;">
+				%s
+				<h1 style="margin:0 0 10px;font-size:26px;line-height:1.25;color:#0f172a;font-weight:700;">Welcome to %s!</h1>
+				<p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>, your vendor application has been <strong style="color:#047857;">approved</strong>.</p>
+				%s
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;">
 				  <tr>
-				    <td style="border-radius:10px;background:%s;">
-				      <a href="%s/vendorlogin" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">Go to vendor portal</a>
+				    <td style="padding:20px 22px;border-radius:12px;background:%s;border:1px solid #a7f3d0;">
+				      <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#047857;">You can now</p>
+				      %s
+				      %s
+				      %s
 				    </td>
 				  </tr>
 				</table>
-				<p style="margin:0;font-size:14px;line-height:1.6;color:%s;">Thank you for partnering with %s.</p>
+				%s
+				<p style="margin:0;font-size:14px;line-height:1.65;color:%s;">We are excited to partner with you and help grow your online pharmacy presence.</p>
 				"""
-						.formatted(BRAND, SLATE, safeName, SLATE, safeBusiness, BRAND, SLATE, TEAL, safeUrl, MUTED, BRAND),
+						.formatted(
+								statusBanner("Approved", TEAL_LIGHT, TEAL, "#99f6e4"),
+								BRAND,
+								SLATE,
+								safeName,
+								businessCard(safeBusiness),
+								TEAL_LIGHT,
+								bulletRow("Add and manage your product catalog"),
+								bulletRow("Receive and track customer orders"),
+								bulletRow("Update store details and certificates anytime"),
+								ctaButton(loginUrl, "Go to vendor portal", TEAL),
+								MUTED),
 				"Welcome to the " + BRAND + " vendor portal",
 				logoUrl,
 				frontendUrl);
@@ -138,28 +164,108 @@ final class EmailHtmlBuilder {
 	static String vendorRejectedApplication(String greetingName, String businessName, String logoUrl, String frontendUrl) {
 		String safeName = escape(greetingName);
 		String safeBusiness = escape(businessName);
+		String safeUrl = escape(frontendUrl);
+		String signupUrl = safeUrl + "/vendorsignup";
 		return layout(
 				"""
-				<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#0f172a;font-weight:700;">Application not approved</h1>
-				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>,</p>
-				<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:%s;">
-				  Thank you for your interest in partnering with %s. After reviewing your application for <strong>%s</strong>, our admin team was unable to approve it at this time.
-				</p>
-				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 20px;">
+				%s
+				<h1 style="margin:0 0 10px;font-size:26px;line-height:1.25;color:#0f172a;font-weight:700;">Application not approved</h1>
+				<p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>, thank you for your interest in partnering with %s.</p>
+				%s
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;">
 				  <tr>
-				    <td style="padding:16px 18px;border-radius:10px;background:#fff1f2;border:1px solid #fecdd3;">
-				      <p style="margin:0;font-size:14px;line-height:1.6;color:#9f1239;">
-				        Your vendor registration has been <strong>declined</strong>. If you believe this was a mistake or would like to apply again with updated documents, please contact our support team or submit a new application.
+				    <td style="padding:20px 22px;border-radius:12px;background:#fff1f2;border:1px solid #fecdd3;">
+				      <p style="margin:0 0 10px;font-size:15px;line-height:1.65;font-weight:600;color:#9f1239;">Your application could not be approved at this time.</p>
+				      <p style="margin:0;font-size:14px;line-height:1.65;color:#be123c;">
+				        This may be due to incomplete documents, unclear certificate details, or information that could not be verified. You may submit a new application with updated documents if you wish to apply again.
 				      </p>
 				    </td>
 				  </tr>
 				</table>
-				<p style="margin:0;font-size:14px;line-height:1.6;color:%s;">We appreciate your interest in the %s vendor network.</p>
+				%s
+				<p style="margin:0;font-size:14px;line-height:1.65;color:%s;">If you believe this decision was made in error, please contact our support team through the website.</p>
 				"""
-						.formatted(SLATE, safeName, SLATE, BRAND, safeBusiness, MUTED, BRAND),
-				"Vendor application declined",
+						.formatted(
+								statusBanner("Not approved", "#fff1f2", "#be123c", "#fecdd3"),
+								SLATE,
+								safeName,
+								BRAND,
+								businessCard(safeBusiness),
+								ctaButton(signupUrl, "Submit a new application", "#be123c"),
+								MUTED),
+				"Update on your MedNexus vendor application",
 				logoUrl,
 				frontendUrl);
+	}
+
+	private static String statusBanner(String label, String background, String textColor, String borderColor) {
+		return """
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;">
+				  <tr>
+				    <td align="center" style="padding:12px 18px;border-radius:999px;background:%s;border:1px solid %s;">
+				      <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:%s;">%s</p>
+				    </td>
+				  </tr>
+				</table>
+				"""
+				.formatted(background, borderColor, textColor, escape(label));
+	}
+
+	private static String businessCard(String safeBusinessName) {
+		return """
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;">
+				  <tr>
+				    <td style="padding:18px 20px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;">
+				      <p style="margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:%s;">Pharmacy / business name</p>
+				      <p style="margin:0;font-size:18px;line-height:1.35;font-weight:700;color:#0f172a;">%s</p>
+				    </td>
+				  </tr>
+				</table>
+				"""
+				.formatted(MUTED, safeBusinessName);
+	}
+
+	private static String stepRow(String number, String text) {
+		return """
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 10px;">
+				  <tr>
+				    <td width="32" valign="top" style="padding-top:1px;">
+				      <span style="display:inline-block;width:24px;height:24px;border-radius:999px;background:#fef3c7;color:#b45309;font-size:12px;font-weight:700;line-height:24px;text-align:center;">%s</span>
+				    </td>
+				    <td valign="top" style="padding-left:10px;">
+				      <p style="margin:0;font-size:14px;line-height:1.6;color:#78350f;">%s</p>
+				    </td>
+				  </tr>
+				</table>
+				"""
+				.formatted(escape(number), escape(text));
+	}
+
+	private static String bulletRow(String text) {
+		return """
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px;">
+				  <tr>
+				    <td width="22" valign="top" style="padding-top:2px;color:#047857;font-size:16px;line-height:1;">&#10003;</td>
+				    <td valign="top" style="padding-left:8px;">
+				      <p style="margin:0;font-size:14px;line-height:1.6;color:#065f46;">%s</p>
+				    </td>
+				  </tr>
+				</table>
+				"""
+				.formatted(escape(text));
+	}
+
+	private static String ctaButton(String href, String label, String background) {
+		return """
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 16px;">
+				  <tr>
+				    <td align="center" style="border-radius:10px;background:%s;">
+				      <a href="%s" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">%s</a>
+				    </td>
+				  </tr>
+				</table>
+				"""
+				.formatted(background, href, escape(label));
 	}
 
 	private static String brandHeader(String logoUrl) {

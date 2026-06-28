@@ -110,9 +110,16 @@ public class EmailService {
 
 				Thank you for applying to join MedNexus as a partner pharmacy.
 
-				We have received your application for %s. Our admin team is reviewing your registration and documents.
+				APPLICATION IS UNDER REVIEW
 
-				You will receive a welcome email once your account is approved.
+				Business: %s
+
+				What happens next:
+				1. Our admin team verifies your certificates and business details.
+				2. We confirm your pharmacy license and registration information.
+				3. You receive an approval or update email within a few business days.
+
+				No action is needed from you right now.
 
 				— The MedNexus Team
 				""".formatted(greetingName, business);
@@ -126,11 +133,16 @@ public class EmailService {
 		String plainText = """
 				Hello %s,
 
-				Great news — your vendor application for %s has been approved!
+				Great news — your vendor application has been APPROVED!
 
-				Welcome to the MedNexus vendor portal. You can now log in to manage products, track orders, and grow your online presence with us.
+				Business: %s
 
-				Vendor login: %s/vendorlogin
+				You can now:
+				- Add and manage your product catalog
+				- Receive and track customer orders
+				- Update store details and certificates anytime
+
+				Go to vendor portal: %s/vendorlogin
 
 				— The MedNexus Team
 				""".formatted(greetingName, business, frontendBaseUrl);
@@ -146,12 +158,17 @@ public class EmailService {
 
 				Thank you for applying to join MedNexus as a partner pharmacy.
 
-				After reviewing your application for %s, our admin team was unable to approve it at this time.
+				APPLICATION NOT APPROVED
 
-				If you believe this was a mistake or would like to apply again with updated documents, you may submit a new vendor registration.
+				Business: %s
+
+				After review, our admin team was unable to approve your application at this time.
+				You may submit a new application with updated documents: %s/vendorsignup
+
+				If you believe this decision was made in error, please contact our support team through the website.
 
 				— The MedNexus Team
-				""".formatted(greetingName, business);
+				""".formatted(greetingName, business, frontendBaseUrl);
 		sendHtmlEmail(toEmail, "Update on your MedNexus vendor application", html, plainText);
 	}
 

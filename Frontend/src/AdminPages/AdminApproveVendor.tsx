@@ -46,6 +46,13 @@ const AdminApproveVendor = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [actionId, setActionId] = useState<number | null>(null)
   const [selectedCertificate, setSelectedCertificate] = useState<{ title: string; src: string } | null>(null)
+  const [topNotice, setTopNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!topNotice) return undefined
+    const timer = window.setTimeout(() => setTopNotice(null), 6000)
+    return () => window.clearTimeout(timer)
+  }, [topNotice])
 
   const loadVendors = useCallback(async () => {
     setLoading(true)
@@ -87,19 +94,29 @@ const AdminApproveVendor = () => {
   }, [searchQuery, vendors])
 
   const handleDecision = async (vendor: Vendor, decision: 'approve' | 'reject') => {
+    if (decision === 'reject') {
+      const confirmed = window.confirm(`Reject ${vendor.businessName}? The vendor will be notified by email.`)
+      if (!confirmed) return
+    }
+
     setActionId(vendor.id)
     try {
       await api.post(`/api/vendors/${vendor.id}/${decision}`)
       setVendors((prev) => prev.filter((v) => v.id !== vendor.id))
       window.dispatchEvent(new Event(PENDING_VENDORS_EVENT))
-      toast.success(
-        decision === 'approve'
-          ? `${vendor.businessName} approved. The vendor will receive a welcome email.`
-          : `${vendor.businessName} rejected. The vendor will be notified by email.`,
-      )
+      if (decision === 'reject') {
+        setTopNotice(`${vendor.businessName} was rejected. The vendor has been notified by email.`)
+        toast.warn(`${vendor.businessName} rejected.`, { position: 'top-center' })
+      } else {
+        setTopNotice(null)
+        toast.success(`${vendor.businessName} approved. The vendor will receive a welcome email.`, {
+          position: 'top-center',
+        })
+      }
     } catch (err) {
       toast.error(
         decision === 'approve' ? 'Failed to approve vendor.' : 'Failed to reject vendor.',
+        { position: 'top-center' },
       )
       console.error(err)
     } finally {
@@ -158,6 +175,30 @@ const AdminApproveVendor = () => {
       <AdminNavbar />
       <AdminMain>
       <FadeInOnScroll>
+        {topNotice ? (
+          <div
+            className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow-sm"
+            role="status"
+          >
+            <div className="flex items-start gap-2">
+              <svg aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-rose-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M6 18 18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <p className="font-medium">{topNotice}</p>
+            </div>
+            <button
+              aria-label="Dismiss notification"
+              className="shrink-0 rounded-md p-1 text-rose-600 transition hover:bg-rose-100"
+              onClick={() => setTopNotice(null)}
+              type="button"
+            >
+              <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M6 18 18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Admin Approve Vendor</h1>
