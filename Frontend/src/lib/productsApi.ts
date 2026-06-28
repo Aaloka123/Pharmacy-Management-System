@@ -73,9 +73,16 @@ export function getStoredImageReferences(images: string[]): string[] {
   return images.map(toStoredImageReference).filter((url): url is string => url != null)
 }
 
-/** Returns a display URL for the first stored product image. */
+/** Returns a display URL for the best stored product image (prefers latest Cloudinary URL). */
 export function getFirstProductImageUrl(images: string[] | null | undefined): string | null {
   if (!images?.length) return null
+  for (let i = images.length - 1; i >= 0; i -= 1) {
+    const raw = images[i]
+    if (/^https?:\/\//i.test(raw.trim()) && raw.includes('res.cloudinary.com')) {
+      const url = resolveMediaUrl(raw)
+      if (url) return url
+    }
+  }
   for (const raw of images) {
     const url = resolveMediaUrl(raw)
     if (url) return url

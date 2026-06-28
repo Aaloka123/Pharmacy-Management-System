@@ -170,9 +170,7 @@ const Checkout = () => {
         cartItemIds: lines.map((line) => Number(line.id)),
       })
       notifyCartChanged()
-      const paymentLabel = PAYMENT_OPTIONS.find((option) => option.id === paymentMethod)?.label ?? 'Selected method'
-      toast.success(`Order placed with ${paymentLabel}. We will confirm your order shortly.`)
-      navigate('/ordertracking', { replace: true })
+      navigate('/payment/success?method=cod', { replace: true })
     } catch (err) {
       if (err instanceof ApiRequestError && err.response.status === 400) {
         toast.error('Some items are unavailable or from closed vendors. Please review your cart.')
@@ -385,6 +383,25 @@ const Checkout = () => {
           </div>
         )}
       </main>
+      {placingOrder && paymentMethod !== 'cod' ? (
+        <div
+          aria-busy="true"
+          aria-live="polite"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-white/85 px-4 backdrop-blur-sm"
+        >
+          <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-10">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-teal-50">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-100 border-t-teal-600" />
+            </div>
+            <h1 className="mt-6 text-xl font-bold text-slate-900">
+              {paymentMethod === 'esewa' ? 'Redirecting to eSewa' : 'Redirecting to Khalti'}
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              Please wait while we connect you to complete payment.
+            </p>
+          </section>
+        </div>
+      ) : null}
       <Footer />
       <Copyright />
     </div>

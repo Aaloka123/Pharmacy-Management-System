@@ -30,6 +30,7 @@ public class VendorOrderTableInitializer implements ApplicationRunner {
 		if (count == null || count == 0) {
 			createVendorOrderTable();
 		}
+		backfillOrderProductImages();
 	}
 
 	private void createVendorOrderTable() {
@@ -57,5 +58,28 @@ public class VendorOrderTableInitializer implements ApplicationRunner {
 				) ENGINE=InnoDB
 				""");
 		log.info("`vendor_order` table created.");
+	}
+
+	private void backfillOrderProductImages() {
+		try {
+			int updated = jdbc.update("""
+					UPDATE `vendor_order` vo
+					INNER JOIN `product` p ON p.id = vo.product_id
+					SET vo.product_image = SUBSTRING_INDEX(p.images, CHAR(30), -1)
+					WHERE p.images IS NOT NULL
+					  AND TRIM(p.images) <> ''
+					  AND (
+					    vo.product_image IS NULL
+					    OR TRIM(vo.product_image) = ''
+					    OR vo.product_image LIKE '/uploads/%'
+					    OR vo.product_image <> SUBSTRING_INDEX(p.images, CHAR(30), -1)
+					  )
+					""");
+			if (updated > 0) {
+				log.info("Backfilled product_image on {} vendor_order row(s).", updated);
+			}
+		} catch (Exception ex) {
+			log.warn("Could not backfill vendor_order.product_image: {}", ex.getMessage());
+		}
 	}
 }

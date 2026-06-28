@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mednexus.mednexus.notification.dto.NotificationResponse;
+import com.mednexus.mednexus.product.ProductImageUtils;
 import com.mednexus.mednexus.order.OrderEmailService;
 import com.mednexus.mednexus.order.OrderStatus;
 import com.mednexus.mednexus.order.VendorOrder;
@@ -41,7 +42,8 @@ public class NotificationService {
 		notification.setMessage(
 				"%s updated your order for %s to %s."
 						.formatted(vendorName, productName, statusLabel));
-		notification.setProductImage(order.getProductImage());
+		notification.setProductImage(
+				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), order.getProduct()));
 		notification.setRead(false);
 		notificationRepository.save(notification);
 		orderEmailService.sendStatusUpdateEmail(order, newStatus);

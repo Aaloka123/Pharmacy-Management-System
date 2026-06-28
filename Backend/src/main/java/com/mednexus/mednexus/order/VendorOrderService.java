@@ -19,6 +19,7 @@ import com.mednexus.mednexus.order.dto.PlaceOrderRequest;
 import com.mednexus.mednexus.order.dto.UpdateOrderStatusRequest;
 import com.mednexus.mednexus.order.dto.VendorOrderResponse;
 import com.mednexus.mednexus.product.Product;
+import com.mednexus.mednexus.product.ProductImageUtils;
 import com.mednexus.mednexus.product.ProductStatus;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserNotFoundException;
@@ -91,7 +92,7 @@ public class VendorOrderService {
 			order.setProduct(product);
 			order.setProductName(product.getProductName());
 			order.setProductSku(product.getSku());
-			order.setProductImage(product.getImages().isEmpty() ? null : product.getImages().get(0));
+			order.setProductImage(ProductImageUtils.preferredImageUrl(product));
 			order.setUnitPrice(product.getPrice());
 			order.setQuantity(cart.getQuantity());
 			order.setPaymentMethod(paymentMethod);
@@ -175,7 +176,7 @@ public class VendorOrderService {
 				order.getVendor().getBusinessName(),
 				order.getProductName(),
 				order.getProductSku(),
-				order.getProductImage(),
+				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), order.getProduct()),
 				order.getUnitPrice(),
 				order.getQuantity(),
 				order.getPaymentMethod(),

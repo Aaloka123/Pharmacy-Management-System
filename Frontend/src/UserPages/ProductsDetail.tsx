@@ -58,6 +58,7 @@ const ProductsDetail = () => {
   const [averageRating, setAverageRating] = useState(0)
   const [totalReviews, setTotalReviews] = useState(0)
   const [hasReviewed, setHasReviewed] = useState(false)
+  const [canReview, setCanReview] = useState(false)
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [reviewBody, setReviewBody] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
@@ -162,6 +163,7 @@ const ProductsDetail = () => {
   useEffect(() => {
     if (productId == null || !currentUser || currentUser.role !== 'USER') {
       setHasReviewed(false)
+      setCanReview(false)
       return
     }
 
@@ -169,9 +171,15 @@ const ProductsDetail = () => {
     const loadEligibility = async () => {
       try {
         const data = await fetchReviewEligibility(productId)
-        if (!cancelled) setHasReviewed(data.hasReviewed)
+        if (!cancelled) {
+          setHasReviewed(data.hasReviewed)
+          setCanReview(data.canReview)
+        }
       } catch {
-        if (!cancelled) setHasReviewed(false)
+        if (!cancelled) {
+          setHasReviewed(false)
+          setCanReview(false)
+        }
       }
     }
     void loadEligibility()
@@ -199,7 +207,7 @@ const ProductsDetail = () => {
     if (!currentUser) return false
     return reviews.some((review) => review.authorId === currentUser.id)
   }, [reviews, currentUser])
-  const showReviewForm = !hasReviewed && !hasMyReview
+  const showReviewForm = canReview && !hasReviewed && !hasMyReview
 
   const categoryFormLine = product ? `${product.category} · ${product.form}` : ''
 
@@ -249,7 +257,7 @@ const ProductsDetail = () => {
         return
       }
       if (err instanceof ApiRequestError && err.response.status === 400) {
-        toast.warn('You are not eligible to review this product yet.')
+        toast.warn('You can review this product after your order is delivered.')
         return
       }
       toast.error('Could not post review.')

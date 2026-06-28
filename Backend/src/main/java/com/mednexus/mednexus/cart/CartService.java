@@ -10,6 +10,7 @@ import com.mednexus.mednexus.cart.dto.AddToCartRequest;
 import com.mednexus.mednexus.cart.dto.CartItemResponse;
 import com.mednexus.mednexus.cart.dto.UpdateCartQuantityRequest;
 import com.mednexus.mednexus.product.Product;
+import com.mednexus.mednexus.product.ProductImageUtils;
 import com.mednexus.mednexus.product.ProductNotFoundException;
 import com.mednexus.mednexus.product.ProductRepository;
 import com.mednexus.mednexus.product.ProductStatus;
@@ -118,7 +119,7 @@ public class CartService {
 	private CartItemResponse toResponse(Cart cart) {
 		Product product = cart.getProduct();
 		Vendor vendor = product.getVendor();
-		String image = product.getImages().isEmpty() ? null : product.getImages().get(0);
+		String image = ProductImageUtils.preferredImageUrl(product);
 		boolean vendorStoreOpen = vendor.getStatus() == VendorStatus.APPROVED
 				&& vendor.getStoreStatus() == StoreStatus.OPEN;
 		return new CartItemResponse(

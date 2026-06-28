@@ -32,6 +32,7 @@ public class NotificationTableInitializer implements ApplicationRunner {
 		} else {
 			migrateNotificationTable();
 		}
+		backfillNotificationProductImages();
 	}
 
 	private void createNotificationTable() {
@@ -69,5 +70,33 @@ public class NotificationTableInitializer implements ApplicationRunner {
 				tableName,
 				columnName);
 		return count != null && count > 0;
+	}
+
+	private void backfillNotificationProductImages() {
+		if (!columnExists("notification", "product_image")) {
+			return;
+		}
+		try {
+			int updated = jdbc.update("""
+					UPDATE `notification` n
+					INNER JOIN `vendor_order` vo ON vo.id = n.order_id
+					INNER JOIN `product` p ON p.id = vo.product_id
+					SET n.product_image = SUBSTRING_INDEX(p.images, CHAR(30), -1)
+					WHERE n.order_id IS NOT NULL
+					  AND p.images IS NOT NULL
+					  AND TRIM(p.images) <> ''
+					  AND (
+					    n.product_image IS NULL
+					    OR TRIM(n.product_image) = ''
+					    OR n.product_image LIKE '/uploads/%'
+					    OR n.product_image <> SUBSTRING_INDEX(p.images, CHAR(30), -1)
+					  )
+					""");
+			if (updated > 0) {
+				log.info("Backfilled product_image on {} notification row(s).", updated);
+			}
+		} catch (Exception ex) {
+			log.warn("Could not backfill notification.product_image: {}", ex.getMessage());
+		}
 	}
 }

@@ -36,10 +36,7 @@ import com.mednexus.mednexus.vendor.VendorRepository;
 @Service
 public class ReviewService {
 
-	private static final Set<OrderStatus> REVIEWABLE_ORDER_STATUSES = EnumSet.of(
-			OrderStatus.CONFIRMED,
-			OrderStatus.SHIPPED,
-			OrderStatus.DELIVERED);
+	private static final Set<OrderStatus> REVIEWABLE_ORDER_STATUSES = EnumSet.of(OrderStatus.DELIVERED);
 
 	private static final DateTimeFormatter REVIEW_DATE_FORMAT =
 			DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)
@@ -104,7 +101,7 @@ public class ReviewService {
 			return new ReviewEligibilityResponse(
 					false,
 					false,
-					"You can review this product after your order is confirmed or delivered.");
+					"You can review this product after your order is delivered.");
 		}
 		return new ReviewEligibilityResponse(true, false, null);
 	}

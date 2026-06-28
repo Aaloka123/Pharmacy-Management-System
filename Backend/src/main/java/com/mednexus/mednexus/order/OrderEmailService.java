@@ -5,12 +5,14 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.mednexus.mednexus.order.dto.OrderEmailDetails;
 import com.mednexus.mednexus.order.dto.OrderEmailLineItem;
 import com.mednexus.mednexus.otp.AfterCommitMailDispatcher;
 import com.mednexus.mednexus.otp.EmailService;
+import com.mednexus.mednexus.product.ProductImageUtils;
 import com.mednexus.mednexus.storage.MediaUrlUtils;
 import com.mednexus.mednexus.user.User;
 
@@ -21,10 +23,15 @@ public class OrderEmailService {
 
 	private final EmailService emailService;
 	private final AfterCommitMailDispatcher mailDispatcher;
+	private final String backendBaseUrl;
 
-	public OrderEmailService(EmailService emailService, AfterCommitMailDispatcher mailDispatcher) {
+	public OrderEmailService(
+			EmailService emailService,
+			AfterCommitMailDispatcher mailDispatcher,
+			@Value("${mednexus.backend.base-url:http://localhost:8080}") String backendBaseUrl) {
 		this.emailService = emailService;
 		this.mailDispatcher = mailDispatcher;
+		this.backendBaseUrl = backendBaseUrl == null ? "http://localhost:8080" : backendBaseUrl.replaceAll("/$", "");
 	}
 
 	public void sendPlacedOrdersEmail(User user, List<VendorOrder> orders, PaymentMethod paymentMethod) {
@@ -82,7 +89,7 @@ public class OrderEmailService {
 			lineItems.add(new OrderEmailLineItem(
 					order.getProductName(),
 					order.getProductSku(),
-					resolveImageUrl(order.getProductImage()),
+					resolveEmailImageUrl(order),
 					order.getQuantity(),
 					order.getUnitPrice(),
 					lineTotal));
@@ -108,12 +115,23 @@ public class OrderEmailService {
 				primaryOrderId);
 	}
 
-	private static String resolveImageUrl(String stored) {
+	private String resolveEmailImageUrl(VendorOrder order) {
+		String stored = ProductImageUtils.resolveOrderProductImage(order.getProductImage(), order.getProduct());
+		return toPublicMediaUrl(stored);
+	}
+
+	private String toPublicMediaUrl(String stored) {
 		if (stored == null || stored.isBlank()) {
 			return null;
 		}
-		if (MediaUrlUtils.isCloudinaryUrl(stored) || stored.startsWith("http://") || stored.startsWith("https://")) {
-			return stored.trim();
+		String trimmed = stored.trim();
+		if (MediaUrlUtils.isCloudinaryUrl(trimmed)
+				|| trimmed.startsWith("http://")
+				|| trimmed.startsWith("https://")) {
+			return trimmed;
+		}
+		if (MediaUrlUtils.isLocalUploadUrl(trimmed)) {
+			return backendBaseUrl + trimmed;
 		}
 		return null;
 	}
