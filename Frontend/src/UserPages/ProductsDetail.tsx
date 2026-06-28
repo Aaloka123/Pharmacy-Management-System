@@ -66,6 +66,7 @@ const ProductsDetail = () => {
   const [submittingReview, setSubmittingReview] = useState(false)
   const [likingReviewId, setLikingReviewId] = useState<number | null>(null)
   const [brokenReviewAvatars, setBrokenReviewAvatars] = useState<Set<number>>(() => new Set())
+  const [brokenVendorAvatars, setBrokenVendorAvatars] = useState<Set<number>>(() => new Set())
   const [addingToCart, setAddingToCart] = useState(false)
 
   useEffect(() => onAuthChange(() => setCurrentUser(getStoredUser())), [])
@@ -501,9 +502,11 @@ const ProductsDetail = () => {
                 </label>
                 <div className="mt-4">
                   <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Product photo</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3">
-                    <label className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-teal-600 hover:text-teal-700">
-                      Choose image
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                      <span className="max-w-[160px] truncate">
+                        {reviewImageFile ? reviewImageFile.name : 'Choose image'}
+                      </span>
                       <input
                         accept="image/*"
                         className="hidden"
@@ -512,11 +515,21 @@ const ProductsDetail = () => {
                       />
                     </label>
                     {reviewImagePreview ? (
-                      <img
-                        alt="Review preview"
-                        className="h-16 w-16 rounded-lg border border-slate-200 object-cover"
-                        src={reviewImagePreview}
-                      />
+                      <div className="relative">
+                        <img
+                          alt="Review preview"
+                          className="h-12 w-12 rounded-lg border border-slate-200 object-cover shadow-sm"
+                          src={reviewImagePreview}
+                        />
+                        <button
+                          aria-label="Remove photo"
+                          className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
+                          onClick={() => handleReviewImageChange(null)}
+                          type="button"
+                        >
+                          ×
+                        </button>
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -586,33 +599,65 @@ const ProductsDetail = () => {
                                 src={r.imageUrl}
                               />
                             ) : null}
-                            <button
-                              aria-label={r.likedByMe ? 'Unlike this review' : 'Like this review'}
-                              aria-pressed={r.likedByMe}
-                              className={`mt-3 inline-flex cursor-pointer items-center gap-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${
-                                r.likedByMe ? 'text-teal-700' : 'text-slate-500'
-                              }`}
-                              disabled={likingReviewId === r.id}
-                              onClick={() => void handleToggleReviewLike(r.id)}
-                              type="button"
-                            >
-                              <svg
-                                aria-hidden="true"
-                                className="h-4 w-4"
-                                fill={r.likedByMe ? 'currentColor' : 'none'}
-                                stroke="currentColor"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="1.8"
-                                viewBox="0 0 24 24"
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <button
+                                aria-label={r.likedByMe ? 'Unlike this review' : 'Like this review'}
+                                aria-pressed={r.likedByMe}
+                                className={`inline-flex cursor-pointer items-center gap-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${
+                                  r.likedByMe ? 'text-teal-700' : 'text-slate-500'
+                                }`}
+                                disabled={likingReviewId === r.id}
+                                onClick={() => void handleToggleReviewLike(r.id)}
+                                type="button"
                               >
-                                <path d="M14 9V5a3 3 0 0 0-3-3L7 11v11h11.28a2 2 0 0 0 1.97-1.67l1.38-9A2 2 0 0 0 19.65 9H14Z" />
-                                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                              </svg>
-                              <span>{r.likedByMe ? 'Liked' : 'Like'}</span>
-                              <span>·</span>
-                              <span>{r.likes}</span>
-                            </button>
+                                <svg
+                                  aria-hidden="true"
+                                  className="h-4 w-4"
+                                  fill={r.likedByMe ? 'currentColor' : 'none'}
+                                  stroke="currentColor"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M14 9V5a3 3 0 0 0-3-3L7 11v11h11.28a2 2 0 0 0 1.97-1.67l1.38-9A2 2 0 0 0 19.65 9H14Z" />
+                                  <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                                </svg>
+                                <span>{r.likedByMe ? 'Liked' : 'Like'}</span>
+                                <span>·</span>
+                                <span>{r.likes}</span>
+                              </button>
+                              {r.vendorLikerName ? (
+                                <>
+                                  <span className="text-sm text-slate-500">·</span>
+                                  <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                                  {!r.vendorLikerProfileImage || brokenVendorAvatars.has(r.id) ? (
+                                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-100 text-[10px] font-bold text-teal-700">
+                                      {r.vendorLikerName.charAt(0).toUpperCase()}
+                                    </div>
+                                  ) : (
+                                    <img
+                                      alt={r.vendorLikerName}
+                                      className="h-6 w-6 shrink-0 rounded-full border border-slate-200 object-cover"
+                                      referrerPolicy="no-referrer"
+                                      onError={() =>
+                                        setBrokenVendorAvatars((prev) => {
+                                          const next = new Set(prev)
+                                          next.add(r.id)
+                                          return next
+                                        })
+                                      }
+                                      src={r.vendorLikerProfileImage}
+                                    />
+                                  )}
+                                  <span>
+                                    Liked by{' '}
+                                    <span className="font-medium text-slate-700">{r.vendorLikerName}</span>
+                                  </span>
+                                </div>
+                                </>
+                              ) : null}
+                            </div>
                         </div>
                       </div>
                     </li>

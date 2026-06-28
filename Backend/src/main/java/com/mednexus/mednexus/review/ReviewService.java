@@ -5,7 +5,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,6 +29,9 @@ import com.mednexus.mednexus.security.PlatformUser;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserNotFoundException;
 import com.mednexus.mednexus.user.UserRepository;
+import com.mednexus.mednexus.vendor.Vendor;
+import com.mednexus.mednexus.vendor.VendorNotFoundException;
+import com.mednexus.mednexus.vendor.VendorRepository;
 
 @Service
 public class ReviewService {
@@ -42,23 +47,29 @@ public class ReviewService {
 
 	private final ProductReviewRepository productReviewRepository;
 	private final ReviewLikeRepository reviewLikeRepository;
+	private final VendorReviewLikeRepository vendorReviewLikeRepository;
 	private final ProductRepository productRepository;
 	private final VendorOrderRepository vendorOrderRepository;
 	private final UserRepository userRepository;
+	private final VendorRepository vendorRepository;
 	private final ReviewFileStorage reviewFileStorage;
 
 	public ReviewService(
 			ProductReviewRepository productReviewRepository,
 			ReviewLikeRepository reviewLikeRepository,
+			VendorReviewLikeRepository vendorReviewLikeRepository,
 			ProductRepository productRepository,
 			VendorOrderRepository vendorOrderRepository,
 			UserRepository userRepository,
+			VendorRepository vendorRepository,
 			ReviewFileStorage reviewFileStorage) {
 		this.productReviewRepository = productReviewRepository;
 		this.reviewLikeRepository = reviewLikeRepository;
+		this.vendorReviewLikeRepository = vendorReviewLikeRepository;
 		this.productRepository = productRepository;
 		this.vendorOrderRepository = vendorOrderRepository;
 		this.userRepository = userRepository;
+		this.vendorRepository = vendorRepository;
 		this.reviewFileStorage = reviewFileStorage;
 	}
 
@@ -67,8 +78,10 @@ public class ReviewService {
 		ensureProductExists(productId);
 		Long viewerUserId = currentUserId();
 		List<ProductReview> reviews = productReviewRepository.findByProductIdWithUser(productId);
+		Map<Long, Vendor> vendorLikers = loadVendorLikersByReviewIds(
+				reviews.stream().map(ProductReview::getId).toList());
 		List<ReviewResponse> responses = reviews.stream()
-				.map(review -> toResponse(review, viewerUserId))
+				.map(review -> toResponseForUser(review, viewerUserId, vendorLikers.get(review.getId())))
 				.toList();
 		double average = reviews.isEmpty()
 				? 0
@@ -126,7 +139,7 @@ public class ReviewService {
 		review.setImageUrl(reviewFileStorage.store(imageFile, userId, productId));
 
 		ProductReview saved = productReviewRepository.save(review);
-		return toResponse(saved, userId);
+		return toResponseForUser(saved, userId, findVendorLiker(saved.getId()));
 	}
 
 	@Transactional
@@ -143,20 +156,72 @@ public class ReviewService {
 			like.setUser(user);
 			reviewLikeRepository.save(like);
 		}
-		return toResponse(review, userId);
+		return toResponseForUser(review, userId, findVendorLiker(reviewId));
+	}
+
+	@Transactional
+	public ReviewResponse toggleVendorLike(Long vendorId, Long reviewId) {
+		ProductReview review = productReviewRepository
+				.findByIdAndProduct_Vendor_Id(reviewId, vendorId)
+				.orElseThrow(ReviewNotFoundException::new);
+
+		var existing = vendorReviewLikeRepository.findByReviewIdAndVendorId(reviewId, vendorId);
+		if (existing.isPresent()) {
+			vendorReviewLikeRepository.delete(existing.get());
+		} else {
+			Vendor vendor = vendorRepository.findById(vendorId).orElseThrow(VendorNotFoundException::new);
+			VendorReviewLike like = new VendorReviewLike();
+			like.setReview(review);
+			like.setVendor(vendor);
+			vendorReviewLikeRepository.save(like);
+		}
+		return toResponseForVendor(review, vendorId, findVendorLiker(reviewId));
 	}
 
 	@Transactional(readOnly = true)
 	public List<ReviewResponse> listForVendor(Long vendorId) {
-		return productReviewRepository.findByVendorIdWithDetails(vendorId).stream()
-				.map(review -> toResponse(review, currentUserId()))
+		List<ProductReview> reviews = productReviewRepository.findByVendorIdWithDetails(vendorId);
+		Map<Long, Vendor> vendorLikers = loadVendorLikersByReviewIds(
+				reviews.stream().map(ProductReview::getId).toList());
+		return reviews.stream()
+				.map(review -> toResponseForVendor(review, vendorId, vendorLikers.get(review.getId())))
 				.toList();
 	}
 
-	private ReviewResponse toResponse(ProductReview review, Long viewerUserId) {
-		long likes = reviewLikeRepository.countByReviewId(review.getId());
+	private ReviewResponse toResponseForUser(ProductReview review, Long viewerUserId, Vendor vendorLiker) {
+		long likes = totalLikes(review.getId());
 		boolean likedByMe = viewerUserId != null
 				&& reviewLikeRepository.existsByReviewIdAndUserId(review.getId(), viewerUserId);
+		return buildResponse(review, likes, likedByMe, vendorLiker);
+	}
+
+	private ReviewResponse toResponseForVendor(ProductReview review, Long viewerVendorId, Vendor vendorLiker) {
+		long likes = totalLikes(review.getId());
+		boolean likedByMe = viewerVendorId != null
+				&& vendorReviewLikeRepository.existsByReviewIdAndVendorId(review.getId(), viewerVendorId);
+		return buildResponse(review, likes, likedByMe, vendorLiker);
+	}
+
+	private Map<Long, Vendor> loadVendorLikersByReviewIds(List<Long> reviewIds) {
+		if (reviewIds.isEmpty()) {
+			return Map.of();
+		}
+		return vendorReviewLikeRepository.findByReviewIdInWithVendor(reviewIds).stream()
+				.collect(Collectors.toMap(like -> like.getReview().getId(), VendorReviewLike::getVendor, (a, b) -> a));
+	}
+
+	private Vendor findVendorLiker(Long reviewId) {
+		return vendorReviewLikeRepository.findByReviewIdWithVendor(reviewId)
+				.map(VendorReviewLike::getVendor)
+				.orElse(null);
+	}
+
+	private long totalLikes(Long reviewId) {
+		return reviewLikeRepository.countByReviewId(reviewId)
+				+ vendorReviewLikeRepository.countByReviewId(reviewId);
+	}
+
+	private ReviewResponse buildResponse(ProductReview review, long likes, boolean likedByMe, Vendor vendorLiker) {
 		User author = review.getUser();
 		Product product = review.getProduct();
 		return new ReviewResponse(
@@ -170,6 +235,8 @@ public class ReviewService {
 				review.getRating(),
 				(int) likes,
 				likedByMe,
+				vendorLiker != null ? displayVendorName(vendorLiker) : null,
+				vendorLiker != null ? vendorLiker.getProfileImage() : null,
 				review.getImageUrl(),
 				REVIEW_DATE_FORMAT.format(review.getCreatedAt()));
 	}
@@ -189,6 +256,16 @@ public class ReviewService {
 			return null;
 		}
 		return principal.getSubjectId();
+	}
+
+	private static String displayVendorName(Vendor vendor) {
+		if (vendor.getBusinessName() != null && !vendor.getBusinessName().isBlank()) {
+			return vendor.getBusinessName().trim();
+		}
+		if (vendor.getName() != null && !vendor.getName().isBlank()) {
+			return vendor.getName().trim();
+		}
+		return "Vendor";
 	}
 
 	private static String displayAuthorName(String fullName) {

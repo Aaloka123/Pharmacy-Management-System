@@ -3,7 +3,7 @@ import { FaStar } from 'react-icons/fa'
 import Navbar from '../VendorComponents/Navbar'
 import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain'
 import fallbackImage from '../assets/Hero1.png'
-import { fetchVendorReviews, resolveReviewAuthorAvatar, type ReviewDto } from '../lib/reviewApi'
+import { fetchVendorReviews, resolveReviewAuthorAvatar, toggleVendorReviewLike, type ReviewDto } from '../lib/reviewApi'
 import { getStoredUser } from '../lib/auth'
 
 const VendorReview = () => {
@@ -12,6 +12,7 @@ const VendorReview = () => {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [brokenReviewAvatars, setBrokenReviewAvatars] = useState<Set<number>>(() => new Set())
+  const [likingReviewId, setLikingReviewId] = useState<number | null>(null)
   const currentUser = getStoredUser()
 
   useEffect(() => {
@@ -41,6 +42,18 @@ const VendorReview = () => {
         review.body.toLowerCase().includes(query),
     )
   }, [reviews, searchTerm])
+
+  const handleToggleReviewLike = async (reviewId: number) => {
+    setLikingReviewId(reviewId)
+    try {
+      const updated = await toggleVendorReviewLike(reviewId)
+      setReviews((prev) => prev.map((review) => (review.id === reviewId ? updated : review)))
+    } catch {
+      // ignore — vendor session may have expired
+    } finally {
+      setLikingReviewId(null)
+    }
+  }
 
   return (
     <VendorLayout>
@@ -137,7 +150,33 @@ const VendorReview = () => {
                             src={review.imageUrl}
                           />
                         ) : null}
-                        <p className="mt-3 text-xs text-slate-500">{review.likes} likes</p>
+                        <button
+                          aria-label={review.likedByMe ? 'Unlike this review' : 'Like this review'}
+                          aria-pressed={review.likedByMe}
+                          className={`mt-3 inline-flex cursor-pointer items-center gap-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${
+                            review.likedByMe ? 'text-teal-700' : 'text-slate-500'
+                          }`}
+                          disabled={likingReviewId === review.id}
+                          onClick={() => void handleToggleReviewLike(review.id)}
+                          type="button"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            className="h-4 w-4"
+                            fill={review.likedByMe ? 'currentColor' : 'none'}
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.8"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M14 9V5a3 3 0 0 0-3-3L7 11v11h11.28a2 2 0 0 0 1.97-1.67l1.38-9A2 2 0 0 0 19.65 9H14Z" />
+                            <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                          </svg>
+                          <span>{review.likedByMe ? 'Liked' : 'Like'}</span>
+                          <span>·</span>
+                          <span>{review.likes}</span>
+                        </button>
                       </div>
                     </div>
                   </li>

@@ -11,6 +11,8 @@ public record ReviewResponse(
 		int rating,
 		int likes,
 		boolean likedByMe,
+		String vendorLikerName,
+		String vendorLikerProfileImage,
 		String imageUrl,
 		String createdAt) {
 }

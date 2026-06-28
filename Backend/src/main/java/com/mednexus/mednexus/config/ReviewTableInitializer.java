@@ -28,6 +28,9 @@ public class ReviewTableInitializer implements ApplicationRunner {
 		if (!tableExists("review_like")) {
 			createReviewLikeTable();
 		}
+		if (!tableExists("vendor_review_like")) {
+			createVendorReviewLikeTable();
+		}
 	}
 
 	private boolean tableExists(String tableName) {
@@ -80,5 +83,23 @@ public class ReviewTableInitializer implements ApplicationRunner {
 				) ENGINE=InnoDB
 				""");
 		log.info("`review_like` table created.");
+	}
+
+	private void createVendorReviewLikeTable() {
+		log.info("Creating missing `vendor_review_like` table...");
+		jdbc.execute("""
+				CREATE TABLE `vendor_review_like` (
+				  `id` bigint NOT NULL AUTO_INCREMENT,
+				  `review_id` bigint NOT NULL,
+				  `vendor_id` bigint NOT NULL,
+				  `created_at` datetime(6) NOT NULL,
+				  PRIMARY KEY (`id`),
+				  UNIQUE KEY `uk_vendor_review_like` (`review_id`, `vendor_id`),
+				  KEY `idx_vendor_review_like_vendor` (`vendor_id`),
+				  CONSTRAINT `fk_vendor_review_like_review` FOREIGN KEY (`review_id`) REFERENCES `product_review` (`id`) ON DELETE CASCADE,
+				  CONSTRAINT `fk_vendor_review_like_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor` (`id`)
+				) ENGINE=InnoDB
+				""");
+		log.info("`vendor_review_like` table created.");
 	}
 }

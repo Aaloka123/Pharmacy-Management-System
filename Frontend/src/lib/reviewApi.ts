@@ -12,6 +12,8 @@ export type ReviewDto = {
   rating: number
   likes: number
   likedByMe: boolean
+  vendorLikerName: string | null
+  vendorLikerProfileImage: string | null
   imageUrl: string | null
   createdAt: string
 }
@@ -20,6 +22,7 @@ function mapReviewDto(review: ReviewDto): ReviewDto {
   return {
     ...review,
     authorProfileImage: resolveProfileImageUrl(review.authorProfileImage),
+    vendorLikerProfileImage: resolveProfileImageUrl(review.vendorLikerProfileImage),
     imageUrl: review.imageUrl ? resolveMediaUrl(review.imageUrl) : null,
   }
 }
@@ -82,6 +85,11 @@ export async function submitProductReview(
 
 export async function toggleReviewLike(reviewId: number): Promise<ReviewDto> {
   const { data } = await api.post<ReviewDto>(`/api/reviews/${reviewId}/like`)
+  return mapReviewDto(data)
+}
+
+export async function toggleVendorReviewLike(reviewId: number): Promise<ReviewDto> {
+  const { data } = await api.post<ReviewDto>(`/api/vendor/reviews/${reviewId}/like`)
   return mapReviewDto(data)
 }
 
