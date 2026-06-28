@@ -118,6 +118,22 @@ public class VendorController {
 		return ResponseEntity.ok(vendorService.updateProfileImage(id, image));
 	}
 
+	@PostMapping(value = "/{id}/pharmacy-management-certificate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("hasRole('ADMIN') or (hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId)")
+	public ResponseEntity<VendorResponse> uploadPharmacyManagementCertificate(
+			@PathVariable Long id,
+			@RequestParam("certificate") MultipartFile certificate) {
+		return ResponseEntity.ok(vendorService.updatePharmacyManagementCertificate(id, certificate));
+	}
+
+	@PostMapping(value = "/{id}/pan-vat-certificate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("hasRole('ADMIN') or (hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId)")
+	public ResponseEntity<VendorResponse> uploadPanVatCertificate(
+			@PathVariable Long id,
+			@RequestParam("certificate") MultipartFile certificate) {
+		return ResponseEntity.ok(vendorService.updatePanVatCertificate(id, certificate));
+	}
+
 	@PutMapping("/{id}/store-status")
 	@PreAuthorize("hasRole('ADMIN') or (hasRole('VENDOR') and principal.vendorAccount and #id == principal.subjectId)")
 	public ResponseEntity<VendorResponse> updateStoreStatus(

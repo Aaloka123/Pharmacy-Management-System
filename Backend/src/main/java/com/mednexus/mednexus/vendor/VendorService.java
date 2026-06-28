@@ -197,6 +197,30 @@ public class VendorService {
 	}
 
 	@Transactional
+	public VendorResponse updatePharmacyManagementCertificate(Long id, MultipartFile certificate) {
+		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		String previous = vendor.getPharmacyManagementCertificate();
+		String url = fileStorage.store(certificate, "pharmacy-cert");
+		vendor.setPharmacyManagementCertificate(url);
+		if (previous != null && !previous.isBlank() && !previous.equals(url)) {
+			fileStorage.deleteByPublicUrl(previous);
+		}
+		return toResponse(vendor);
+	}
+
+	@Transactional
+	public VendorResponse updatePanVatCertificate(Long id, MultipartFile certificate) {
+		Vendor vendor = vendorRepository.findById(id).orElseThrow(VendorNotFoundException::new);
+		String previous = vendor.getPanVatCertificate();
+		String url = fileStorage.store(certificate, "pan-cert");
+		vendor.setPanVatCertificate(url);
+		if (previous != null && !previous.isBlank() && !previous.equals(url)) {
+			fileStorage.deleteByPublicUrl(previous);
+		}
+		return toResponse(vendor);
+	}
+
+	@Transactional
 	public VendorResponse updateStoreStatus(Long id, UpdateStoreStatusRequest request, boolean isAdmin) {
 		if (request == null || request.storeStatus() == null) {
 			throw new InvalidVendorStateException("Store status is required");

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'r
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
-import { api, ApiRequestError, resolveProfileImageUrl } from '../lib/api';
+import { api, ApiRequestError, resolveMediaUrl, resolveProfileImageUrl } from '../lib/api';
 import { getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth';
 import {
   toApiStoreStatus,
@@ -46,6 +46,8 @@ const Setting = () => {
   const [storeStatus, setStoreStatus] = useState<'Open' | 'Close'>('Open');
   const [isUpdatingStoreStatus, setIsUpdatingStoreStatus] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pharmacyCertInputRef = useRef<HTMLInputElement | null>(null);
+  const panCertInputRef = useRef<HTMLInputElement | null>(null);
 
   const [businessName, setBusinessName] = useState('');
   const [businessLocation, setBusinessLocation] = useState('');
@@ -57,6 +59,8 @@ const Setting = () => {
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isUploadingPharmacyCert, setIsUploadingPharmacyCert] = useState(false);
+  const [isUploadingPanCert, setIsUploadingPanCert] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -148,6 +152,71 @@ const Setting = () => {
       setIsUploadingImage(false);
       if (event.target) event.target.value = '';
     }
+  };
+
+  const uploadCertificate = async (
+    file: File,
+    endpoint: 'pharmacy-management-certificate' | 'pan-vat-certificate',
+    setUploading: (value: boolean) => void,
+    successMessage: string,
+  ) => {
+    if (!vendor) return;
+    setUploading(true);
+    try {
+      const payload = new FormData();
+      payload.append('certificate', file);
+      const { data } = await api.post<VendorRecord>(`/api/vendors/${vendor.id}/${endpoint}`, payload);
+      applyVendor(data);
+      toast.success(successMessage);
+    } catch (e) {
+      if (e instanceof ApiRequestError) {
+        toast.error('Failed to upload certificate.');
+      } else {
+        toast.error('Could not reach the server.');
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePharmacyCertChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !vendor) return;
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      toast.error('Please upload an image or PDF file.');
+      if (event.target) event.target.value = '';
+      return;
+    }
+    await uploadCertificate(
+      file,
+      'pharmacy-management-certificate',
+      setIsUploadingPharmacyCert,
+      'Pharmacy Management Certificate updated.',
+    );
+    if (event.target) event.target.value = '';
+  };
+
+  const handlePanCertChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !vendor) return;
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      toast.error('Please upload an image or PDF file.');
+      if (event.target) event.target.value = '';
+      return;
+    }
+    await uploadCertificate(
+      file,
+      'pan-vat-certificate',
+      setIsUploadingPanCert,
+      'PAN / VAT Certificate updated.',
+    );
+    if (event.target) event.target.value = '';
+  };
+
+  const isImageCertificate = (url: string | null | undefined) => {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return !lower.includes('.pdf') && !lower.includes('/raw/upload');
   };
 
   const handleStoreStatusChange = async (nextStatus: 'Open' | 'Close') => {
@@ -529,6 +598,86 @@ const Setting = () => {
                   )}
                 </div>
               </form>
+
+              <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+                <h2 className="text-lg font-semibold text-slate-900">Certificates</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Upload or replace your Pharmacy Management Certificate and PAN / VAT Certificate.
+                </p>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-slate-200 p-4">
+                    <span className="text-sm font-semibold text-slate-800">Pharmacy Management Certificate</span>
+                    {vendor.pharmacyManagementCertificate ? (
+                      <div className="mt-3">
+                        {isImageCertificate(vendor.pharmacyManagementCertificate) ? (
+                          <img
+                            alt="Pharmacy Management Certificate"
+                            className="max-h-40 w-full rounded-lg border border-slate-200 object-contain"
+                            src={resolveMediaUrl(vendor.pharmacyManagementCertificate) ?? undefined}
+                          />
+                        ) : null}
+                        <a
+                          className="mt-2 inline-block text-sm font-medium text-teal-700 hover:text-teal-800"
+                          href={resolveMediaUrl(vendor.pharmacyManagementCertificate) ?? '#'}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          View current certificate
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-slate-500">No certificate uploaded yet.</p>
+                    )}
+                    <input
+                      accept="image/*,.pdf"
+                      className="mt-3 block w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-teal-600 file:px-3.5 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-teal-700 disabled:opacity-60"
+                      disabled={isUploadingPharmacyCert}
+                      onChange={handlePharmacyCertChange}
+                      ref={pharmacyCertInputRef}
+                      type="file"
+                    />
+                    {isUploadingPharmacyCert ? (
+                      <p className="mt-2 text-xs text-slate-500">Uploading…</p>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-lg border border-slate-200 p-4">
+                    <span className="text-sm font-semibold text-slate-800">PAN / VAT Certificate</span>
+                    {vendor.panVatCertificate ? (
+                      <div className="mt-3">
+                        {isImageCertificate(vendor.panVatCertificate) ? (
+                          <img
+                            alt="PAN / VAT Certificate"
+                            className="max-h-40 w-full rounded-lg border border-slate-200 object-contain"
+                            src={resolveMediaUrl(vendor.panVatCertificate) ?? undefined}
+                          />
+                        ) : null}
+                        <a
+                          className="mt-2 inline-block text-sm font-medium text-teal-700 hover:text-teal-800"
+                          href={resolveMediaUrl(vendor.panVatCertificate) ?? '#'}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          View current certificate
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-slate-500">No certificate uploaded yet.</p>
+                    )}
+                    <input
+                      accept="image/*,.pdf"
+                      className="mt-3 block w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-teal-600 file:px-3.5 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-teal-700 disabled:opacity-60"
+                      disabled={isUploadingPanCert}
+                      onChange={handlePanCertChange}
+                      ref={panCertInputRef}
+                      type="file"
+                    />
+                    {isUploadingPanCert ? (
+                      <p className="mt-2 text-xs text-slate-500">Uploading…</p>
+                    ) : null}
+                  </div>
+                </div>
+              </section>
 
               <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
                 <h2 className="mb-3 text-base font-semibold text-slate-900">Change Password</h2>
