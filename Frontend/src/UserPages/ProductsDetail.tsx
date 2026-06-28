@@ -6,21 +6,18 @@ import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartStorage'
 import { getPublicProduct, getProductImageUrls, type ProductDto } from '../lib/productsApi'
+import {
+  fetchProductReviews,
+  submitProductReview,
+  toggleReviewLike,
+  resolveReviewAuthorAvatar,
+  type ReviewDto,
+} from '../lib/reviewApi'
+import { ApiRequestError } from '../lib/api'
+import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
 import { FaStar } from 'react-icons/fa'
 import TopProduct from '../UserComponents/TopProduct'
 import FadeInOnScroll from '../components/FadeInOnScroll'
-
-type Review = {
-  id: string
-  author: string
-  body: string
-  rating: number
-  likes: number
-  likedByMe: boolean
-  createdAt: string
-}
-
-const PRODUCT_RATING = 4
 
 const ProductStarRating = ({ rating }: { rating: number }) => (
   <div aria-label={`${rating} out of 5 stars`} className="flex items-center gap-0.5">
@@ -54,30 +51,21 @@ const ProductsDetail = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-
-  const [reviews, setReviews] = useState<Review[]>([
-    {
-      id: '1',
-      author: 'Priya K.',
-      body: 'Worked well for what my doctor prescribed. Clear packaging and arrived on time.',
-      rating: 5,
-      likes: 4,
-      likedByMe: false,
-      createdAt: 'Apr 12, 2026',
-    },
-    {
-      id: '2',
-      author: 'Daniel M.',
-      body: 'Pharmacist was helpful explaining how to take it with food. Good experience overall.',
-      rating: 4,
-      likes: 2,
-      likedByMe: false,
-      createdAt: 'Apr 8, 2026',
-    },
-  ])
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredUser())
+  const [reviews, setReviews] = useState<ReviewDto[]>([])
+  const [averageRating, setAverageRating] = useState(0)
+  const [totalReviews, setTotalReviews] = useState(0)
+  const [reviewsLoading, setReviewsLoading] = useState(false)
   const [reviewBody, setReviewBody] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
+  const [reviewImageFile, setReviewImageFile] = useState<File | null>(null)
+  const [reviewImagePreview, setReviewImagePreview] = useState<string | null>(null)
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [likingReviewId, setLikingReviewId] = useState<number | null>(null)
+  const [brokenReviewAvatars, setBrokenReviewAvatars] = useState<Set<number>>(() => new Set())
   const [addingToCart, setAddingToCart] = useState(false)
+
+  useEffect(() => onAuthChange(() => setCurrentUser(getStoredUser())), [])
 
   const handleAddToCart = async () => {
     if (!product) return
@@ -138,41 +126,132 @@ const ProductsDetail = () => {
     }
   }, [productId])
 
+  useEffect(() => {
+    if (productId == null) return
+
+    let cancelled = false
+    const loadReviews = async () => {
+      setReviewsLoading(true)
+      try {
+        const data = await fetchProductReviews(productId)
+        if (cancelled) return
+        setReviews(data.reviews)
+        setAverageRating(data.averageRating)
+        setTotalReviews(data.totalReviews)
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err)
+          setReviews([])
+          setAverageRating(0)
+          setTotalReviews(0)
+        }
+      } finally {
+        if (!cancelled) setReviewsLoading(false)
+      }
+    }
+    void loadReviews()
+    return () => {
+      cancelled = true
+    }
+  }, [productId])
+
+  useEffect(() => {
+    return () => {
+      if (reviewImagePreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(reviewImagePreview)
+      }
+    }
+  }, [reviewImagePreview])
+
   const galleryImages = useMemo(() => {
     if (!product) return []
     return getProductImageUrls(product.images)
   }, [product])
 
   const thumbnailImages = galleryImages.filter((image) => image !== selectedImage).slice(0, 3)
+  const displayedRating = totalReviews > 0 ? averageRating : 0
 
   const categoryFormLine = product ? `${product.category} · ${product.form}` : ''
 
   const stock = product ? stockLabel(product.stock) : null
 
-  const handleSubmitReview = (e: FormEvent) => {
-    e.preventDefault()
-    const trimmed = reviewBody.trim()
-    if (!trimmed) return
-    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `r-${Date.now()}`
-    const createdAt = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-    setReviews((prev) => [
-      { id, author: 'Logged-in User', body: trimmed, rating: reviewRating, likes: 0, likedByMe: false, createdAt },
-      ...prev,
-    ])
-    setReviewBody('')
-    setReviewRating(0)
+  const handleReviewImageChange = (file: File | null) => {
+    if (reviewImagePreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(reviewImagePreview)
+    }
+    setReviewImageFile(file)
+    setReviewImagePreview(file ? URL.createObjectURL(file) : null)
   }
 
-  const toggleReviewLike = (id: string) => {
-    setReviews((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r
-        if (r.likedByMe) {
-          return { ...r, likedByMe: false, likes: Math.max(0, r.likes - 1) }
-        }
-        return { ...r, likedByMe: true, likes: r.likes + 1 }
-      }),
-    )
+  const handleSubmitReview = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!productId || reviewRating < 1) {
+      toast.warn('Please select a star rating.')
+      return
+    }
+    const trimmed = reviewBody.trim()
+    if (!trimmed) return
+
+    if (!currentUser) {
+      toast.info('Please log in to post a review.')
+      navigate('/login', { state: { from: `/productsdetail?id=${productId}` } })
+      return
+    }
+
+    setSubmittingReview(true)
+    try {
+      const created = await submitProductReview(productId, reviewRating, trimmed, reviewImageFile)
+      setReviews((prev) => [created, ...prev])
+      setTotalReviews((count) => count + 1)
+      setAverageRating((prev) => {
+        const nextTotal = totalReviews + 1
+        return Math.round(((prev * totalReviews + reviewRating) / nextTotal) * 10) / 10
+      })
+      setReviewBody('')
+      setReviewRating(0)
+      handleReviewImageChange(null)
+      toast.success('Review posted.')
+    } catch (err) {
+      if (err instanceof ApiRequestError && err.response.status === 401) {
+        toast.info('Please log in to post a review.')
+        navigate('/login', { state: { from: `/productsdetail?id=${productId}` } })
+        return
+      }
+      if (err instanceof ApiRequestError && err.response.status === 400) {
+        toast.warn('You are not eligible to review this product yet.')
+        return
+      }
+      toast.error('Could not post review.')
+      console.error(err)
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  const handleToggleReviewLike = async (reviewId: number) => {
+    if (!currentUser) {
+      toast.info('Please log in to like reviews.')
+      navigate('/login', { state: { from: `/productsdetail?id=${productId}` } })
+      return
+    }
+
+    setLikingReviewId(reviewId)
+    try {
+      const updated = await toggleReviewLike(reviewId)
+      setReviews((prev) => prev.map((review) => (review.id === reviewId ? updated : review)))
+    } catch (err) {
+      if (err instanceof ApiRequestError && err.response.status === 401) {
+        toast.info('Please log in to like reviews.')
+        return
+      }
+      if (err instanceof ApiRequestError && err.response.status === 400) {
+        toast.warn('You cannot like your own review.')
+        return
+      }
+      toast.error('Could not update like.')
+    } finally {
+      setLikingReviewId(null)
+    }
   }
 
   if (loading) {
@@ -254,8 +333,10 @@ const ProductsDetail = () => {
             <div>
               <h1 className="text-2xl font-bold text-slate-900">{product.productName}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <ProductStarRating rating={PRODUCT_RATING} />
-                <span className="text-sm font-semibold text-slate-800">{PRODUCT_RATING}.0</span>
+                <ProductStarRating rating={Math.round(displayedRating)} />
+                <span className="text-sm font-semibold text-slate-800">
+                  {totalReviews > 0 ? `${displayedRating.toFixed(1)} · ${totalReviews} reviews` : 'No reviews yet'}
+                </span>
               </div>
               <p className="mt-2 text-sm text-slate-600">{categoryFormLine}</p>
               {product.vendorBusinessName ? (
@@ -360,98 +441,157 @@ const ProductsDetail = () => {
 
           <h3 className="mt-10 text-2xl font-bold text-slate-900">Reviews</h3>
           <section className="mt-3">
-            <form className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6" onSubmit={handleSubmitReview}>
+            <form className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6" onSubmit={(e) => void handleSubmitReview(e)}>
+              <p className="text-sm text-slate-600">
+                Share your experience after purchasing this product.
+              </p>
               <div className="mt-4">
                 <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Rating</p>
-                <div className="mt-2 flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
-                      aria-pressed={reviewRating === star}
-                      className={`leading-none transition ${star <= reviewRating ? 'text-amber-400' : 'text-slate-300'}`}
-                      key={star}
-                      onClick={() => setReviewRating(star)}
-                      type="button"
-                    >
-                      <FaStar className="h-6 w-6" />
-                    </button>
-                  ))}
+                  <div className="mt-2 flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                        aria-pressed={reviewRating === star}
+                        className={`cursor-pointer leading-none transition ${star <= reviewRating ? 'text-amber-400' : 'text-slate-300'}`}
+                        key={star}
+                        onClick={() => setReviewRating(star)}
+                        type="button"
+                      >
+                        <FaStar className="h-6 w-6" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <label className="mt-4 block">
-                <span className="text-sm font-semibold uppercase tracking-wide text-slate-500">Review</span>
-                <textarea
-                  className="mt-1.5 min-h-[100px] w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-base text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
-                  onChange={(e) => setReviewBody(e.target.value)}
-                  placeholder="How was the product, delivery, or support?"
-                  required
-                  value={reviewBody}
-                />
-              </label>
-              <button
-                className="mt-4 cursor-pointer rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"
-                type="submit"
-              >
-                Post review
+                <label className="mt-4 block">
+                  <span className="text-sm font-semibold uppercase tracking-wide text-slate-500">Review</span>
+                  <textarea
+                    className="mt-1.5 min-h-[100px] w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-base text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+                    onChange={(e) => setReviewBody(e.target.value)}
+                    placeholder="How was the product, delivery, or support?"
+                    required
+                    value={reviewBody}
+                  />
+                </label>
+                <div className="mt-4">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Product photo (optional)</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <label className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-teal-600 hover:text-teal-700">
+                      Choose image
+                      <input
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleReviewImageChange(e.target.files?.[0] ?? null)}
+                        type="file"
+                      />
+                    </label>
+                    {reviewImagePreview ? (
+                      <img
+                        alt="Review preview"
+                        className="h-16 w-16 rounded-lg border border-slate-200 object-cover"
+                        src={reviewImagePreview}
+                      />
+                    ) : null}
+                  </div>
+                </div>
+                <button
+                  className="mt-4 cursor-pointer rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={submittingReview}
+                  type="submit"
+                >
+                  {submittingReview ? 'Posting…' : 'Post review'}
               </button>
             </form>
 
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
               <p className="text-sm font-semibold text-slate-800">
-                {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                {totalReviews} {totalReviews === 1 ? 'review' : 'reviews'}
               </p>
-              <ul className="mt-4 space-y-5">
-                {reviews.map((r) => (
-                  <li className="rounded-xl border border-slate-100 bg-white p-4" key={r.id}>
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 text-sm font-bold text-rose-700">
-                        {r.author.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[15px] font-semibold text-slate-900">{r.author}</p>
-                        <div className="mt-0.5 flex items-center gap-2">
-                          <div aria-label={`${r.rating} out of 5 stars`} className="flex items-center gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <FaStar
-                                className={`h-3.5 w-3.5 ${star <= r.rating ? 'text-amber-400' : 'text-slate-300'}`}
-                                key={`${r.id}-star-${star}`}
-                              />
-                            ))}
+              {reviewsLoading ? (
+                <p className="mt-4 text-sm text-slate-500">Loading reviews…</p>
+              ) : reviews.length === 0 ? (
+                <p className="mt-4 text-sm text-slate-500">No reviews yet. Be the first to share your experience.</p>
+              ) : (
+                <ul className="mt-4 space-y-5">
+                  {reviews.map((r) => {
+                    const authorAvatar = resolveReviewAuthorAvatar(r, currentUser)
+                    const showAuthorInitial = !authorAvatar || brokenReviewAvatars.has(r.id)
+                    return (
+                    <li className="rounded-xl border border-slate-100 bg-white p-4" key={r.id}>
+                      <div className="flex items-start gap-3">
+                        {!showAuthorInitial ? (
+                          <img
+                            alt={r.author}
+                            className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover"
+                            referrerPolicy="no-referrer"
+                            onError={() =>
+                              setBrokenReviewAvatars((prev) => {
+                                const next = new Set(prev)
+                                next.add(r.id)
+                                return next
+                              })
+                            }
+                            src={authorAvatar}
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 text-sm font-bold text-rose-700">
+                            {r.author.charAt(0).toUpperCase()}
                           </div>
-                          <span className="text-xs text-slate-500">{r.createdAt}</span>
+                        )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[15px] font-semibold text-slate-900">{r.author}</p>
+                            <div className="mt-0.5 flex items-center gap-2">
+                              <div aria-label={`${r.rating} out of 5 stars`} className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <FaStar
+                                    className={`h-3.5 w-3.5 ${star <= r.rating ? 'text-amber-400' : 'text-slate-300'}`}
+                                    key={`${r.id}-star-${star}`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs text-slate-500">{r.createdAt}</span>
+                            </div>
+                            <p className="mt-2.5 text-[15px] leading-7 text-slate-700">{r.body}</p>
+                            {r.imageUrl ? (
+                              <img
+                                alt={`${r.author} review photo`}
+                                className="mt-3 max-h-48 rounded-xl border border-slate-200 object-cover"
+                                src={r.imageUrl}
+                              />
+                            ) : null}
+                            <button
+                              aria-label={r.likedByMe ? 'Unlike this review' : 'Like this review'}
+                              aria-pressed={r.likedByMe}
+                              className={`mt-3 inline-flex cursor-pointer items-center gap-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${
+                                r.likedByMe ? 'text-teal-700' : 'text-slate-500'
+                              }`}
+                              disabled={likingReviewId === r.id}
+                              onClick={() => void handleToggleReviewLike(r.id)}
+                              type="button"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                className="h-4 w-4"
+                                fill={r.likedByMe ? 'currentColor' : 'none'}
+                                stroke="currentColor"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="1.8"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M14 9V5a3 3 0 0 0-3-3L7 11v11h11.28a2 2 0 0 0 1.97-1.67l1.38-9A2 2 0 0 0 19.65 9H14Z" />
+                                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                              </svg>
+                              <span>{r.likedByMe ? 'Liked' : 'Like'}</span>
+                              <span>·</span>
+                              <span>{r.likes}</span>
+                            </button>
                         </div>
-                        <p className="mt-2.5 text-[15px] leading-7 text-slate-700">{r.body}</p>
-                        <button
-                          aria-label={r.likedByMe ? 'Unlike this review' : 'Like this review'}
-                          aria-pressed={r.likedByMe}
-                          className={`mt-3 inline-flex items-center gap-1.5 text-sm ${
-                            r.likedByMe ? 'text-teal-700' : 'text-slate-500'
-                          }`}
-                          onClick={() => toggleReviewLike(r.id)}
-                          type="button"
-                        >
-                          <svg
-                            aria-hidden="true"
-                            className="h-4 w-4"
-                            fill={r.likedByMe ? 'currentColor' : 'none'}
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.8"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M14 9V5a3 3 0 0 0-3-3L7 11v11h11.28a2 2 0 0 0 1.97-1.67l1.38-9A2 2 0 0 0 19.65 9H14Z" />
-                            <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                          </svg>
-                          <span>{r.likedByMe ? 'Liked' : 'Like'}</span>
-                          <span>·</span>
-                          <span>{r.likes}</span>
-                        </button>
                       </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                    )
+                  })}
+                </ul>
+              )}
             </div>
           </section>
         </section>

@@ -17,6 +17,7 @@ import com.mednexus.mednexus.order.OrderNotFoundException;
 import com.mednexus.mednexus.otp.InvalidOtpException;
 import com.mednexus.mednexus.product.DuplicateProductSkuException;
 import com.mednexus.mednexus.product.ProductNotFoundException;
+import com.mednexus.mednexus.review.ReviewNotFoundException;
 import com.mednexus.mednexus.vendor.VendorNotApprovedException;
 import com.mednexus.mednexus.vendor.VendorNotFoundException;
 
@@ -109,6 +110,13 @@ public class RestExceptionHandler {
 	public ProblemDetail handleVendorNotApproved(VendorNotApprovedException ex) {
 		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
 		pd.setTitle("Forbidden");
+		return pd;
+	}
+
+	@ExceptionHandler(ReviewNotFoundException.class)
+	public ProblemDetail handleReviewNotFound(ReviewNotFoundException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+		pd.setTitle("Not found");
 		return pd;
 	}
 

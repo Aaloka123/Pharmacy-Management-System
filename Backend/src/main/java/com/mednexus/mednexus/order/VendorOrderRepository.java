@@ -1,5 +1,6 @@
 package com.mednexus.mednexus.order;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,4 +50,14 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 	Optional<VendorOrder> findByIdAndUserIdWithDetails(
 			@Param("orderId") Long orderId,
 			@Param("userId") Long userId);
+
+	boolean existsByUserIdAndProductIdAndStatusIn(
+			Long userId,
+			Long productId,
+			Collection<OrderStatus> statuses);
+
+	Optional<VendorOrder> findFirstByUserIdAndProductIdAndStatusInOrderByCreatedAtDesc(
+			Long userId,
+			Long productId,
+			Collection<OrderStatus> statuses);
 }
