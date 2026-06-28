@@ -8,6 +8,9 @@ import java.util.List;
 
 import com.mednexus.mednexus.vendor.Vendor;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -18,7 +21,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -63,16 +65,16 @@ public class Product {
 	@Column(name = "expiry_date", nullable = false)
 	private LocalDate expiryDate;
 
-	@Lob
+	@JdbcTypeCode(SqlTypes.LONG32VARCHAR)
 	@Column(name = "product_description", nullable = false)
 	private String productDescription;
 
-	@Lob
+	@JdbcTypeCode(SqlTypes.LONG32VARCHAR)
 	@Convert(converter = StringListJsonConverter.class)
 	@Column(name = "dosage_instructions", nullable = false)
 	private List<String> dosageInstructions = new ArrayList<>();
 
-	@Lob
+	@JdbcTypeCode(SqlTypes.LONG32VARCHAR)
 	@Convert(converter = StringListJsonConverter.class)
 	@Column(name = "side_effects", nullable = false)
 	private List<String> sideEffects = new ArrayList<>();
@@ -87,7 +89,7 @@ public class Product {
 	@Column(name = "status", nullable = false, length = 20)
 	private ProductStatus status = ProductStatus.ACTIVE;
 
-	@Lob
+	@JdbcTypeCode(SqlTypes.LONG32VARCHAR)
 	@Convert(converter = StringListJsonConverter.class)
 	@Column(name = "images", nullable = false)
 	private List<String> images = new ArrayList<>();

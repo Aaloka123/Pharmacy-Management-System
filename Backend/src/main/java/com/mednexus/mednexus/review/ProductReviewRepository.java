@@ -27,5 +27,7 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, Lo
 			""")
 		List<ProductReview> findByVendorIdWithDetails(@Param("vendorId") Long vendorId);
 
+	boolean existsByUser_IdAndProduct_Id(Long userId, Long productId);
+
 	Optional<ProductReview> findByIdAndProduct_Id(Long id, Long productId);
 }

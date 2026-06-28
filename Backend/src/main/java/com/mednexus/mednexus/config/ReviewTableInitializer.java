@@ -28,7 +28,6 @@ public class ReviewTableInitializer implements ApplicationRunner {
 		if (!tableExists("review_like")) {
 			createReviewLikeTable();
 		}
-		dropOneReviewPerUserConstraintIfPresent();
 	}
 
 	private boolean tableExists(String tableName) {
@@ -54,7 +53,7 @@ public class ReviewTableInitializer implements ApplicationRunner {
 				  `created_at` datetime(6) NOT NULL,
 				  `updated_at` datetime(6) NOT NULL,
 				  PRIMARY KEY (`id`),
-				  KEY `idx_review_user_product` (`user_id`, `product_id`),
+				  UNIQUE KEY `uk_review_user_product` (`user_id`, `product_id`),
 				  KEY `idx_review_product` (`product_id`),
 				  KEY `idx_review_vendor_order` (`vendor_order_id`),
 				  CONSTRAINT `fk_review_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`),
@@ -81,23 +80,5 @@ public class ReviewTableInitializer implements ApplicationRunner {
 				) ENGINE=InnoDB
 				""");
 		log.info("`review_like` table created.");
-	}
-
-	private void dropOneReviewPerUserConstraintIfPresent() {
-		if (!tableExists("product_review")) {
-			return;
-		}
-		Integer count = jdbc.queryForObject(
-				"""
-				SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
-				WHERE TABLE_SCHEMA = DATABASE()
-				  AND TABLE_NAME = 'product_review'
-				  AND CONSTRAINT_NAME = 'uk_review_user_product'
-				""",
-				Integer.class);
-		if (count != null && count > 0) {
-			log.info("Allowing multiple reviews per user — dropping uk_review_user_product...");
-			jdbc.execute("ALTER TABLE `product_review` DROP INDEX `uk_review_user_product`");
-		}
 	}
 }

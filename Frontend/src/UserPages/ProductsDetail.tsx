@@ -8,10 +8,12 @@ import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartSto
 import { getPublicProduct, getProductImageUrls, type ProductDto } from '../lib/productsApi'
 import {
   fetchProductReviews,
+  fetchReviewEligibility,
   submitProductReview,
   toggleReviewLike,
   resolveReviewAuthorAvatar,
   type ReviewDto,
+  type ReviewEligibilityDto,
 } from '../lib/reviewApi'
 import { ApiRequestError } from '../lib/api'
 import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
@@ -55,6 +57,7 @@ const ProductsDetail = () => {
   const [reviews, setReviews] = useState<ReviewDto[]>([])
   const [averageRating, setAverageRating] = useState(0)
   const [totalReviews, setTotalReviews] = useState(0)
+  const [hasReviewed, setHasReviewed] = useState(false)
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [reviewBody, setReviewBody] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
@@ -156,6 +159,27 @@ const ProductsDetail = () => {
   }, [productId])
 
   useEffect(() => {
+    if (productId == null || !currentUser || currentUser.role !== 'USER') {
+      setHasReviewed(false)
+      return
+    }
+
+    let cancelled = false
+    const loadEligibility = async () => {
+      try {
+        const data = await fetchReviewEligibility(productId)
+        if (!cancelled) setHasReviewed(data.hasReviewed)
+      } catch {
+        if (!cancelled) setHasReviewed(false)
+      }
+    }
+    void loadEligibility()
+    return () => {
+      cancelled = true
+    }
+  }, [productId, currentUser])
+
+  useEffect(() => {
     return () => {
       if (reviewImagePreview?.startsWith('blob:')) {
         URL.revokeObjectURL(reviewImagePreview)
@@ -170,6 +194,11 @@ const ProductsDetail = () => {
 
   const thumbnailImages = galleryImages.filter((image) => image !== selectedImage).slice(0, 3)
   const displayedRating = totalReviews > 0 ? averageRating : 0
+  const hasMyReview = useMemo(() => {
+    if (!currentUser) return false
+    return reviews.some((review) => review.authorId === currentUser.id)
+  }, [reviews, currentUser])
+  const showReviewForm = !hasReviewed && !hasMyReview
 
   const categoryFormLine = product ? `${product.category} · ${product.form}` : ''
 
@@ -203,6 +232,7 @@ const ProductsDetail = () => {
       const created = await submitProductReview(productId, reviewRating, trimmed, reviewImageFile)
       setReviews((prev) => [created, ...prev])
       setTotalReviews((count) => count + 1)
+      setHasReviewed(true)
       setAverageRating((prev) => {
         const nextTotal = totalReviews + 1
         return Math.round(((prev * totalReviews + reviewRating) / nextTotal) * 10) / 10
@@ -242,10 +272,6 @@ const ProductsDetail = () => {
     } catch (err) {
       if (err instanceof ApiRequestError && err.response.status === 401) {
         toast.info('Please log in to like reviews.')
-        return
-      }
-      if (err instanceof ApiRequestError && err.response.status === 400) {
-        toast.warn('You cannot like your own review.')
         return
       }
       toast.error('Could not update like.')
@@ -441,6 +467,7 @@ const ProductsDetail = () => {
 
           <h3 className="mt-10 text-2xl font-bold text-slate-900">Reviews</h3>
           <section className="mt-3">
+            {showReviewForm ? (
             <form className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6" onSubmit={(e) => void handleSubmitReview(e)}>
               <p className="text-sm text-slate-600">
                 Share your experience after purchasing this product.
@@ -473,7 +500,7 @@ const ProductsDetail = () => {
                   />
                 </label>
                 <div className="mt-4">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Product photo (optional)</p>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Product photo</p>
                   <div className="mt-2 flex flex-wrap items-center gap-3">
                     <label className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-teal-600 hover:text-teal-700">
                       Choose image
@@ -501,8 +528,9 @@ const ProductsDetail = () => {
                   {submittingReview ? 'Posting…' : 'Post review'}
               </button>
             </form>
+            ) : null}
 
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
+            <div className={`rounded-2xl border border-slate-200 bg-white p-5 md:p-6${showReviewForm ? ' mt-4' : ''}`}>
               <p className="text-sm font-semibold text-slate-800">
                 {totalReviews} {totalReviews === 1 ? 'review' : 'reviews'}
               </p>

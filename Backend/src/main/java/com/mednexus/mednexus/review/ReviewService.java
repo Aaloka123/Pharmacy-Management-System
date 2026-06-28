@@ -79,14 +79,21 @@ public class ReviewService {
 	@Transactional(readOnly = true)
 	public ReviewEligibilityResponse eligibility(Long productId, Long userId) {
 		ensureProductExists(productId);
+		if (productReviewRepository.existsByUser_IdAndProduct_Id(userId, productId)) {
+			return new ReviewEligibilityResponse(
+					false,
+					true,
+					"You have already reviewed this product.");
+		}
 		boolean hasPurchased = vendorOrderRepository.existsByUserIdAndProductIdAndStatusIn(
 				userId, productId, REVIEWABLE_ORDER_STATUSES);
 		if (!hasPurchased) {
 			return new ReviewEligibilityResponse(
 					false,
+					false,
 					"You can review this product after your order is confirmed or delivered.");
 		}
-		return new ReviewEligibilityResponse(true, null);
+		return new ReviewEligibilityResponse(true, false, null);
 	}
 
 	@Transactional
@@ -125,9 +132,6 @@ public class ReviewService {
 	@Transactional
 	public ReviewResponse toggleLike(Long userId, Long reviewId) {
 		ProductReview review = productReviewRepository.findById(reviewId).orElseThrow(ReviewNotFoundException::new);
-		if (review.getUser().getId().equals(userId)) {
-			throw new IllegalArgumentException("You cannot like your own review.");
-		}
 
 		var existing = reviewLikeRepository.findByReviewIdAndUserId(reviewId, userId);
 		if (existing.isPresent()) {

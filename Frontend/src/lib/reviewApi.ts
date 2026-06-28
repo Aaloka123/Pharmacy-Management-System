@@ -45,6 +45,7 @@ export type ProductReviewsDto = {
 
 export type ReviewEligibilityDto = {
   canReview: boolean
+  hasReviewed: boolean
   message: string | null
 }
 
