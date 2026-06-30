@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mednexus.mednexus.notification.NotificationService;
 import com.mednexus.mednexus.order.OrderStatus;
 import com.mednexus.mednexus.order.VendorOrder;
 import com.mednexus.mednexus.order.VendorOrderRepository;
@@ -45,29 +46,35 @@ public class ReviewService {
 	private final ProductReviewRepository productReviewRepository;
 	private final ReviewLikeRepository reviewLikeRepository;
 	private final VendorReviewLikeRepository vendorReviewLikeRepository;
+	private final AdminReviewLikeRepository adminReviewLikeRepository;
 	private final ProductRepository productRepository;
 	private final VendorOrderRepository vendorOrderRepository;
 	private final UserRepository userRepository;
 	private final VendorRepository vendorRepository;
 	private final ReviewFileStorage reviewFileStorage;
+	private final NotificationService notificationService;
 
 	public ReviewService(
 			ProductReviewRepository productReviewRepository,
 			ReviewLikeRepository reviewLikeRepository,
 			VendorReviewLikeRepository vendorReviewLikeRepository,
+			AdminReviewLikeRepository adminReviewLikeRepository,
 			ProductRepository productRepository,
 			VendorOrderRepository vendorOrderRepository,
 			UserRepository userRepository,
 			VendorRepository vendorRepository,
-			ReviewFileStorage reviewFileStorage) {
+			ReviewFileStorage reviewFileStorage,
+			NotificationService notificationService) {
 		this.productReviewRepository = productReviewRepository;
 		this.reviewLikeRepository = reviewLikeRepository;
 		this.vendorReviewLikeRepository = vendorReviewLikeRepository;
+		this.adminReviewLikeRepository = adminReviewLikeRepository;
 		this.productRepository = productRepository;
 		this.vendorOrderRepository = vendorOrderRepository;
 		this.userRepository = userRepository;
 		this.vendorRepository = vendorRepository;
 		this.reviewFileStorage = reviewFileStorage;
+		this.notificationService = notificationService;
 	}
 
 	@Transactional(readOnly = true)
@@ -175,6 +182,37 @@ public class ReviewService {
 		return toResponseForVendor(review, vendorId, findVendorLiker(reviewId));
 	}
 
+	@Transactional
+	public ReviewResponse toggleAdminLike(Long adminUserId, Long reviewId) {
+		ProductReview review = productReviewRepository.findByIdWithDetails(reviewId)
+				.orElseThrow(ReviewNotFoundException::new);
+
+		var existing = adminReviewLikeRepository.findByReviewIdAndAdminUser_Id(reviewId, adminUserId);
+		if (existing.isPresent()) {
+			adminReviewLikeRepository.delete(existing.get());
+		} else {
+			User admin = userRepository.findById(adminUserId).orElseThrow(UserNotFoundException::new);
+			AdminReviewLike like = new AdminReviewLike();
+			like.setReview(review);
+			like.setAdminUser(admin);
+			adminReviewLikeRepository.save(like);
+			if (!adminUserId.equals(review.getUser().getId())) {
+				notificationService.notifyReviewLikedByAdmin(review);
+			}
+		}
+		return toResponseForAdmin(review, adminUserId, findVendorLiker(reviewId));
+	}
+
+	@Transactional(readOnly = true)
+	public List<ReviewResponse> listForAdmin(Long adminUserId) {
+		List<ProductReview> reviews = productReviewRepository.findAllWithDetails();
+		Map<Long, Vendor> vendorLikers = loadVendorLikersByReviewIds(
+				reviews.stream().map(ProductReview::getId).toList());
+		return reviews.stream()
+				.map(review -> toResponseForAdmin(review, adminUserId, vendorLikers.get(review.getId())))
+				.toList();
+	}
+
 	@Transactional(readOnly = true)
 	public List<ReviewResponse> listForVendor(Long vendorId) {
 		List<ProductReview> reviews = productReviewRepository.findByVendorIdWithDetails(vendorId);
@@ -199,6 +237,13 @@ public class ReviewService {
 		return buildResponse(review, likes, likedByMe, vendorLiker);
 	}
 
+	private ReviewResponse toResponseForAdmin(ProductReview review, Long viewerAdminUserId, Vendor vendorLiker) {
+		long likes = totalLikes(review.getId());
+		boolean likedByMe = viewerAdminUserId != null
+				&& adminReviewLikeRepository.existsByReviewIdAndAdminUser_Id(review.getId(), viewerAdminUserId);
+		return buildResponse(review, likes, likedByMe, vendorLiker);
+	}
+
 	private Map<Long, Vendor> loadVendorLikersByReviewIds(List<Long> reviewIds) {
 		if (reviewIds.isEmpty()) {
 			return Map.of();
@@ -215,7 +260,8 @@ public class ReviewService {
 
 	private long totalLikes(Long reviewId) {
 		return reviewLikeRepository.countByReviewId(reviewId)
-				+ vendorReviewLikeRepository.countByReviewId(reviewId);
+				+ vendorReviewLikeRepository.countByReviewId(reviewId)
+				+ adminReviewLikeRepository.countByReviewId(reviewId);
 	}
 
 	private ReviewResponse buildResponse(ProductReview review, long likes, boolean likedByMe, Vendor vendorLiker) {

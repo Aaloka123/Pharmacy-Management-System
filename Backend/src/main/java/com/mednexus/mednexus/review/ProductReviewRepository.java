@@ -32,4 +32,20 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, Lo
 	Optional<ProductReview> findByIdAndProduct_Id(Long id, Long productId);
 
 	Optional<ProductReview> findByIdAndProduct_Vendor_Id(Long id, Long vendorId);
+
+	@Query("""
+			SELECT r FROM ProductReview r
+			JOIN FETCH r.user
+			JOIN FETCH r.product
+			WHERE r.id = :id
+			""")
+	Optional<ProductReview> findByIdWithDetails(@Param("id") Long id);
+
+	@Query("""
+			SELECT r FROM ProductReview r
+			JOIN FETCH r.user
+			JOIN FETCH r.product
+			ORDER BY r.createdAt DESC
+			""")
+	List<ProductReview> findAllWithDetails();
 }

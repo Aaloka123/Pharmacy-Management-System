@@ -7,10 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mednexus.mednexus.notification.dto.NotificationResponse;
+import com.mednexus.mednexus.product.Product;
 import com.mednexus.mednexus.product.ProductImageUtils;
 import com.mednexus.mednexus.order.OrderEmailService;
 import com.mednexus.mednexus.order.OrderStatus;
 import com.mednexus.mednexus.order.VendorOrder;
+import com.mednexus.mednexus.review.ProductReview;
 import com.mednexus.mednexus.user.User;
 
 @Service
@@ -47,6 +49,24 @@ public class NotificationService {
 		notification.setRead(false);
 		notificationRepository.save(notification);
 		orderEmailService.sendStatusUpdateEmail(order, newStatus);
+	}
+
+	@Transactional
+	public void notifyReviewLikedByAdmin(ProductReview review) {
+		User author = review.getUser();
+		Product product = review.getProduct();
+		if (author == null || product == null) {
+			return;
+		}
+
+		Notification notification = new Notification();
+		notification.setUser(author);
+		notification.setOrderId(null);
+		notification.setMessage(
+				"MedNexus admin liked your review for %s.".formatted(product.getProductName()));
+		notification.setProductImage(ProductImageUtils.preferredImageUrl(product));
+		notification.setRead(false);
+		notificationRepository.save(notification);
 	}
 
 	@Transactional(readOnly = true)

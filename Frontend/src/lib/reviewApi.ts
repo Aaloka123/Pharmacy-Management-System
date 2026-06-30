@@ -93,6 +93,16 @@ export async function toggleVendorReviewLike(reviewId: number): Promise<ReviewDt
   return mapReviewDto(data)
 }
 
+export async function fetchAdminReviews(): Promise<ReviewDto[]> {
+  const { data } = await api.get<ReviewDto[]>('/api/admin/reviews')
+  return data.map(mapReviewDto)
+}
+
+export async function toggleAdminReviewLike(reviewId: number): Promise<ReviewDto> {
+  const { data } = await api.post<ReviewDto>(`/api/admin/reviews/${reviewId}/like`)
+  return mapReviewDto(data)
+}
+
 export async function fetchVendorReviews(): Promise<ReviewDto[]> {
   const { data } = await api.get<ReviewDto[]>('/api/vendor/reviews')
   return data.map(mapReviewDto)
