@@ -2,7 +2,7 @@ package com.mednexus.mednexus.review;
 
 import java.time.Instant;
 
-import com.mednexus.mednexus.user.User;
+import com.mednexus.mednexus.vendor.Vendor;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,16 +13,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(
-		name = "admin_review_like",
-		uniqueConstraints = @UniqueConstraint(
-				name = "uk_admin_review_like",
-				columnNames = { "review_id", "admin_user_id" }))
-public class AdminReviewLike {
+		name = "review_reply",
+		uniqueConstraints = @UniqueConstraint(name = "uk_review_reply", columnNames = { "review_id" }))
+public class ReviewReply {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,20 +32,37 @@ public class AdminReviewLike {
 	private ProductReview review;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "admin_user_id", nullable = false)
-	private User adminUser;
+	@JoinColumn(name = "vendor_id", nullable = false)
+	private Vendor vendor;
+
+	@Column(name = "body", nullable = false, columnDefinition = "TEXT")
+	private String body;
 
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
-	public AdminReviewLike() {
+	@Column(name = "updated_at", nullable = false)
+	private Instant updatedAt;
+
+	public ReviewReply() {
 	}
 
 	@PrePersist
 	void onCreate() {
+		Instant now = Instant.now();
 		if (createdAt == null) {
-			createdAt = Instant.now();
+			createdAt = now;
 		}
+		updatedAt = now;
+	}
+
+	@PreUpdate
+	void onUpdate() {
+		updatedAt = Instant.now();
+	}
+
+	public Long getId() {
+		return id;
 	}
 
 	public ProductReview getReview() {
@@ -57,11 +73,27 @@ public class AdminReviewLike {
 		this.review = review;
 	}
 
-	public User getAdminUser() {
-		return adminUser;
+	public Vendor getVendor() {
+		return vendor;
 	}
 
-	public void setAdminUser(User adminUser) {
-		this.adminUser = adminUser;
+	public void setVendor(Vendor vendor) {
+		this.vendor = vendor;
+	}
+
+	public String getBody() {
+		return body;
+	}
+
+	public void setBody(String body) {
+		this.body = body;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	public Instant getUpdatedAt() {
+		return updatedAt;
 	}
 }

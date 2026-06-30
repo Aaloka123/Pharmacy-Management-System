@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
-import { FaStar } from 'react-icons/fa'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { FaRegComment, FaStar } from 'react-icons/fa'
+import { toast } from 'react-toastify'
 import Navbar from '../VendorComponents/Navbar'
 import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain'
 import ImageLightbox from '../components/ImageLightbox'
 import fallbackImage from '../assets/Hero1.png'
-import { fetchVendorReviews, resolveReviewAuthorAvatar, toggleVendorReviewLike, type ReviewDto } from '../lib/reviewApi'
+import {
+  fetchVendorReviews,
+  resolveReviewAuthorAvatar,
+  submitVendorReviewReply,
+  toggleVendorReviewLike,
+  type ReviewDto,
+} from '../lib/reviewApi'
 import { getStoredUser } from '../lib/auth'
 
 const VendorReview = () => {
@@ -15,6 +22,9 @@ const VendorReview = () => {
   const [brokenReviewAvatars, setBrokenReviewAvatars] = useState<Set<number>>(() => new Set())
   const [likingReviewId, setLikingReviewId] = useState<number | null>(null)
   const [previewReviewImage, setPreviewReviewImage] = useState<{ url: string; alt: string } | null>(null)
+  const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({})
+  const [submittingReplyId, setSubmittingReplyId] = useState<number | null>(null)
+  const [openCommentReviewIds, setOpenCommentReviewIds] = useState<Set<number>>(() => new Set())
   const currentUser = getStoredUser()
 
   useEffect(() => {
@@ -41,7 +51,8 @@ const VendorReview = () => {
       (review) =>
         review.author.toLowerCase().includes(query) ||
         review.productName.toLowerCase().includes(query) ||
-        review.body.toLowerCase().includes(query),
+        review.body.toLowerCase().includes(query) ||
+        (review.vendorReplyBody?.toLowerCase().includes(query) ?? false),
     )
   }, [reviews, searchTerm])
 
@@ -55,6 +66,39 @@ const VendorReview = () => {
     } finally {
       setLikingReviewId(null)
     }
+  }
+
+  const handleSubmitReply = async (event: FormEvent, reviewId: number) => {
+    event.preventDefault()
+    const body = (replyDrafts[reviewId] ?? '').trim()
+    if (!body) {
+      toast.error('Please write a reply before posting.')
+      return
+    }
+    setSubmittingReplyId(reviewId)
+    const hadReply = reviews.some((review) => review.id === reviewId && review.vendorReplyBody)
+    try {
+      const updated = await submitVendorReviewReply(reviewId, body)
+      setReviews((prev) => prev.map((review) => (review.id === reviewId ? updated : review)))
+      setReplyDrafts((prev) => ({ ...prev, [reviewId]: updated.vendorReplyBody ?? body }))
+      toast.success(hadReply ? 'Reply updated.' : 'Reply posted.')
+    } catch {
+      toast.error('Could not post your reply. Please try again.')
+    } finally {
+      setSubmittingReplyId(null)
+    }
+  }
+
+  const toggleCommentSection = (reviewId: number) => {
+    setOpenCommentReviewIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(reviewId)) {
+        next.delete(reviewId)
+      } else {
+        next.add(reviewId)
+      }
+      return next
+    })
   }
 
   return (
@@ -145,51 +189,97 @@ const VendorReview = () => {
                           </div>
                         </div>
                         <p className="mt-3 text-sm leading-7 text-slate-700">{review.body}</p>
-                        {review.imageUrl ? (
-                          <button
-                            className="mt-3 inline-block cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-transparent p-0 hover:bg-transparent"
-                            onClick={() =>
-                              setPreviewReviewImage({
-                                url: review.imageUrl!,
-                                alt: `Review photo for ${review.productName}`,
-                              })
-                            }
-                            type="button"
-                          >
-                            <img
-                              alt={`Review photo for ${review.productName}`}
-                              className="block max-h-56 max-w-full object-cover"
-                              src={review.imageUrl}
-                            />
-                          </button>
-                        ) : null}
-                        <button
-                          aria-label={review.likedByMe ? 'Unlike this review' : 'Like this review'}
-                          aria-pressed={review.likedByMe}
-                          className={`mt-3 inline-flex cursor-pointer items-center gap-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${
-                            review.likedByMe ? 'text-teal-700' : 'text-slate-500'
-                          }`}
-                          disabled={likingReviewId === review.id}
-                          onClick={() => void handleToggleReviewLike(review.id)}
-                          type="button"
+                        <div className="mt-3 flex w-full flex-col items-start gap-3">
+                          {review.imageUrl ? (
+                            <button
+                              className="block cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-transparent p-0 hover:bg-transparent"
+                              onClick={() =>
+                                setPreviewReviewImage({
+                                  url: review.imageUrl!,
+                                  alt: `Review photo for ${review.productName}`,
+                                })
+                              }
+                              type="button"
+                            >
+                              <img
+                                alt={`Review photo for ${review.productName}`}
+                                className="block max-h-56 max-w-full object-cover"
+                                src={review.imageUrl}
+                              />
+                            </button>
+                          ) : null}
+                          <div className="flex flex-wrap items-center gap-4">
+                            <button
+                              aria-label={review.likedByMe ? 'Unlike this review' : 'Like this review'}
+                              aria-pressed={review.likedByMe}
+                              className={`inline-flex cursor-pointer items-center gap-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${
+                                review.likedByMe ? 'text-teal-700' : 'text-slate-500'
+                              }`}
+                              disabled={likingReviewId === review.id}
+                              onClick={() => void handleToggleReviewLike(review.id)}
+                              type="button"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                className="h-4 w-4"
+                                fill={review.likedByMe ? 'currentColor' : 'none'}
+                                stroke="currentColor"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="1.8"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M14 9V5a3 3 0 0 0-3-3L7 11v11h11.28a2 2 0 0 0 1.97-1.67l1.38-9A2 2 0 0 0 19.65 9H14Z" />
+                                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                              </svg>
+                              <span>{review.likedByMe ? 'Liked' : 'Like'}</span>
+                              <span>·</span>
+                              <span>{review.likes}</span>
+                            </button>
+                            <button
+                              aria-expanded={openCommentReviewIds.has(review.id)}
+                              aria-label={openCommentReviewIds.has(review.id) ? 'Hide reply' : 'Reply to review'}
+                              className={`inline-flex cursor-pointer items-center gap-1.5 text-sm ${
+                                openCommentReviewIds.has(review.id) || review.vendorReplyBody
+                                  ? 'text-teal-700'
+                                  : 'text-slate-500'
+                              }`}
+                              onClick={() => toggleCommentSection(review.id)}
+                              type="button"
+                            >
+                              <FaRegComment className="h-4 w-4" aria-hidden="true" />
+                              {review.vendorReplyBody ? <span>1</span> : null}
+                            </button>
+                          </div>
+                        </div>
+                        {openCommentReviewIds.has(review.id) ? (
+                        <form
+                          className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-4"
+                          onSubmit={(event) => void handleSubmitReply(event, review.id)}
                         >
-                          <svg
-                            aria-hidden="true"
-                            className="h-4 w-4"
-                            fill={review.likedByMe ? 'currentColor' : 'none'}
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.8"
-                            viewBox="0 0 24 24"
+                          <p className="text-sm font-semibold text-slate-900">Reply to customer</p>
+                          <textarea
+                            className="mt-2 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
+                            onChange={(event) =>
+                              setReplyDrafts((prev) => ({ ...prev, [review.id]: event.target.value }))
+                            }
+                            placeholder="Thank the customer or address their feedback..."
+                            rows={3}
+                            value={replyDrafts[review.id] ?? review.vendorReplyBody ?? ''}
+                          />
+                          <button
+                            className="mt-3 cursor-pointer rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={submittingReplyId === review.id}
+                            type="submit"
                           >
-                            <path d="M14 9V5a3 3 0 0 0-3-3L7 11v11h11.28a2 2 0 0 0 1.97-1.67l1.38-9A2 2 0 0 0 19.65 9H14Z" />
-                            <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                          </svg>
-                          <span>{review.likedByMe ? 'Liked' : 'Like'}</span>
-                          <span>·</span>
-                          <span>{review.likes}</span>
-                        </button>
+                            {submittingReplyId === review.id
+                              ? 'Posting…'
+                              : review.vendorReplyBody
+                                ? 'Update reply'
+                                : 'Post reply'}
+                          </button>
+                        </form>
+                        ) : null}
                       </div>
                     </div>
                   </li>

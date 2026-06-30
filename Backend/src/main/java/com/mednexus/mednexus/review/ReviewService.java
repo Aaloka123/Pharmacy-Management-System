@@ -22,6 +22,7 @@ import com.mednexus.mednexus.order.VendorOrderRepository;
 import com.mednexus.mednexus.product.Product;
 import com.mednexus.mednexus.product.ProductNotFoundException;
 import com.mednexus.mednexus.product.ProductRepository;
+import com.mednexus.mednexus.review.dto.CreateReviewReplyRequest;
 import com.mednexus.mednexus.review.dto.CreateReviewRequest;
 import com.mednexus.mednexus.review.dto.ProductReviewsResponse;
 import com.mednexus.mednexus.review.dto.ReviewEligibilityResponse;
@@ -46,7 +47,7 @@ public class ReviewService {
 	private final ProductReviewRepository productReviewRepository;
 	private final ReviewLikeRepository reviewLikeRepository;
 	private final VendorReviewLikeRepository vendorReviewLikeRepository;
-	private final AdminReviewLikeRepository adminReviewLikeRepository;
+	private final ReviewReplyRepository reviewReplyRepository;
 	private final ProductRepository productRepository;
 	private final VendorOrderRepository vendorOrderRepository;
 	private final UserRepository userRepository;
@@ -58,7 +59,7 @@ public class ReviewService {
 			ProductReviewRepository productReviewRepository,
 			ReviewLikeRepository reviewLikeRepository,
 			VendorReviewLikeRepository vendorReviewLikeRepository,
-			AdminReviewLikeRepository adminReviewLikeRepository,
+			ReviewReplyRepository reviewReplyRepository,
 			ProductRepository productRepository,
 			VendorOrderRepository vendorOrderRepository,
 			UserRepository userRepository,
@@ -68,7 +69,7 @@ public class ReviewService {
 		this.productReviewRepository = productReviewRepository;
 		this.reviewLikeRepository = reviewLikeRepository;
 		this.vendorReviewLikeRepository = vendorReviewLikeRepository;
-		this.adminReviewLikeRepository = adminReviewLikeRepository;
+		this.reviewReplyRepository = reviewReplyRepository;
 		this.productRepository = productRepository;
 		this.vendorOrderRepository = vendorOrderRepository;
 		this.userRepository = userRepository;
@@ -84,8 +85,14 @@ public class ReviewService {
 		List<ProductReview> reviews = productReviewRepository.findByProductIdWithUser(productId);
 		Map<Long, Vendor> vendorLikers = loadVendorLikersByReviewIds(
 				reviews.stream().map(ProductReview::getId).toList());
+		Map<Long, ReviewReply> replies = loadRepliesByReviewIds(
+				reviews.stream().map(ProductReview::getId).toList());
 		List<ReviewResponse> responses = reviews.stream()
-				.map(review -> toResponseForUser(review, viewerUserId, vendorLikers.get(review.getId())))
+				.map(review -> toResponseForUser(
+						review,
+						viewerUserId,
+						vendorLikers.get(review.getId()),
+						replies.get(review.getId())))
 				.toList();
 		double average = reviews.isEmpty()
 				? 0
@@ -143,7 +150,7 @@ public class ReviewService {
 		review.setImageUrl(reviewFileStorage.store(imageFile, userId, productId));
 
 		ProductReview saved = productReviewRepository.save(review);
-		return toResponseForUser(saved, userId, findVendorLiker(saved.getId()));
+		return toResponseForUser(saved, userId, findVendorLiker(saved.getId()), null);
 	}
 
 	@Transactional
@@ -160,7 +167,11 @@ public class ReviewService {
 			like.setUser(user);
 			reviewLikeRepository.save(like);
 		}
-		return toResponseForUser(review, userId, findVendorLiker(reviewId));
+		return toResponseForUser(
+				review,
+				userId,
+				findVendorLiker(reviewId),
+				findReply(reviewId));
 	}
 
 	@Transactional
@@ -179,37 +190,53 @@ public class ReviewService {
 			like.setVendor(vendor);
 			vendorReviewLikeRepository.save(like);
 		}
-		return toResponseForVendor(review, vendorId, findVendorLiker(reviewId));
+		return toResponseForVendor(
+				review,
+				vendorId,
+				findVendorLiker(reviewId),
+				findReply(reviewId));
 	}
 
 	@Transactional
-	public ReviewResponse toggleAdminLike(Long adminUserId, Long reviewId) {
-		ProductReview review = productReviewRepository.findByIdWithDetails(reviewId)
+	public ReviewResponse upsertVendorReply(Long vendorId, Long reviewId, CreateReviewReplyRequest request) {
+		ProductReview review = productReviewRepository
+				.findByIdAndVendorIdWithDetails(reviewId, vendorId)
 				.orElseThrow(ReviewNotFoundException::new);
 
-		var existing = adminReviewLikeRepository.findByReviewIdAndAdminUser_Id(reviewId, adminUserId);
-		if (existing.isPresent()) {
-			adminReviewLikeRepository.delete(existing.get());
-		} else {
-			User admin = userRepository.findById(adminUserId).orElseThrow(UserNotFoundException::new);
-			AdminReviewLike like = new AdminReviewLike();
-			like.setReview(review);
-			like.setAdminUser(admin);
-			adminReviewLikeRepository.save(like);
-			if (!adminUserId.equals(review.getUser().getId())) {
-				notificationService.notifyReviewLikedByAdmin(review);
-			}
+		String body = request.body().trim();
+		if (body.isBlank()) {
+			throw new IllegalArgumentException("Reply cannot be empty.");
 		}
-		return toResponseForAdmin(review, adminUserId, findVendorLiker(reviewId));
+
+		boolean isNewReply = reviewReplyRepository.findByReviewId(reviewId).isEmpty();
+		Vendor vendor = vendorRepository.findById(vendorId).orElseThrow(VendorNotFoundException::new);
+		ReviewReply reply = reviewReplyRepository.findByReviewId(reviewId).orElseGet(() -> {
+			ReviewReply created = new ReviewReply();
+			created.setReview(review);
+			created.setVendor(vendor);
+			return created;
+		});
+		reply.setBody(body);
+		reply.setVendor(vendor);
+		ReviewReply saved = reviewReplyRepository.save(reply);
+
+		notificationService.notifyReviewReplyFromVendor(review, vendor, !isNewReply);
+
+		return toResponseForVendor(review, vendorId, findVendorLiker(reviewId), saved);
 	}
 
 	@Transactional(readOnly = true)
-	public List<ReviewResponse> listForAdmin(Long adminUserId) {
+	public List<ReviewResponse> listForAdmin() {
 		List<ProductReview> reviews = productReviewRepository.findAllWithDetails();
 		Map<Long, Vendor> vendorLikers = loadVendorLikersByReviewIds(
 				reviews.stream().map(ProductReview::getId).toList());
+		Map<Long, ReviewReply> replies = loadRepliesByReviewIds(
+				reviews.stream().map(ProductReview::getId).toList());
 		return reviews.stream()
-				.map(review -> toResponseForAdmin(review, adminUserId, vendorLikers.get(review.getId())))
+				.map(review -> toResponseForAdmin(
+						review,
+						vendorLikers.get(review.getId()),
+						replies.get(review.getId())))
 				.toList();
 	}
 
@@ -218,30 +245,54 @@ public class ReviewService {
 		List<ProductReview> reviews = productReviewRepository.findByVendorIdWithDetails(vendorId);
 		Map<Long, Vendor> vendorLikers = loadVendorLikersByReviewIds(
 				reviews.stream().map(ProductReview::getId).toList());
+		Map<Long, ReviewReply> replies = loadRepliesByReviewIds(
+				reviews.stream().map(ProductReview::getId).toList());
 		return reviews.stream()
-				.map(review -> toResponseForVendor(review, vendorId, vendorLikers.get(review.getId())))
+				.map(review -> toResponseForVendor(
+						review,
+						vendorId,
+						vendorLikers.get(review.getId()),
+						replies.get(review.getId())))
 				.toList();
 	}
 
-	private ReviewResponse toResponseForUser(ProductReview review, Long viewerUserId, Vendor vendorLiker) {
+	private ReviewResponse toResponseForUser(
+			ProductReview review,
+			Long viewerUserId,
+			Vendor vendorLiker,
+			ReviewReply vendorReply) {
 		long likes = totalLikes(review.getId());
 		boolean likedByMe = viewerUserId != null
 				&& reviewLikeRepository.existsByReviewIdAndUserId(review.getId(), viewerUserId);
-		return buildResponse(review, likes, likedByMe, vendorLiker);
+		return buildResponse(review, likes, likedByMe, vendorLiker, vendorReply);
 	}
 
-	private ReviewResponse toResponseForVendor(ProductReview review, Long viewerVendorId, Vendor vendorLiker) {
+	private ReviewResponse toResponseForVendor(
+			ProductReview review,
+			Long viewerVendorId,
+			Vendor vendorLiker,
+			ReviewReply vendorReply) {
 		long likes = totalLikes(review.getId());
 		boolean likedByMe = viewerVendorId != null
 				&& vendorReviewLikeRepository.existsByReviewIdAndVendorId(review.getId(), viewerVendorId);
-		return buildResponse(review, likes, likedByMe, vendorLiker);
+		return buildResponse(review, likes, likedByMe, vendorLiker, vendorReply);
 	}
 
-	private ReviewResponse toResponseForAdmin(ProductReview review, Long viewerAdminUserId, Vendor vendorLiker) {
+	private ReviewResponse toResponseForAdmin(ProductReview review, Vendor vendorLiker, ReviewReply vendorReply) {
 		long likes = totalLikes(review.getId());
-		boolean likedByMe = viewerAdminUserId != null
-				&& adminReviewLikeRepository.existsByReviewIdAndAdminUser_Id(review.getId(), viewerAdminUserId);
-		return buildResponse(review, likes, likedByMe, vendorLiker);
+		return buildResponse(review, likes, false, vendorLiker, vendorReply);
+	}
+
+	private Map<Long, ReviewReply> loadRepliesByReviewIds(List<Long> reviewIds) {
+		if (reviewIds.isEmpty()) {
+			return Map.of();
+		}
+		return reviewReplyRepository.findByReviewIdInWithVendor(reviewIds).stream()
+				.collect(Collectors.toMap(reply -> reply.getReview().getId(), reply -> reply, (a, b) -> a));
+	}
+
+	private ReviewReply findReply(Long reviewId) {
+		return reviewReplyRepository.findByReviewIdWithVendor(reviewId).orElse(null);
 	}
 
 	private Map<Long, Vendor> loadVendorLikersByReviewIds(List<Long> reviewIds) {
@@ -260,13 +311,18 @@ public class ReviewService {
 
 	private long totalLikes(Long reviewId) {
 		return reviewLikeRepository.countByReviewId(reviewId)
-				+ vendorReviewLikeRepository.countByReviewId(reviewId)
-				+ adminReviewLikeRepository.countByReviewId(reviewId);
+				+ vendorReviewLikeRepository.countByReviewId(reviewId);
 	}
 
-	private ReviewResponse buildResponse(ProductReview review, long likes, boolean likedByMe, Vendor vendorLiker) {
+	private ReviewResponse buildResponse(
+			ProductReview review,
+			long likes,
+			boolean likedByMe,
+			Vendor vendorLiker,
+			ReviewReply vendorReply) {
 		User author = review.getUser();
 		Product product = review.getProduct();
+		Vendor replyVendor = vendorReply != null ? vendorReply.getVendor() : null;
 		return new ReviewResponse(
 				review.getId(),
 				product.getId(),
@@ -281,7 +337,11 @@ public class ReviewService {
 				vendorLiker != null ? displayVendorName(vendorLiker) : null,
 				vendorLiker != null ? vendorLiker.getProfileImage() : null,
 				review.getImageUrl(),
-				REVIEW_DATE_FORMAT.format(review.getCreatedAt()));
+				REVIEW_DATE_FORMAT.format(review.getCreatedAt()),
+				vendorReply != null ? vendorReply.getBody() : null,
+				replyVendor != null ? displayVendorName(replyVendor) : null,
+				replyVendor != null ? replyVendor.getProfileImage() : null,
+				vendorReply != null ? REVIEW_DATE_FORMAT.format(vendorReply.getCreatedAt()) : null);
 	}
 
 	private void ensureProductExists(Long productId) {

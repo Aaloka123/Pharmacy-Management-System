@@ -14,6 +14,7 @@ import com.mednexus.mednexus.order.OrderStatus;
 import com.mednexus.mednexus.order.VendorOrder;
 import com.mednexus.mednexus.review.ProductReview;
 import com.mednexus.mednexus.user.User;
+import com.mednexus.mednexus.vendor.Vendor;
 
 @Service
 public class NotificationService {
@@ -52,18 +53,24 @@ public class NotificationService {
 	}
 
 	@Transactional
-	public void notifyReviewLikedByAdmin(ProductReview review) {
-		User author = review.getUser();
+	public void notifyReviewReplyFromVendor(ProductReview review, Vendor vendor, boolean isUpdate) {
+		User user = review.getUser();
 		Product product = review.getProduct();
-		if (author == null || product == null) {
+		if (user == null || product == null || vendor == null) {
 			return;
 		}
 
+		String vendorName = formatVendorName(vendor);
+		String message = isUpdate
+				? "%s updated their reply to your review for %s."
+						.formatted(vendorName, product.getProductName())
+				: "%s replied to your review for %s."
+						.formatted(vendorName, product.getProductName());
 		Notification notification = new Notification();
-		notification.setUser(author);
+		notification.setUser(user);
 		notification.setOrderId(null);
-		notification.setMessage(
-				"MedNexus admin liked your review for %s.".formatted(product.getProductName()));
+		notification.setProductId(product.getId());
+		notification.setMessage(message);
 		notification.setProductImage(ProductImageUtils.preferredImageUrl(product));
 		notification.setRead(false);
 		notificationRepository.save(notification);
@@ -96,10 +103,21 @@ public class NotificationService {
 		return new NotificationResponse(
 				notification.getId(),
 				notification.getOrderId(),
+				notification.getProductId(),
 				notification.getMessage(),
 				notification.getProductImage(),
 				notification.isRead(),
 				notification.getCreatedAt());
+	}
+
+	private static String formatVendorName(Vendor vendor) {
+		if (vendor.getBusinessName() != null && !vendor.getBusinessName().isBlank()) {
+			return vendor.getBusinessName().trim();
+		}
+		if (vendor.getName() != null && !vendor.getName().isBlank()) {
+			return vendor.getName().trim();
+		}
+		return "Vendor";
 	}
 
 	private static String formatStatus(OrderStatus status) {

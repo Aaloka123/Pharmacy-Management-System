@@ -42,6 +42,7 @@ public class NotificationTableInitializer implements ApplicationRunner {
 				  `id` bigint NOT NULL AUTO_INCREMENT,
 				  `user_id` bigint NOT NULL,
 				  `order_id` bigint DEFAULT NULL,
+				  `product_id` bigint DEFAULT NULL,
 				  `message` varchar(500) NOT NULL,
 				  `product_image` varchar(2048) DEFAULT NULL,
 				  `is_read` tinyint(1) NOT NULL DEFAULT 0,
@@ -59,6 +60,10 @@ public class NotificationTableInitializer implements ApplicationRunner {
 		if (!columnExists("notification", "product_image")) {
 			log.info("Migrating `notification` table for product images...");
 			jdbc.execute("ALTER TABLE `notification` ADD COLUMN `product_image` varchar(2048) DEFAULT NULL");
+		}
+		if (!columnExists("notification", "product_id")) {
+			log.info("Migrating `notification` table for product links...");
+			jdbc.execute("ALTER TABLE `notification` ADD COLUMN `product_id` bigint DEFAULT NULL");
 		}
 	}
 

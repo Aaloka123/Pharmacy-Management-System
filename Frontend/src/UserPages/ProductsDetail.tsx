@@ -602,25 +602,26 @@ const ProductsDetail = () => {
                               <span className="text-xs text-slate-500">{r.createdAt}</span>
                             </div>
                             <p className="mt-2.5 text-[15px] leading-7 text-slate-700">{r.body}</p>
-                            {r.imageUrl ? (
-                              <button
-                                className="mt-3 inline-block cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-transparent p-0 hover:bg-transparent"
-                                onClick={() =>
-                                  setPreviewReviewImage({
-                                    url: r.imageUrl!,
-                                    alt: `${r.author} review photo`,
-                                  })
-                                }
-                                type="button"
-                              >
-                                <img
-                                  alt={`${r.author} review photo`}
-                                  className="block max-h-48 max-w-full object-cover"
-                                  src={r.imageUrl}
-                                />
-                              </button>
-                            ) : null}
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <div className="mt-3 flex w-full flex-col items-start gap-3">
+                              {r.imageUrl ? (
+                                <button
+                                  className="block cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-transparent p-0 hover:bg-transparent"
+                                  onClick={() =>
+                                    setPreviewReviewImage({
+                                      url: r.imageUrl!,
+                                      alt: `${r.author} review photo`,
+                                    })
+                                  }
+                                  type="button"
+                                >
+                                  <img
+                                    alt={`${r.author} review photo`}
+                                    className="block max-h-48 max-w-full object-cover"
+                                    src={r.imageUrl}
+                                  />
+                                </button>
+                              ) : null}
+                              <div className="flex flex-wrap items-center gap-2">
                               <button
                                 aria-label={r.likedByMe ? 'Unlike this review' : 'Like this review'}
                                 aria-pressed={r.likedByMe}
@@ -678,7 +679,31 @@ const ProductsDetail = () => {
                                 </div>
                                 </>
                               ) : null}
+                              </div>
                             </div>
+                            {r.vendorReplyBody ? (
+                              <div className="mt-5 border-l-2 border-slate-200 pl-4">
+                                <div className="flex items-center gap-2">
+                                  {r.vendorReplyAuthorProfileImage ? (
+                                    <img
+                                      alt={r.vendorReplyAuthorName ?? 'Seller'}
+                                      className="h-8 w-8 shrink-0 rounded-full border border-slate-200 object-cover"
+                                      referrerPolicy="no-referrer"
+                                      src={r.vendorReplyAuthorProfileImage}
+                                    />
+                                  ) : null}
+                                  <div>
+                                    <p className="text-sm font-semibold text-slate-900">
+                                      Response from {r.vendorReplyAuthorName ?? 'Seller'}
+                                    </p>
+                                    {r.vendorReplyCreatedAt ? (
+                                      <p className="text-xs text-slate-500">{r.vendorReplyCreatedAt}</p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                                <p className="mt-2 text-sm leading-7 text-slate-700">{r.vendorReplyBody}</p>
+                              </div>
+                            ) : null}
                         </div>
                       </div>
                     </li>

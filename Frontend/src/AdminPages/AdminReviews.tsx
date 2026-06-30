@@ -7,7 +7,6 @@ import fallbackImage from '../assets/Hero1.png'
 import {
   fetchAdminReviews,
   resolveReviewAuthorAvatar,
-  toggleAdminReviewLike,
   type ReviewDto,
 } from '../lib/reviewApi'
 import { getStoredUser } from '../lib/auth'
@@ -18,7 +17,6 @@ const AdminReviews = () => {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [brokenReviewAvatars, setBrokenReviewAvatars] = useState<Set<number>>(() => new Set())
-  const [likingReviewId, setLikingReviewId] = useState<number | null>(null)
   const [previewReviewImage, setPreviewReviewImage] = useState<{ url: string; alt: string } | null>(null)
   const currentUser = getStoredUser()
 
@@ -50,18 +48,6 @@ const AdminReviews = () => {
     )
   }, [reviews, searchTerm])
 
-  const handleToggleReviewLike = async (reviewId: number) => {
-    setLikingReviewId(reviewId)
-    try {
-      const updated = await toggleAdminReviewLike(reviewId)
-      setReviews((prev) => prev.map((review) => (review.id === reviewId ? updated : review)))
-    } catch {
-      // ignore — admin session may have expired
-    } finally {
-      setLikingReviewId(null)
-    }
-  }
-
   return (
     <AdminLayout>
       <AdminNavbar />
@@ -71,7 +57,7 @@ const AdminReviews = () => {
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Customer reviews</h1>
               <p className="mt-1 text-sm text-slate-600">
-                Review customer feedback across all products. Liking a review notifies the customer.
+                Browse customer feedback across all products. Admins can view reviews only.
               </p>
             </div>
             <input
@@ -166,33 +152,36 @@ const AdminReviews = () => {
                             />
                           </button>
                         ) : null}
-                        <button
-                          aria-label={review.likedByMe ? 'Unlike this review' : 'Like this review'}
-                          aria-pressed={review.likedByMe}
-                          className={`mt-3 inline-flex cursor-pointer items-center gap-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${
-                            review.likedByMe ? 'text-teal-700' : 'text-slate-500'
-                          }`}
-                          disabled={likingReviewId === review.id}
-                          onClick={() => void handleToggleReviewLike(review.id)}
-                          type="button"
-                        >
-                          <svg
-                            aria-hidden="true"
-                            className="h-4 w-4"
-                            fill={review.likedByMe ? 'currentColor' : 'none'}
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.8"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M14 9V5a3 3 0 0 0-3-3L7 11v11h11.28a2 2 0 0 0 1.97-1.67l1.38-9A2 2 0 0 0 19.65 9H14Z" />
-                            <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                          </svg>
-                          <span>{review.likedByMe ? 'Liked' : 'Like'}</span>
-                          <span>·</span>
-                          <span>{review.likes}</span>
-                        </button>
+                        {review.likes > 0 ? (
+                          <p className="mt-3 text-sm text-slate-500">{review.likes} likes</p>
+                        ) : null}
+                        {review.vendorReplyBody ? (
+                          <div className="mt-4 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
+                            <div className="flex items-center gap-3">
+                              {review.vendorReplyAuthorProfileImage ? (
+                                <img
+                                  alt={review.vendorReplyAuthorName ?? 'Vendor'}
+                                  className="h-9 w-9 shrink-0 rounded-full border border-slate-200 object-cover"
+                                  referrerPolicy="no-referrer"
+                                  src={review.vendorReplyAuthorProfileImage}
+                                />
+                              ) : (
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">
+                                  {(review.vendorReplyAuthorName ?? 'V').charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {review.vendorReplyAuthorName ?? 'Vendor'}
+                                </p>
+                                {review.vendorReplyCreatedAt ? (
+                                  <p className="text-xs text-slate-500">Vendor reply · {review.vendorReplyCreatedAt}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                            <p className="mt-2.5 text-sm leading-7 text-slate-700">{review.vendorReplyBody}</p>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </li>

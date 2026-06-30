@@ -14,5 +14,9 @@ public record ReviewResponse(
 		String vendorLikerName,
 		String vendorLikerProfileImage,
 		String imageUrl,
-		String createdAt) {
+		String createdAt,
+		String vendorReplyBody,
+		String vendorReplyAuthorName,
+		String vendorReplyAuthorProfileImage,
+		String vendorReplyCreatedAt) {
 }

@@ -44,6 +44,17 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, Lo
 	@Query("""
 			SELECT r FROM ProductReview r
 			JOIN FETCH r.user
+			JOIN FETCH r.product p
+			JOIN FETCH p.vendor
+			WHERE r.id = :id AND p.vendor.id = :vendorId
+			""")
+	Optional<ProductReview> findByIdAndVendorIdWithDetails(
+			@Param("id") Long id,
+			@Param("vendorId") Long vendorId);
+
+	@Query("""
+			SELECT r FROM ProductReview r
+			JOIN FETCH r.user
 			JOIN FETCH r.product
 			ORDER BY r.createdAt DESC
 			""")

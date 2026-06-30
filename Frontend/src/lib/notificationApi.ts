@@ -3,6 +3,7 @@ import { api } from './api'
 export type NotificationDto = {
   id: number
   orderId: number | null
+  productId: number | null
   message: string
   productImage: string | null
   read: boolean

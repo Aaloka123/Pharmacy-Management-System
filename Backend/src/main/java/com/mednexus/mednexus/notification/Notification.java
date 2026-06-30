@@ -30,6 +30,9 @@ public class Notification {
 	@Column(name = "order_id")
 	private Long orderId;
 
+	@Column(name = "product_id")
+	private Long productId;
+
 	@Column(name = "message", nullable = false, length = 500)
 	private String message;
 
@@ -74,6 +77,14 @@ public class Notification {
 
 	public void setOrderId(Long orderId) {
 		this.orderId = orderId;
+	}
+
+	public Long getProductId() {
+		return productId;
+	}
+
+	public void setProductId(Long productId) {
+		this.productId = productId;
 	}
 
 	public String getMessage() {

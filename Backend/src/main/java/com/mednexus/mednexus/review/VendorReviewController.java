@@ -9,11 +9,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mednexus.mednexus.review.dto.CreateReviewReplyRequest;
 import com.mednexus.mednexus.review.dto.ReviewResponse;
 import com.mednexus.mednexus.security.PlatformUser;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/vendor/reviews")
@@ -37,5 +41,13 @@ public class VendorReviewController {
 			@AuthenticationPrincipal PlatformUser principal,
 			@PathVariable Long reviewId) {
 		return ResponseEntity.ok(reviewService.toggleVendorLike(principal.getSubjectId(), reviewId));
+	}
+
+	@PostMapping("/{reviewId}/reply")
+	public ResponseEntity<ReviewResponse> reply(
+			@AuthenticationPrincipal PlatformUser principal,
+			@PathVariable Long reviewId,
+			@Valid @RequestBody CreateReviewReplyRequest request) {
+		return ResponseEntity.ok(reviewService.upsertVendorReply(principal.getSubjectId(), reviewId, request));
 	}
 }

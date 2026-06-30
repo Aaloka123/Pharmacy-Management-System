@@ -16,6 +16,10 @@ export type ReviewDto = {
   vendorLikerProfileImage: string | null
   imageUrl: string | null
   createdAt: string
+  vendorReplyBody: string | null
+  vendorReplyAuthorName: string | null
+  vendorReplyAuthorProfileImage: string | null
+  vendorReplyCreatedAt: string | null
 }
 
 function mapReviewDto(review: ReviewDto): ReviewDto {
@@ -23,6 +27,7 @@ function mapReviewDto(review: ReviewDto): ReviewDto {
     ...review,
     authorProfileImage: resolveProfileImageUrl(review.authorProfileImage),
     vendorLikerProfileImage: resolveProfileImageUrl(review.vendorLikerProfileImage),
+    vendorReplyAuthorProfileImage: resolveProfileImageUrl(review.vendorReplyAuthorProfileImage),
     imageUrl: review.imageUrl ? resolveMediaUrl(review.imageUrl) : null,
   }
 }
@@ -93,14 +98,14 @@ export async function toggleVendorReviewLike(reviewId: number): Promise<ReviewDt
   return mapReviewDto(data)
 }
 
+export async function submitVendorReviewReply(reviewId: number, body: string): Promise<ReviewDto> {
+  const { data } = await api.post<ReviewDto>(`/api/vendor/reviews/${reviewId}/reply`, { body })
+  return mapReviewDto(data)
+}
+
 export async function fetchAdminReviews(): Promise<ReviewDto[]> {
   const { data } = await api.get<ReviewDto[]>('/api/admin/reviews')
   return data.map(mapReviewDto)
-}
-
-export async function toggleAdminReviewLike(reviewId: number): Promise<ReviewDto> {
-  const { data } = await api.post<ReviewDto>(`/api/admin/reviews/${reviewId}/like`)
-  return mapReviewDto(data)
 }
 
 export async function fetchVendorReviews(): Promise<ReviewDto[]> {

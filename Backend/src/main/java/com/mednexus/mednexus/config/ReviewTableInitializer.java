@@ -31,8 +31,8 @@ public class ReviewTableInitializer implements ApplicationRunner {
 		if (!tableExists("vendor_review_like")) {
 			createVendorReviewLikeTable();
 		}
-		if (!tableExists("admin_review_like")) {
-			createAdminReviewLikeTable();
+		if (!tableExists("review_reply")) {
+			createReviewReplyTable();
 		}
 	}
 
@@ -106,21 +106,23 @@ public class ReviewTableInitializer implements ApplicationRunner {
 		log.info("`vendor_review_like` table created.");
 	}
 
-	private void createAdminReviewLikeTable() {
-		log.info("Creating missing `admin_review_like` table...");
+	private void createReviewReplyTable() {
+		log.info("Creating missing `review_reply` table...");
 		jdbc.execute("""
-				CREATE TABLE `admin_review_like` (
+				CREATE TABLE `review_reply` (
 				  `id` bigint NOT NULL AUTO_INCREMENT,
 				  `review_id` bigint NOT NULL,
-				  `admin_user_id` bigint NOT NULL,
+				  `vendor_id` bigint NOT NULL,
+				  `body` text NOT NULL,
 				  `created_at` datetime(6) NOT NULL,
+				  `updated_at` datetime(6) NOT NULL,
 				  PRIMARY KEY (`id`),
-				  UNIQUE KEY `uk_admin_review_like` (`review_id`, `admin_user_id`),
-				  KEY `idx_admin_review_like_admin` (`admin_user_id`),
-				  CONSTRAINT `fk_admin_review_like_review` FOREIGN KEY (`review_id`) REFERENCES `product_review` (`id`) ON DELETE CASCADE,
-				  CONSTRAINT `fk_admin_review_like_admin` FOREIGN KEY (`admin_user_id`) REFERENCES `user` (`id`)
+				  UNIQUE KEY `uk_review_reply` (`review_id`),
+				  KEY `idx_review_reply_vendor` (`vendor_id`),
+				  CONSTRAINT `fk_review_reply_review` FOREIGN KEY (`review_id`) REFERENCES `product_review` (`id`) ON DELETE CASCADE,
+				  CONSTRAINT `fk_review_reply_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor` (`id`)
 				) ENGINE=InnoDB
 				""");
-		log.info("`admin_review_like` table created.");
+		log.info("`review_reply` table created.");
 	}
 }

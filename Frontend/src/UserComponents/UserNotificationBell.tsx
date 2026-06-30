@@ -77,7 +77,11 @@ const UserNotificationBell = () => {
     }
     setOpen(false)
     void refresh()
-    navigate('/ordertracking')
+    if (notification.productId != null) {
+      navigate(`/productsdetail?id=${notification.productId}`)
+    } else {
+      navigate('/ordertracking')
+    }
   }
 
   const handleMarkAllRead = async () => {
