@@ -20,6 +20,7 @@ import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
 import { FaStar } from 'react-icons/fa'
 import TopProduct from '../UserComponents/TopProduct'
 import FadeInOnScroll from '../components/FadeInOnScroll'
+import ImageLightbox from '../components/ImageLightbox'
 
 const ProductStarRating = ({ rating }: { rating: number }) => (
   <div aria-label={`${rating} out of 5 stars`} className="flex items-center gap-0.5">
@@ -68,6 +69,7 @@ const ProductsDetail = () => {
   const [likingReviewId, setLikingReviewId] = useState<number | null>(null)
   const [brokenReviewAvatars, setBrokenReviewAvatars] = useState<Set<number>>(() => new Set())
   const [brokenVendorAvatars, setBrokenVendorAvatars] = useState<Set<number>>(() => new Set())
+  const [previewReviewImage, setPreviewReviewImage] = useState<{ url: string; alt: string } | null>(null)
   const [addingToCart, setAddingToCart] = useState(false)
 
   useEffect(() => onAuthChange(() => setCurrentUser(getStoredUser())), [])
@@ -601,11 +603,22 @@ const ProductsDetail = () => {
                             </div>
                             <p className="mt-2.5 text-[15px] leading-7 text-slate-700">{r.body}</p>
                             {r.imageUrl ? (
-                              <img
-                                alt={`${r.author} review photo`}
-                                className="mt-3 max-h-48 rounded-xl border border-slate-200 object-cover"
-                                src={r.imageUrl}
-                              />
+                              <button
+                                className="mt-3 inline-block cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-transparent p-0 hover:bg-transparent"
+                                onClick={() =>
+                                  setPreviewReviewImage({
+                                    url: r.imageUrl!,
+                                    alt: `${r.author} review photo`,
+                                  })
+                                }
+                                type="button"
+                              >
+                                <img
+                                  alt={`${r.author} review photo`}
+                                  className="block max-h-48 max-w-full object-cover"
+                                  src={r.imageUrl}
+                                />
+                              </button>
                             ) : null}
                             <div className="mt-3 flex flex-wrap items-center gap-2">
                               <button
@@ -681,6 +694,13 @@ const ProductsDetail = () => {
       <FadeInOnScroll delay={100}><TopProduct /></FadeInOnScroll>
       <Footer />
       <Copyright />
+      {previewReviewImage ? (
+        <ImageLightbox
+          alt={previewReviewImage.alt}
+          imageUrl={previewReviewImage.url}
+          onClose={() => setPreviewReviewImage(null)}
+        />
+      ) : null}
     </div>
   )
 }

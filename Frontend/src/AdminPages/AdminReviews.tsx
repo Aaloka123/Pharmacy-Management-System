@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { FaStar } from 'react-icons/fa'
 import AdminNavbar from '../AdminComponents/AdminNavbar'
 import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain'
+import ImageLightbox from '../components/ImageLightbox'
 import fallbackImage from '../assets/Hero1.png'
 import {
   fetchAdminReviews,
@@ -18,6 +19,7 @@ const AdminReviews = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [brokenReviewAvatars, setBrokenReviewAvatars] = useState<Set<number>>(() => new Set())
   const [likingReviewId, setLikingReviewId] = useState<number | null>(null)
+  const [previewReviewImage, setPreviewReviewImage] = useState<{ url: string; alt: string } | null>(null)
   const currentUser = getStoredUser()
 
   useEffect(() => {
@@ -147,11 +149,22 @@ const AdminReviews = () => {
                         </div>
                         <p className="mt-3 text-sm leading-7 text-slate-700">{review.body}</p>
                         {review.imageUrl ? (
-                          <img
-                            alt={`Review photo for ${review.productName}`}
-                            className="mt-3 max-h-56 rounded-xl border border-slate-200 object-cover"
-                            src={review.imageUrl}
-                          />
+                          <button
+                            className="mt-3 inline-block cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-transparent p-0 hover:bg-transparent"
+                            onClick={() =>
+                              setPreviewReviewImage({
+                                url: review.imageUrl!,
+                                alt: `Review photo for ${review.productName}`,
+                              })
+                            }
+                            type="button"
+                          >
+                            <img
+                              alt={`Review photo for ${review.productName}`}
+                              className="block max-h-56 max-w-full object-cover"
+                              src={review.imageUrl}
+                            />
+                          </button>
                         ) : null}
                         <button
                           aria-label={review.likedByMe ? 'Unlike this review' : 'Like this review'}
@@ -189,6 +202,13 @@ const AdminReviews = () => {
           </div>
         </FadeInOnScroll>
       </AdminMain>
+      {previewReviewImage ? (
+        <ImageLightbox
+          alt={previewReviewImage.alt}
+          imageUrl={previewReviewImage.url}
+          onClose={() => setPreviewReviewImage(null)}
+        />
+      ) : null}
     </AdminLayout>
   )
 }
