@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { api, ApiRequestError, resolveBackendUrl } from '../lib/api'
 import { listVendorProductsByVendorId, type ProductDto } from '../lib/productsApi'
+import { getProductExpiryStatus } from '../lib/vendorNavBadges'
 import {
   toApiStoreStatus,
   toDisplayStoreStatus,
@@ -67,6 +68,12 @@ const formatDateTime = (iso: string | null | undefined): string => {
   if (!iso) return '—'
   const date = new Date(iso)
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+}
+
+const formatExpiryDate = (dateStr: string): string => {
+  if (!dateStr) return '—'
+  const date = new Date(dateStr)
+  return Number.isNaN(date.getTime()) ? dateStr : date.toLocaleDateString()
 }
 
 const shopInitial = (shopName: string): string => {
@@ -459,27 +466,34 @@ const AdminVendorProfile = () => {
                       <th className="px-4 py-3 text-xs font-semibold text-slate-700">Price (NPR)</th>
                       <th className="px-4 py-3 text-xs font-semibold text-slate-700">Stock</th>
                       <th className="px-4 py-3 text-xs font-semibold text-slate-700">Expiry Date</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-700">Expiry Status</th>
                       <th className="px-4 py-3 text-xs font-semibold text-slate-700">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {productsLoading ? (
                       <tr>
-                        <td className="px-4 py-6 text-sm text-slate-500" colSpan={9}>
+                        <td className="px-4 py-6 text-sm text-slate-500" colSpan={10}>
                           Loading products...
                         </td>
                       </tr>
                     ) : null}
                     {!productsLoading && vendorProducts.length === 0 ? (
                       <tr>
-                        <td className="px-4 py-6 text-sm text-slate-500" colSpan={9}>
+                        <td className="px-4 py-6 text-sm text-slate-500" colSpan={10}>
                           No products listed by this vendor yet.
                         </td>
                       </tr>
                     ) : null}
                     {!productsLoading
-                      ? vendorProducts.map((product, index) => (
-                      <tr key={product.id} className="border-t border-slate-200">
+                      ? vendorProducts.map((product, index) => {
+                      const expiryStatus = getProductExpiryStatus(product.expiryDate)
+                      const expired = expiryStatus.label === 'Expired'
+                      return (
+                      <tr
+                        key={product.id}
+                        className={`border-t border-slate-200 ${expired ? 'bg-rose-50/70' : ''}`}
+                      >
                         <td className="px-4 py-3 text-sm text-slate-700">{index + 1}</td>
                         <td className="px-4 py-3">
                           {product.image ? (
@@ -499,7 +513,16 @@ const AdminVendorProfile = () => {
                         <td className="px-4 py-3 text-sm text-slate-700">{product.category}</td>
                         <td className="px-4 py-3 text-sm text-slate-700">{product.price.toLocaleString()}</td>
                         <td className="px-4 py-3 text-sm text-slate-700">{product.stock}</td>
-                        <td className="px-4 py-3 text-sm text-slate-700">{product.expiryDate}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">
+                          {formatExpiryDate(product.expiryDate)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm">
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${expiryStatus.classes}`}
+                          >
+                            {expiryStatus.label}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-sm">
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -512,7 +535,7 @@ const AdminVendorProfile = () => {
                           </span>
                         </td>
                       </tr>
-                    ))
+                    )})
                       : null}
                   </tbody>
                 </table>

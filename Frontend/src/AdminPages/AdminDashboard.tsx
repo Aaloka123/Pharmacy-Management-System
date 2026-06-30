@@ -1,124 +1,85 @@
 import {
   LuArrowUpRight,
-  LuBadgeCheck,
   LuBell,
   LuCircleDollarSign,
-  LuPackage,
   LuShoppingBag,
   LuStore,
   LuTrendingUp,
   LuUsers,
 } from 'react-icons/lu'
+import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import { Link } from 'react-router-dom'
 import AdminNavbar from '../AdminComponents/AdminNavbar'
 import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { getStoredUser } from '../lib/auth'
+import { resolveProfileImageUrl } from '../lib/api'
+import {
+  fetchAdminDashboard,
+  formatNpr,
+  formatPlatformRevenue,
+  type AdminChartMonthPoint,
+  type AdminDashboardData,
+  type AdminVendorStatusSlice,
+} from '../lib/adminDashboardApi'
 
-const STATS = [
-  {
-    label: 'Total Users',
-    value: '12,480',
-    change: '+14.2%',
-    up: true,
-    sub: '842 new this month',
-    icon: LuUsers,
-    accent: 'bg-sky-50 text-sky-700',
-  },
-  {
-    label: 'Active Vendors',
-    value: '186',
-    change: '+6',
-    up: true,
-    sub: '12 pending approval',
-    icon: LuStore,
-    accent: 'bg-violet-50 text-violet-700',
-  },
-  {
-    label: 'Platform Orders',
-    value: '28,640',
-    change: '+9.8%',
-    up: true,
-    sub: '1,920 this week',
-    icon: LuShoppingBag,
-    accent: 'bg-emerald-50 text-emerald-700',
-  },
-  {
-    label: 'Platform Revenue',
-    value: 'NRP 1.24 Cr',
-    change: '+11.5%',
-    up: true,
-    sub: 'All vendors combined',
-    icon: LuCircleDollarSign,
-    accent: 'bg-amber-50 text-amber-700',
-  },
-] as const
+type StatCard = {
+  label: string
+  value: string
+  change: string
+  sub: string
+  icon: ComponentType<{ className?: string; strokeWidth?: number }>
+  accent: string
+}
 
-const REVENUE_MONTHS = [
-  { label: 'Jan', value: 72 },
-  { label: 'Feb', value: 78 },
-  { label: 'Mar', value: 85 },
-  { label: 'Apr', value: 92 },
-  { label: 'May', value: 98 },
-  { label: 'Jun', value: 104 },
-  { label: 'Jul', value: 110 },
-  { label: 'Aug', value: 118 },
-  { label: 'Sep', value: 112 },
-  { label: 'Oct', value: 126 },
-  { label: 'Nov', value: 134 },
-  { label: 'Dec', value: 142 },
-]
+function TopVendorLogo({ businessName, profileImage }: { businessName: string; profileImage: string | null }) {
+  const [imageFailed, setImageFailed] = useState(false)
+  const logoUrl = profileImage ? resolveProfileImageUrl(profileImage) : null
+  const initial = (businessName.trim().charAt(0) || '?').toUpperCase()
 
-const USER_GROWTH = [
-  { month: 'Jan', users: 820 },
-  { month: 'Feb', users: 940 },
-  { month: 'Mar', users: 1010 },
-  { month: 'Apr', users: 1120 },
-  { month: 'May', users: 1180 },
-  { month: 'Jun', users: 1240 },
-]
+  useEffect(() => {
+    setImageFailed(false)
+  }, [profileImage])
 
-const VENDOR_STATUS = [
-  { label: 'Approved', value: 72, color: '#059669' },
-  { label: 'Pending', value: 14, color: '#d97706' },
-  { label: 'Rejected', value: 8, color: '#e11d48' },
-  { label: 'Suspended', value: 6, color: '#64748b' },
-]
+  if (logoUrl && !imageFailed) {
+    return (
+      <img
+        alt=""
+        className="h-10 w-10 shrink-0 rounded-lg border border-slate-200 object-cover"
+        onError={() => setImageFailed(true)}
+        referrerPolicy="no-referrer"
+        src={logoUrl}
+      />
+    )
+  }
 
-const PENDING_VENDORS = [
-  { name: 'Himalaya Pharmacy', owner: 'Ramesh K.C.', city: 'Kathmandu', applied: '16 Jun 2026' },
-  { name: 'Green Care Meds', owner: 'Sunita Rai', city: 'Pokhara', applied: '15 Jun 2026' },
-  { name: 'City Health Store', owner: 'Prakash Shrestha', city: 'Lalitpur', applied: '15 Jun 2026' },
-  { name: 'Nepal Wellness Hub', owner: 'Anjali Thapa', city: 'Bhaktapur', applied: '14 Jun 2026' },
-]
+  return (
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-700 text-sm font-bold text-white">
+      {initial}
+    </span>
+  )
+}
 
-const RECENT_ACTIVITY = [
-  { action: 'Vendor approved', detail: 'Annapurna Pharmacy · Kathmandu', time: '12 min ago', tone: 'text-emerald-700 bg-emerald-50' },
-  { action: 'New user signup', detail: 'Bikash Adhikari joined MedNexus', time: '28 min ago', tone: 'text-sky-700 bg-sky-50' },
-  { action: 'Product flagged', detail: 'Ibuprofen 400mg · review required', time: '1 hr ago', tone: 'text-amber-700 bg-amber-50' },
-  { action: 'Order completed', detail: 'Order #MN-8821 · NRP 2,450', time: '2 hr ago', tone: 'text-violet-700 bg-violet-50' },
-  { action: 'Vendor application', detail: 'Himalaya Pharmacy submitted documents', time: '3 hr ago', tone: 'text-teal-700 bg-teal-50' },
-]
+function PlatformRevenueChart({ months }: { months: AdminChartMonthPoint[] }) {
+  if (months.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-slate-500">No revenue data yet.</div>
+    )
+  }
 
-const TOP_VENDORS = [
-  { name: 'Annapurna Pharmacy', orders: 1240, revenue: 'NRP 18,40,000', rating: 4.9 },
-  { name: 'MediCare Plus', orders: 986, revenue: 'NRP 14,20,500', rating: 4.8 },
-  { name: 'LifeLine Chemist', orders: 874, revenue: 'NRP 12,95,200', rating: 4.7 },
-  { name: 'Swasthya Kendra', orders: 712, revenue: 'NRP 10,60,800', rating: 4.6 },
-]
-
-function PlatformRevenueChart() {
   const width = 640
   const height = 220
   const padX = 36
   const padY = 24
-  const max = Math.max(...REVENUE_MONTHS.map((m) => m.value))
-  const points = REVENUE_MONTHS.map((m, i) => {
-    const x = padX + (i / (REVENUE_MONTHS.length - 1)) * (width - padX * 2)
+  const max = Math.max(...months.map((m) => m.value), 1)
+  const points = months.map((m, i) => {
+    const x = padX + (i / Math.max(months.length - 1, 1)) * (width - padX * 2)
     const y = height - padY - (m.value / max) * (height - padY * 2)
     return { x, y, ...m }
   })
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - padY} L ${points[0].x} ${height - padY} Z`
+  const lastPoint = points[points.length - 1]
+  const firstPoint = points[0]
+  const areaPath = `${linePath} L ${lastPoint.x} ${height - padY} L ${firstPoint.x} ${height - padY} Z`
 
   return (
     <svg aria-hidden className="h-full w-full" viewBox={`0 0 ${width} ${height}`}>
@@ -148,38 +109,20 @@ function PlatformRevenueChart() {
   )
 }
 
-function UserGrowthChart() {
-  const max = Math.max(...USER_GROWTH.map((m) => m.users))
-
-  return (
-    <div className="flex h-52 items-end justify-between gap-4 px-2 pt-4">
-      {USER_GROWTH.map((item) => (
-        <div className="flex flex-1 flex-col items-center gap-2" key={item.month}>
-          <span className="text-xs font-medium text-slate-600">{item.users}</span>
-          <div
-            className="w-full max-w-12 rounded-t-md bg-linear-to-t from-indigo-700 to-indigo-500"
-            style={{ height: `${(item.users / max) * 100}%`, minHeight: '14%' }}
-          />
-          <span className="text-xs text-slate-500">{item.month}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function VendorStatusDonut() {
-  const total = VENDOR_STATUS.reduce((sum, s) => sum + s.value, 0)
+function VendorStatusDonut({ slices }: { slices: AdminVendorStatusSlice[] }) {
+  const total = slices.reduce((sum, slice) => sum + slice.count, 0)
   let offset = 0
   const radius = 54
   const circumference = 2 * Math.PI * radius
+  const denominator = total > 0 ? total : 1
 
   return (
     <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="relative h-40 w-40 shrink-0">
         <svg className="h-full w-full -rotate-90" viewBox="0 0 140 140">
           <circle cx="70" cy="70" fill="none" r={radius} stroke="#f1f5f9" strokeWidth="16" />
-          {VENDOR_STATUS.map((slice) => {
-            const dash = (slice.value / total) * circumference
+          {slices.map((slice) => {
+            const dash = total > 0 ? (slice.count / denominator) * circumference : 0
             const circle = (
               <circle
                 key={slice.label}
@@ -199,18 +142,18 @@ function VendorStatusDonut() {
           })}
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <p className="text-2xl font-bold text-slate-900">186</p>
+          <p className="text-2xl font-bold text-slate-900">{total}</p>
           <p className="text-xs text-slate-500">Vendors</p>
         </div>
       </div>
       <ul className="w-full space-y-2.5 sm:max-w-[180px]">
-        {VENDOR_STATUS.map((slice) => (
+        {slices.map((slice) => (
           <li className="flex items-center justify-between gap-3 text-sm" key={slice.label}>
             <span className="flex items-center gap-2 text-slate-600">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: slice.color }} />
               {slice.label}
             </span>
-            <span className="font-semibold text-slate-900">{slice.value}%</span>
+            <span className="font-semibold text-slate-900">{slice.count}</span>
           </li>
         ))}
       </ul>
@@ -220,6 +163,77 @@ function VendorStatusDonut() {
 
 const AdminDashboard = () => {
   const adminName = getStoredUser()?.fullName?.trim() || 'Admin'
+  const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const currentYear = new Date().getFullYear()
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await fetchAdminDashboard()
+        if (!cancelled) setDashboard(data)
+      } catch {
+        if (!cancelled) {
+          setError('Could not load dashboard data.')
+          setDashboard(null)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const statCards = useMemo<StatCard[]>(() => {
+    if (!dashboard) return []
+
+    const { stats } = dashboard
+    return [
+      {
+        label: 'Total Users',
+        value: stats.totalUsers.toLocaleString(),
+        change: '—',
+        sub: `${stats.totalUsers.toLocaleString()} registered customers`,
+        icon: LuUsers,
+        accent: 'bg-sky-50 text-sky-700',
+      },
+      {
+        label: 'Active Vendors',
+        value: stats.activeVendors.toLocaleString(),
+        change: stats.pendingVendors > 0 ? `+${stats.pendingVendors}` : '0',
+        sub: `${stats.pendingVendors} pending approval`,
+        icon: LuStore,
+        accent: 'bg-violet-50 text-violet-700',
+      },
+      {
+        label: 'Platform Orders',
+        value: stats.totalOrders.toLocaleString(),
+        change: stats.ordersChangeLabel,
+        sub: `${stats.ordersThisWeek.toLocaleString()} this week`,
+        icon: LuShoppingBag,
+        accent: 'bg-emerald-50 text-emerald-700',
+      },
+      {
+        label: 'Platform Revenue',
+        value: formatPlatformRevenue(stats.platformRevenue),
+        change: stats.revenueChangeLabel,
+        sub: 'All vendors combined',
+        icon: LuCircleDollarSign,
+        accent: 'bg-amber-50 text-amber-700',
+      },
+    ]
+  }, [dashboard])
+
+  const revenueGrowthLabel = dashboard?.stats.revenueChangeLabel ?? '—'
 
   return (
     <AdminLayout>
@@ -250,74 +264,49 @@ const AdminDashboard = () => {
             </span>
             <span className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-teal-50 px-3 text-sm font-semibold text-teal-800">
               <LuTrendingUp className="h-4 w-4" />
-              +11.2% growth
+              {revenueGrowthLabel} revenue
             </span>
           </div>
         </div>
         </FadeInOnScroll>
 
+        {error ? (
+          <p className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
+        ) : null}
+
         <FadeInOnScroll delay={80}>
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {STATS.map((stat) => (
-            <article
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
-              key={stat.label}
-            >
-              <div className="flex items-start justify-between">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.accent}`}>
-                  <stat.icon className="h-5 w-5" strokeWidth={2} />
-                </div>
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                  <LuArrowUpRight className="h-3.5 w-3.5" />
-                  {stat.change}
-                </span>
-              </div>
-              <p className="mt-4 text-sm font-medium text-slate-600">{stat.label}</p>
-              <p className="mt-1 text-2xl font-bold text-slate-900">{stat.value}</p>
-              <p className="mt-1 text-xs text-slate-500">{stat.sub}</p>
-            </article>
-          ))}
-        </section>
-        </FadeInOnScroll>
-
-        <FadeInOnScroll delay={100}>
-        <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Link
-            className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm transition hover:border-amber-300 hover:shadow-md"
-            to="/adminapprovevendor"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-              <LuBadgeCheck className="h-5 w-5" strokeWidth={2} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">12 pending approvals</p>
-              <p className="text-xs text-slate-600">Review vendor applications</p>
-            </div>
-          </Link>
-          <Link
-            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-teal-200 hover:shadow-md"
-            to="/adminproducts"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
-              <LuPackage className="h-5 w-5" strokeWidth={2} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">3,420 products</p>
-              <p className="text-xs text-slate-600">Manage catalog listings</p>
-            </div>
-          </Link>
-          <Link
-            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-teal-200 hover:shadow-md"
-            to="/adminusers"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
-              <LuUsers className="h-5 w-5" strokeWidth={2} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">User management</p>
-              <p className="text-xs text-slate-600">View and support customers</p>
-            </div>
-          </Link>
+          {loading
+            ? Array.from({ length: 4 }).map((_, index) => (
+                <article
+                  className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                  key={`stat-skeleton-${index}`}
+                >
+                  <div className="h-11 w-11 rounded-xl bg-slate-100" />
+                  <div className="mt-4 h-4 w-24 rounded bg-slate-100" />
+                  <div className="mt-3 h-8 w-28 rounded bg-slate-100" />
+                  <div className="mt-3 h-3 w-32 rounded bg-slate-100" />
+                </article>
+              ))
+            : statCards.map((stat) => (
+                <article
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                  key={stat.label}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.accent}`}>
+                      <stat.icon className="h-5 w-5" strokeWidth={2} />
+                    </div>
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                      <LuArrowUpRight className="h-3.5 w-3.5" />
+                      {stat.change}
+                    </span>
+                  </div>
+                  <p className="mt-4 text-sm font-medium text-slate-600">{stat.label}</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-900">{stat.value}</p>
+                  <p className="mt-1 text-xs text-slate-500">{stat.sub}</p>
+                </article>
+              ))}
         </section>
         </FadeInOnScroll>
 
@@ -329,45 +318,31 @@ const AdminDashboard = () => {
                 <h2 className="text-lg font-bold text-slate-900">Platform Revenue</h2>
                 <p className="text-sm text-slate-500">Combined revenue across all vendors (NPR lakhs)</p>
               </div>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">2026</span>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                {currentYear}
+              </span>
             </div>
             <div className="h-56 w-full">
-              <PlatformRevenueChart />
+              {loading ? (
+                <div className="flex h-full items-center justify-center text-sm text-slate-500">Loading chart…</div>
+              ) : error || !dashboard ? (
+                <div className="flex h-full items-center justify-center text-sm text-slate-500">Chart unavailable.</div>
+              ) : (
+                <PlatformRevenueChart months={dashboard.charts.revenueByMonth} />
+              )}
             </div>
           </article>
 
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900">Vendor Status</h2>
             <p className="mb-4 text-sm text-slate-500">Application and account breakdown</p>
-            <VendorStatusDonut />
-          </article>
-        </section>
-        </FadeInOnScroll>
-
-        <FadeInOnScroll delay={140}>
-        <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900">User Growth</h2>
-            <p className="mb-2 text-sm text-slate-500">New registrations per month</p>
-            <UserGrowthChart />
-          </article>
-
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900">Recent Activity</h2>
-            <p className="mb-4 text-sm text-slate-500">Latest platform events</p>
-            <ul className="space-y-3">
-              {RECENT_ACTIVITY.map((item) => (
-                <li className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-3" key={item.detail}>
-                  <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${item.tone}`}>
-                    {item.action}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-800">{item.detail}</p>
-                    <p className="text-xs text-slate-500">{item.time}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {loading ? (
+              <div className="flex h-40 items-center justify-center text-sm text-slate-500">Loading…</div>
+            ) : error || !dashboard ? (
+              <div className="flex h-40 items-center justify-center text-sm text-slate-500">Data unavailable.</div>
+            ) : (
+              <VendorStatusDonut slices={dashboard.charts.vendorStatusBreakdown} />
+            )}
           </article>
         </section>
         </FadeInOnScroll>
@@ -395,14 +370,28 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {PENDING_VENDORS.map((vendor) => (
-                    <tr className="hover:bg-slate-50/80" key={vendor.name}>
-                      <td className="px-5 py-3.5 font-semibold text-slate-900">{vendor.name}</td>
-                      <td className="px-5 py-3.5 text-slate-700">{vendor.owner}</td>
-                      <td className="px-5 py-3.5 text-slate-600">{vendor.city}</td>
-                      <td className="px-5 py-3.5 text-slate-500">{vendor.applied}</td>
+                  {loading ? (
+                    <tr>
+                      <td className="px-5 py-8 text-center text-slate-500" colSpan={4}>
+                        Loading applications…
+                      </td>
                     </tr>
-                  ))}
+                  ) : dashboard?.pendingVendors.length === 0 ? (
+                    <tr>
+                      <td className="px-5 py-8 text-center text-slate-500" colSpan={4}>
+                        No pending vendor applications.
+                      </td>
+                    </tr>
+                  ) : (
+                    dashboard?.pendingVendors.map((vendor) => (
+                      <tr className="hover:bg-slate-50/80" key={vendor.id}>
+                        <td className="px-5 py-3.5 font-semibold text-slate-900">{vendor.businessName}</td>
+                        <td className="px-5 py-3.5 text-slate-700">{vendor.ownerName}</td>
+                        <td className="px-5 py-3.5 text-slate-600">{vendor.city}</td>
+                        <td className="px-5 py-3.5 text-slate-500">{vendor.appliedAt}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -411,27 +400,29 @@ const AdminDashboard = () => {
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900">Top Vendors</h2>
             <p className="mb-4 text-sm text-slate-500">Highest performing pharmacies</p>
-            <ul className="space-y-3">
-              {TOP_VENDORS.map((vendor, index) => (
-                <li
-                  className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3"
-                  key={vendor.name}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-700 text-sm font-bold text-white">
-                      {index + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-900">{vendor.name}</p>
-                      <p className="text-xs text-slate-500">
-                        {vendor.orders} orders · ★ {vendor.rating}
-                      </p>
+            {loading ? (
+              <p className="py-8 text-center text-sm text-slate-500">Loading vendors…</p>
+            ) : !dashboard || dashboard.topVendors.length === 0 ? (
+              <p className="py-8 text-center text-sm text-slate-500">No vendor order data yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {dashboard.topVendors.map((vendor) => (
+                  <li className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3" key={vendor.vendorId}>
+                    <div className="flex items-center gap-3">
+                      <TopVendorLogo businessName={vendor.businessName} profileImage={vendor.profileImage} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-slate-900">{vendor.businessName}</p>
+                        <p className="text-xs text-slate-500">
+                          {vendor.orderCount} orders
+                          {vendor.averageRating != null ? ` · ★ ${vendor.averageRating.toFixed(1)}` : ''}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <p className="mt-2 pl-11 text-sm font-semibold text-slate-800">{vendor.revenue}</p>
-                </li>
-              ))}
-            </ul>
+                    <p className="mt-2 pl-[52px] text-sm font-semibold text-slate-800">{formatNpr(vendor.revenue)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </article>
         </section>
         </FadeInOnScroll>

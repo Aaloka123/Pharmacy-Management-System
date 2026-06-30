@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.mednexus.mednexus.user.Role;
+
 public interface UserRepository extends JpaRepository<User, Long> {
 
 	boolean existsByEmailIgnoreCase(String email);
@@ -16,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	Optional<User> findByRefreshTokenHash(String refreshTokenHash);
 
 	List<User> findAllByRoleOrderByIdAsc(Role role);
+
+	long countByRole(Role role);
 }

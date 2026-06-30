@@ -57,9 +57,10 @@ const AdminNavbar = () => {
 
   const menuItems = useMemo(
     () =>
-      baseMenuItems.map((item) =>
-        item.label === 'Approve Vendor' ? { ...item, badge: pendingVendors } : item,
-      ),
+      baseMenuItems.map((item) => {
+        if (item.to !== '/adminapprovevendor' || pendingVendors <= 0) return item
+        return { ...item, badge: pendingVendors, badgeStyle: 'inline' as const }
+      }),
     [pendingVendors],
   )
 

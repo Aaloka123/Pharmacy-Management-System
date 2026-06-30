@@ -11,6 +11,7 @@ export type PortalMenuItem = {
   Icon: ComponentType<{ className?: string }>
   to: string
   badge?: number
+  badgeStyle?: 'pill' | 'inline'
 }
 
 type PortalSidebarProps = {
@@ -50,11 +51,16 @@ function MenuLinks({
 
   return (
     <>
-      {items.map(({ label, Icon, to, badge }) => (
+      {items.map(({ label, Icon, to, badge, badgeStyle = 'pill' }) => (
         <NavLink className={linkClassName} key={label} onClick={onNavigate} to={to}>
           <Icon className={iconClass} />
-          <span className="truncate">{label}</span>
-          {badge && badge > 0 ? (
+          <span className="truncate">
+            {label}
+            {badge && badge > 0 && badgeStyle === 'inline' ? (
+              <span className="font-semibold text-rose-600"> ({badge > 99 ? '99+' : badge})</span>
+            ) : null}
+          </span>
+          {badge && badge > 0 && badgeStyle === 'pill' ? (
             <span
               aria-label={`${badge} notifications`}
               className="ml-auto inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-semibold text-white"

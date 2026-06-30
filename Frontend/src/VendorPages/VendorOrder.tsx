@@ -11,6 +11,7 @@ import {
   type ApiOrderStatus,
   type VendorOrderDto,
 } from '../lib/orderApi';
+import { markVendorOrdersViewed } from '../lib/vendorNavBadges';
 
 type PaymentMethod = 'e-sewa' | 'khalti' | 'COD';
 type OrderStatus = 'Pending' | 'Confirmed' | 'Shipped' | 'Delivered' | 'Canceled';
@@ -96,6 +97,7 @@ const Order = () => {
       try {
         const data = await fetchVendorOrders();
         setOrders(data.map(dtoToVendorOrder));
+        markVendorOrdersViewed(data.filter((order) => order.status === 'PENDING').map((order) => order.id));
       } catch {
         setError('Could not load orders. Please try again.');
         setOrders([]);

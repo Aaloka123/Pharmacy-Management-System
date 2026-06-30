@@ -69,6 +69,14 @@ const AdminReviews = () => {
             />
           </div>
 
+          {!loading && !error ? (
+            <div className="mt-4">
+              <span className="inline-flex rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                Total Reviews: {reviews.length}
+              </span>
+            </div>
+          ) : null}
+
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white">
             {loading ? (
               <p className="px-5 py-8 text-center text-sm text-slate-500">Loading reviews…</p>

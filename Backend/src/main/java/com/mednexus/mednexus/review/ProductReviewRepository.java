@@ -3,6 +3,7 @@ package com.mednexus.mednexus.review;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -59,4 +60,19 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, Lo
 			ORDER BY r.createdAt DESC
 			""")
 	List<ProductReview> findAllWithDetails();
+
+	@Query("""
+			SELECT r FROM ProductReview r
+			JOIN FETCH r.product
+			ORDER BY r.createdAt DESC
+			""")
+	List<ProductReview> findTop10ByOrderByCreatedAtDesc(Pageable pageable);
+
+	@Query("""
+			SELECT p.vendor.id, AVG(r.rating)
+			FROM ProductReview r
+			JOIN r.product p
+			GROUP BY p.vendor.id
+			""")
+	List<Object[]> averageRatingByVendor();
 }

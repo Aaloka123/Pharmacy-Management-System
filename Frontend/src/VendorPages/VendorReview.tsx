@@ -13,6 +13,7 @@ import {
   type ReviewDto,
 } from '../lib/reviewApi'
 import { getStoredUser } from '../lib/auth'
+import { markVendorReviewsViewed } from '../lib/vendorNavBadges'
 
 const VendorReview = () => {
   const [reviews, setReviews] = useState<ReviewDto[]>([])
@@ -34,6 +35,7 @@ const VendorReview = () => {
       try {
         const data = await fetchVendorReviews()
         setReviews(data)
+        markVendorReviewsViewed(data.filter((review) => !review.vendorReplyBody).map((review) => review.id))
       } catch {
         setError('Could not load customer reviews.')
         setReviews([])
@@ -121,6 +123,14 @@ const VendorReview = () => {
               value={searchTerm}
             />
           </div>
+
+          {!loading && !error ? (
+            <div className="mt-4">
+              <span className="inline-flex rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                Total Reviews: {reviews.length}
+              </span>
+            </div>
+          ) : null}
 
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white">
             {loading ? (
