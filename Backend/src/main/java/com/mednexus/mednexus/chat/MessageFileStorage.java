@@ -32,4 +32,11 @@ public class MessageFileStorage {
 				"messages",
 				"conv-" + conversationId + "-sender-" + senderId + "-" + System.currentTimeMillis());
 	}
+
+	public void deleteByUrl(String url) {
+		if (url == null || url.isBlank()) {
+			return;
+		}
+		cloudinaryStorage.deleteByUrl(url);
+	}
 }

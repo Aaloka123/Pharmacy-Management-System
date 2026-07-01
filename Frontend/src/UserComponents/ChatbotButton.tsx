@@ -43,6 +43,15 @@ const ChatbotButton = () => {
     return () => window.removeEventListener(MESSAGE_PANEL_OPEN_EVENT, onOpen)
   }, [])
 
+  useEffect(() => {
+    if (!open) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
+
   return (
     <>
       {!open ? (
@@ -72,7 +81,7 @@ const ChatbotButton = () => {
       ) : null}
 
       {open ? (
-        <div className="fixed bottom-6 right-6 z-50 flex h-[min(100dvh-5rem,560px)] w-[min(calc(100vw-2rem),400px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <div className="fixed bottom-6 right-6 z-50 flex h-[min(100dvh-5rem,560px)] w-[min(calc(100vw-2rem),400px)] flex-col overflow-hidden overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-2xl">
           <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-teal-700 px-4 py-3 text-white">
             <div>
               <p className="text-sm font-semibold">Messages</p>
@@ -80,14 +89,14 @@ const ChatbotButton = () => {
             </div>
             <button
               aria-label="Close messages"
-              className="rounded-lg p-1.5 hover:bg-teal-600"
+              className="cursor-pointer rounded-lg p-1.5 hover:bg-teal-600"
               onClick={closePanel}
               type="button"
             >
               <FiX className="h-4 w-4" />
             </button>
           </div>
-          <div className="min-h-0 flex-1">
+          <div className="min-h-0 flex-1 overscroll-contain">
             <MessagingPage
               key={`${panelTarget?.vendorId ?? 'all'}-${panelTarget?.conversationId ?? 'new'}`}
               initialConversationId={panelTarget?.conversationId ?? null}

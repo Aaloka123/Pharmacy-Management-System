@@ -28,6 +28,10 @@ public class ChatTableInitializer implements ApplicationRunner {
 		if (!tableExists("chat_message")) {
 			createChatMessageTable();
 		}
+		if (!tableExists("chat_message_hidden")) {
+			createChatMessageHiddenTable();
+		}
+		ensureChatMessageDeleteColumns();
 	}
 
 	private boolean tableExists(String tableName) {
@@ -75,6 +79,9 @@ public class ChatTableInitializer implements ApplicationRunner {
 				  `attachment_name` varchar(255) DEFAULT NULL,
 				  `attachment_mime_type` varchar(120) DEFAULT NULL,
 				  `reply_to_message_id` bigint DEFAULT NULL,
+				  `deleted_at` datetime(6) DEFAULT NULL,
+				  `deleted_by_type` varchar(20) DEFAULT NULL,
+				  `deleted_by_id` bigint DEFAULT NULL,
 				  `created_at` datetime(6) NOT NULL,
 				  PRIMARY KEY (`id`),
 				  KEY `idx_chat_message_conversation` (`conversation_id`),
@@ -83,5 +90,47 @@ public class ChatTableInitializer implements ApplicationRunner {
 				) ENGINE=InnoDB
 				""");
 		log.info("`chat_message` table created.");
+	}
+
+	private void createChatMessageHiddenTable() {
+		log.info("Creating missing `chat_message_hidden` table...");
+		jdbc.execute("""
+				CREATE TABLE `chat_message_hidden` (
+				  `message_id` bigint NOT NULL,
+				  `hider_type` varchar(20) NOT NULL,
+				  `hider_id` bigint NOT NULL,
+				  `hidden_at` datetime(6) NOT NULL,
+				  PRIMARY KEY (`message_id`, `hider_type`, `hider_id`),
+				  KEY `idx_chat_message_hidden_hider` (`hider_type`, `hider_id`),
+				  CONSTRAINT `fk_chat_message_hidden_message`
+				    FOREIGN KEY (`message_id`) REFERENCES `chat_message` (`id`) ON DELETE CASCADE
+				) ENGINE=InnoDB
+				""");
+		log.info("`chat_message_hidden` table created.");
+	}
+
+	private void ensureChatMessageDeleteColumns() {
+		if (!columnExists("chat_message", "deleted_at")) {
+			log.info("Adding `deleted_at` column to `chat_message`...");
+			jdbc.execute("ALTER TABLE `chat_message` ADD COLUMN `deleted_at` datetime(6) DEFAULT NULL");
+		}
+		if (!columnExists("chat_message", "deleted_by_type")) {
+			log.info("Adding `deleted_by_type` column to `chat_message`...");
+			jdbc.execute("ALTER TABLE `chat_message` ADD COLUMN `deleted_by_type` varchar(20) DEFAULT NULL");
+		}
+		if (!columnExists("chat_message", "deleted_by_id")) {
+			log.info("Adding `deleted_by_id` column to `chat_message`...");
+			jdbc.execute("ALTER TABLE `chat_message` ADD COLUMN `deleted_by_id` bigint DEFAULT NULL");
+		}
+	}
+
+	private boolean columnExists(String tableName, String columnName) {
+		Integer count = jdbc.queryForObject(
+				"SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+						+ "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+				Integer.class,
+				tableName,
+				columnName);
+		return count != null && count > 0;
 	}
 }

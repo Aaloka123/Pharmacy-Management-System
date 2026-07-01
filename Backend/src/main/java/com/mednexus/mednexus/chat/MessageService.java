@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.chat.dto.AttachmentUploadResponse;
+import com.mednexus.mednexus.chat.dto.ChatMessageDeleteEvent;
 import com.mednexus.mednexus.chat.dto.ChatMessageResponse;
 import com.mednexus.mednexus.chat.dto.ChatMessageResponse.MessageSenderTypeDto;
 import com.mednexus.mednexus.chat.dto.ConversationResponse;
@@ -35,6 +37,7 @@ public class MessageService {
 
 	private final ConversationRepository conversationRepository;
 	private final ChatMessageRepository chatMessageRepository;
+	private final ChatMessageHiddenRepository chatMessageHiddenRepository;
 	private final UserRepository userRepository;
 	private final VendorRepository vendorRepository;
 	private final MessageFileStorage messageFileStorage;
@@ -43,12 +46,14 @@ public class MessageService {
 	public MessageService(
 			ConversationRepository conversationRepository,
 			ChatMessageRepository chatMessageRepository,
+			ChatMessageHiddenRepository chatMessageHiddenRepository,
 			UserRepository userRepository,
 			VendorRepository vendorRepository,
 			MessageFileStorage messageFileStorage,
 			SimpMessagingTemplate messagingTemplate) {
 		this.conversationRepository = conversationRepository;
 		this.chatMessageRepository = chatMessageRepository;
+		this.chatMessageHiddenRepository = chatMessageHiddenRepository;
 		this.userRepository = userRepository;
 		this.vendorRepository = vendorRepository;
 		this.messageFileStorage = messageFileStorage;
@@ -97,7 +102,12 @@ public class MessageService {
 	@Transactional(readOnly = true)
 	public List<ChatMessageResponse> listMessages(PlatformUser principal, Long conversationId) {
 		Conversation conversation = requireConversationAccess(principal, conversationId);
+		MessageSenderType viewerType = resolveSenderType(principal);
+		Long viewerId = principal.getSubjectId();
+		Set<Long> hiddenIds = chatMessageHiddenRepository.findHiddenMessageIds(
+				conversation.getId(), viewerType, viewerId);
 		return chatMessageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId()).stream()
+				.filter(message -> !hiddenIds.contains(message.getId()))
 				.map(this::toMessageResponse)
 				.toList();
 	}
@@ -173,6 +183,55 @@ public class MessageService {
 		return 0;
 	}
 
+	@Transactional
+	public void deleteMessageForMe(PlatformUser principal, Long conversationId, Long messageId) {
+		Conversation conversation = requireConversationAccess(principal, conversationId);
+		ChatMessage message = requireMessageInConversation(conversation, messageId);
+		MessageSenderType hiderType = resolveSenderType(principal);
+		Long hiderId = principal.getSubjectId();
+		if (chatMessageHiddenRepository.existsByIdMessageIdAndIdHiderTypeAndIdHiderId(
+				message.getId(), hiderType, hiderId)) {
+			return;
+		}
+		chatMessageHiddenRepository.save(new ChatMessageHidden(
+				new ChatMessageHiddenId(message.getId(), hiderType, hiderId)));
+	}
+
+	@Transactional
+	public void deleteMessageForEveryone(PlatformUser principal, Long conversationId, Long messageId) {
+		Conversation conversation = requireConversationAccess(principal, conversationId);
+		ChatMessage message = requireMessageInConversation(conversation, messageId);
+		MessageSenderType senderType = resolveSenderType(principal);
+		if (message.getDeletedAt() != null) {
+			return;
+		}
+		if (!message.getSenderType().equals(senderType) || !message.getSenderId().equals(principal.getSubjectId())) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the sender can delete for everyone");
+		}
+
+		String attachmentUrl = message.getAttachmentUrl();
+		message.setDeletedAt(Instant.now());
+		message.setDeletedByType(senderType);
+		message.setDeletedById(principal.getSubjectId());
+		message.setBody(null);
+		message.setAttachmentUrl(null);
+		message.setAttachmentName(null);
+		message.setAttachmentMimeType(null);
+		chatMessageRepository.save(message);
+
+		if (attachmentUrl != null && !attachmentUrl.isBlank()) {
+			messageFileStorage.deleteByUrl(attachmentUrl);
+		}
+
+		refreshConversationPreview(conversation);
+		conversationRepository.save(conversation);
+
+		ChatMessageResponse tombstone = toMessageResponse(message);
+		messagingTemplate.convertAndSend(
+				"/topic/conversation." + conversationId,
+				new ChatMessageDeleteEvent("DELETE_FOR_EVERYONE", tombstone));
+	}
+
 	private Conversation requireConversationAccess(PlatformUser principal, Long conversationId) {
 		Conversation conversation = conversationRepository.findByIdWithDetails(conversationId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -238,19 +297,39 @@ public class MessageService {
 	}
 
 	private ChatMessageResponse toMessageResponse(ChatMessage message) {
-		String mimeType = message.getAttachmentMimeType();
+		boolean deleted = message.getDeletedAt() != null;
+		String mimeType = deleted ? null : message.getAttachmentMimeType();
 		return new ChatMessageResponse(
 				message.getId(),
 				message.getConversation().getId(),
 				MessageSenderTypeDto.valueOf(message.getSenderType().name()),
 				message.getSenderId(),
-				message.getBody(),
-				message.getAttachmentUrl(),
-				message.getAttachmentName(),
+				deleted ? null : message.getBody(),
+				deleted ? null : message.getAttachmentUrl(),
+				deleted ? null : message.getAttachmentName(),
 				mimeType,
 				mimeType != null ? attachmentKind(mimeType) : null,
 				message.getReplyToMessageId(),
-				formatInstant(message.getCreatedAt()));
+				formatInstant(message.getCreatedAt()),
+				deleted);
+	}
+
+	private ChatMessage requireMessageInConversation(Conversation conversation, Long messageId) {
+		return chatMessageRepository.findByIdAndConversationId(messageId, conversation.getId())
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found"));
+	}
+
+	private void refreshConversationPreview(Conversation conversation) {
+		chatMessageRepository.findTopByConversationIdAndDeletedAtIsNullOrderByCreatedAtDesc(conversation.getId())
+				.ifPresentOrElse(latest -> {
+					conversation.setLastMessageAt(latest.getCreatedAt());
+					conversation.setLastMessageSenderType(latest.getSenderType());
+					conversation.setLastMessagePreview(buildPreview(latest));
+				}, () -> {
+					conversation.setLastMessageAt(null);
+					conversation.setLastMessageSenderType(null);
+					conversation.setLastMessagePreview(null);
+				});
 	}
 
 	private String buildPreview(ChatMessage message) {

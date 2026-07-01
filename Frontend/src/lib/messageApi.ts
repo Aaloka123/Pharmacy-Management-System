@@ -25,6 +25,7 @@ export type ChatMessageDto = {
   attachmentKind: 'image' | 'pdf' | 'file' | null
   replyToMessageId: number | null
   createdAt: string
+  deleted?: boolean
 }
 
 export type SendMessagePayload = {
@@ -88,6 +89,14 @@ export async function markConversationRead(conversationId: number): Promise<void
 export async function fetchUnreadMessageCount(): Promise<number> {
   const { data } = await api.get<{ count: number }>('/api/messages/unread-count')
   return data?.count ?? 0
+}
+
+export async function deleteMessageForMe(conversationId: number, messageId: number): Promise<void> {
+  await api.delete(`/api/messages/conversations/${conversationId}/messages/${messageId}/me`)
+}
+
+export async function deleteMessageForEveryone(conversationId: number, messageId: number): Promise<void> {
+  await api.delete(`/api/messages/conversations/${conversationId}/messages/${messageId}/everyone`)
 }
 
 function guessImageMimeType(url: string): string {

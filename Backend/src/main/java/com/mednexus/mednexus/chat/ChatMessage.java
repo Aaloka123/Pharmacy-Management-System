@@ -49,6 +49,16 @@ public class ChatMessage {
 	@Column(name = "reply_to_message_id")
 	private Long replyToMessageId;
 
+	@Column(name = "deleted_at")
+	private Instant deletedAt;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "deleted_by_type", length = 20)
+	private MessageSenderType deletedByType;
+
+	@Column(name = "deleted_by_id")
+	private Long deletedById;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -128,6 +138,30 @@ public class ChatMessage {
 
 	public void setReplyToMessageId(Long replyToMessageId) {
 		this.replyToMessageId = replyToMessageId;
+	}
+
+	public Instant getDeletedAt() {
+		return deletedAt;
+	}
+
+	public void setDeletedAt(Instant deletedAt) {
+		this.deletedAt = deletedAt;
+	}
+
+	public MessageSenderType getDeletedByType() {
+		return deletedByType;
+	}
+
+	public void setDeletedByType(MessageSenderType deletedByType) {
+		this.deletedByType = deletedByType;
+	}
+
+	public Long getDeletedById() {
+		return deletedById;
+	}
+
+	public void setDeletedById(Long deletedById) {
+		this.deletedById = deletedById;
 	}
 
 	public Instant getCreatedAt() {

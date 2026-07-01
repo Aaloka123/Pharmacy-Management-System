@@ -51,10 +51,22 @@ const AppContent = () => {
   }, [pathname])
 
   const normalizedPath = pathname.replace(/\/+$/, '') || '/'
+  const vendorPortalPaths = [
+    '/vendordashboard',
+    '/vendormessage',
+    '/vendorproduct',
+    '/vendororder',
+    '/vendorreview',
+    '/vendorbills',
+    '/vendorsetting',
+    '/vendoruserprofile',
+    '/vendorlogin',
+    '/vendorsignup',
+  ]
   const showMessageChatbot =
-    !normalizedPath.startsWith('/vendor') &&
     !normalizedPath.startsWith('/admin') &&
-    !['/login', '/signup', '/forgetpassword', '/vendorlogin', '/vendorsignup'].includes(normalizedPath)
+    !['/login', '/signup', '/forgetpassword'].includes(normalizedPath) &&
+    !vendorPortalPaths.includes(normalizedPath)
 
   return (
     <>

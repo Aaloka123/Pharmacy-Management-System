@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FiArrowLeft, FiImage, FiPaperclip, FiSend, FiX } from 'react-icons/fi'
+import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
+import { FiArrowLeft, FiCornerUpLeft, FiImage, FiPaperclip, FiSend, FiTrash2, FiX } from 'react-icons/fi'
 import { HiOutlineMagnifyingGlass } from 'react-icons/hi2'
 import { toast } from 'react-toastify'
 import { resolveMediaUrl, resolveProfileImageUrl } from '../lib/api'
@@ -11,6 +13,8 @@ import {
 } from '../lib/chatSocket'
 import {
   createConversation,
+  deleteMessageForEveryone,
+  deleteMessageForMe,
   fetchConversations,
   fetchMessages,
   markConversationRead,
@@ -67,6 +71,32 @@ function formatListTime(iso: string | null): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
+function MessageAvatar({
+  imageUrl,
+  name,
+  side,
+}: {
+  imageUrl: string | null
+  name: string
+  side: 'left' | 'right'
+}) {
+  const resolved = resolveProfileImageUrl(imageUrl)
+  return (
+    <div
+      className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-teal-700 text-[10px] font-bold text-white ${
+        side === 'left' ? 'mr-2' : 'ml-2'
+      }`}
+      title={name}
+    >
+      {resolved ? (
+        <img alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" src={resolved} />
+      ) : (
+        peerInitial(name)
+      )}
+    </div>
+  )
+}
+
 const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 'page' }: MessagingPageProps) => {
   const isPanel = layout === 'panel'
   const selfSenderType = mode === 'vendor' ? 'VENDOR' : 'USER'
@@ -81,6 +111,11 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [messageMenu, setMessageMenu] = useState<{
+    message: ChatMessageDto
+    x: number
+    y: number
+  } | null>(null)
   const [pendingAttachment, setPendingAttachment] = useState<{
     url: string
     fileName: string
@@ -89,6 +124,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   } | null>(null)
 
   const messageListRef = useRef<HTMLDivElement>(null)
+  const conversationListRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const stompClientRef = useRef<Client | null>(null)
   const subscriptionRef = useRef<StompSubscription | null>(null)
@@ -129,6 +165,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     async (conversationId: number) => {
       setSelectedId(conversationId)
       setReplyTo(null)
+      setMessageMenu(null)
       setPendingAttachment(null)
       setLoadingThread(true)
       try {
@@ -157,6 +194,34 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   useEffect(() => {
     void loadConversations()
   }, [loadConversations])
+
+  useEffect(() => {
+    if (!isPanel) return undefined
+
+    const lockScrollChain = (element: HTMLElement) => {
+      const onWheel = (event: WheelEvent) => {
+        const { scrollTop, scrollHeight, clientHeight } = element
+        const maxScroll = scrollHeight - clientHeight
+        if (maxScroll <= 0) {
+          event.preventDefault()
+          return
+        }
+        if ((scrollTop <= 0 && event.deltaY < 0) || (scrollTop >= maxScroll - 1 && event.deltaY > 0)) {
+          event.preventDefault()
+        }
+      }
+      element.addEventListener('wheel', onWheel, { passive: false })
+      return () => element.removeEventListener('wheel', onWheel)
+    }
+
+    const cleanups = [messageListRef.current, conversationListRef.current]
+      .filter((element): element is HTMLDivElement => element != null)
+      .map(lockScrollChain)
+
+    return () => {
+      cleanups.forEach((cleanup) => cleanup())
+    }
+  }, [isPanel, messages.length, filteredConversations.length, selectedId])
 
   useEffect(() => {
     if (initialConversationId == null || initialConversationHandled.current) {
@@ -223,7 +288,27 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
 
     const handleFrame = (frame: { body: string }) => {
       try {
-        const incoming = JSON.parse(frame.body) as ChatMessageDto
+        const payload = JSON.parse(frame.body) as
+          | ChatMessageDto
+          | { eventType: 'DELETE_FOR_EVERYONE'; message: ChatMessageDto }
+
+        if ('eventType' in payload && payload.eventType === 'DELETE_FOR_EVERYONE') {
+          const updated = payload.message
+          setMessages((prev) => prev.map((message) => (message.id === updated.id ? updated : message)))
+          setConversations((prev) =>
+            prev.map((conversation) =>
+              conversation.id === updated.conversationId
+                ? {
+                    ...conversation,
+                    lastMessagePreview: updated.deleted ? 'Message deleted' : conversation.lastMessagePreview,
+                  }
+                : conversation,
+            ),
+          )
+          return
+        }
+
+        const incoming = payload as ChatMessageDto
         setMessages((prev) => {
           if (prev.some((message) => message.id === incoming.id)) {
             return prev
@@ -341,6 +426,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   }
 
   const replyPreview = (message: ChatMessageDto) => {
+    if (message.deleted) return 'Message deleted'
     if (message.body) return message.body
     if (message.attachmentKind === 'pdf') return 'PDF document'
     if (message.attachmentKind === 'image') return 'Photo'
@@ -348,6 +434,89 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   }
 
   const selfId = getStoredUser()?.id
+  const selfUser = getStoredUser()
+  const peerDisplayName = selectedConversation?.peerName ?? (mode === 'vendor' ? 'Customer' : 'Vendor')
+  const peerDisplayImage = selectedConversation?.peerProfileImage ?? null
+
+  const canReplyToMessage = useCallback(
+    (message: ChatMessageDto) => {
+      if (message.deleted) return false
+      const fromSelf = message.senderType === selfSenderType && message.senderId === selfId
+      return !fromSelf && (mode === 'user' || mode === 'vendor')
+    },
+    [mode, selfId, selfSenderType],
+  )
+
+  const isOwnMessage = useCallback(
+    (message: ChatMessageDto) =>
+      message.senderType === selfSenderType && message.senderId === selfId,
+    [selfId, selfSenderType],
+  )
+
+  const handleDeleteForMe = async (message: ChatMessageDto) => {
+    if (selectedId == null) return
+    setMessageMenu(null)
+    try {
+      await deleteMessageForMe(selectedId, message.id)
+      setMessages((prev) => prev.filter((item) => item.id !== message.id))
+      if (replyTo?.id === message.id) {
+        setReplyTo(null)
+      }
+    } catch {
+      toast.error('Could not delete message for yourself.')
+    }
+  }
+
+  const handleDeleteForEveryone = async (message: ChatMessageDto) => {
+    if (selectedId == null) return
+    setMessageMenu(null)
+    try {
+      await deleteMessageForEveryone(selectedId, message.id)
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.id === message.id
+            ? {
+                ...item,
+                deleted: true,
+                body: null,
+                attachmentUrl: null,
+                attachmentName: null,
+                attachmentMimeType: null,
+                attachmentKind: null,
+              }
+            : item,
+        ),
+      )
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === selectedId
+            ? { ...conversation, lastMessagePreview: 'Message deleted' }
+            : conversation,
+        ),
+      )
+      if (replyTo?.id === message.id) {
+        setReplyTo(null)
+      }
+    } catch {
+      toast.error('Could not delete message for everyone.')
+    }
+  }
+
+  useEffect(() => {
+    if (!messageMenu) return undefined
+    const closeMenu = () => setMessageMenu(null)
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu()
+    }
+    window.addEventListener('click', closeMenu)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('scroll', closeMenu, true)
+    return () => {
+      window.removeEventListener('click', closeMenu)
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('scroll', closeMenu, true)
+    }
+  }, [messageMenu])
 
   const showConversationList = !isPanel || selectedId == null
   const showConversationThread = !isPanel || selectedId != null
@@ -356,6 +525,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     setSelectedId(null)
     setMessages([])
     setReplyTo(null)
+    setMessageMenu(null)
     setPendingAttachment(null)
   }
 
@@ -363,7 +533,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     <div
       className={
         isPanel
-          ? 'flex h-full min-h-0 flex-col bg-white'
+          ? 'flex h-full min-h-0 flex-col overflow-hidden overscroll-contain bg-white'
           : 'flex min-h-[calc(100dvh-4rem)] flex-col bg-slate-50 md:min-h-[calc(100dvh-5rem)]'
       }
     >
@@ -402,7 +572,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain" ref={conversationListRef}>
               {loadingList ? (
                 <p className="px-4 py-6 text-sm text-slate-500">Loading conversations...</p>
               ) : filteredConversations.length === 0 ? (
@@ -417,7 +587,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                   const active = conversation.id === selectedId
                   return (
                     <button
-                      className={`flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50 ${
+                      className={`flex w-full cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50 ${
                         active ? 'bg-teal-50/70' : ''
                       }`}
                       key={conversation.id}
@@ -469,33 +639,63 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                   {isPanel ? (
                     <button
                       aria-label="Back to conversations"
-                      className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100"
+                      className="cursor-pointer rounded-lg p-1.5 text-slate-600 hover:bg-slate-100"
                       onClick={backToList}
                       type="button"
                     >
                       <FiArrowLeft className="h-4 w-4" />
                     </button>
                   ) : null}
-                  {resolveProfileImageUrl(selectedConversation.peerProfileImage) ? (
-                    <img
-                      alt=""
-                      className="h-10 w-10 rounded-full border border-slate-200 object-cover"
-                      src={resolveProfileImageUrl(selectedConversation.peerProfileImage)!}
-                    />
+                  {mode === 'vendor' && selectedConversation ? (
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      {resolveProfileImageUrl(selectedConversation.peerProfileImage) ? (
+                        <img
+                          alt=""
+                          className="h-10 w-10 rounded-full border border-slate-200 object-cover"
+                          referrerPolicy="no-referrer"
+                          src={resolveProfileImageUrl(selectedConversation.peerProfileImage)!}
+                        />
+                      ) : (
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-700 text-sm font-bold text-white">
+                          {peerInitial(selectedConversation.peerName)}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <h2 className="truncate text-sm font-semibold text-slate-900">
+                          {selectedConversation.peerName}
+                        </h2>
+                      </div>
+                    </div>
                   ) : (
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-700 text-sm font-bold text-white">
-                      {peerInitial(selectedConversation.peerName)}
-                    </span>
+                    <Link
+                      className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3"
+                      to={`/vendorprofile?id=${selectedConversation.peerId}`}
+                    >
+                      {resolveProfileImageUrl(selectedConversation.peerProfileImage) ? (
+                        <img
+                          alt=""
+                          className="h-10 w-10 rounded-full border border-slate-200 object-cover"
+                          src={resolveProfileImageUrl(selectedConversation.peerProfileImage)!}
+                        />
+                      ) : (
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-700 text-sm font-bold text-white">
+                          {peerInitial(selectedConversation.peerName)}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <h2 className="truncate text-sm font-semibold text-slate-900 underline-offset-2 transition group-hover:underline">
+                          {selectedConversation.peerName}
+                        </h2>
+                        <p className="text-xs text-slate-500">Pharmacy vendor</p>
+                      </div>
+                    </Link>
                   )}
-                  <div>
-                    <h2 className="text-sm font-semibold text-slate-900">{selectedConversation.peerName}</h2>
-                    <p className="text-xs text-slate-500">
-                      {mode === 'user' ? 'Pharmacy vendor' : 'Customer'}
-                    </p>
-                  </div>
                 </header>
 
-                <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-4" ref={messageListRef}>
+                <div
+                  className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50 p-4"
+                  ref={messageListRef}
+                >
                   {loadingThread ? (
                     <p className="text-sm text-slate-500">Loading messages...</p>
                   ) : messages.length === 0 ? (
@@ -510,55 +710,87 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                         : null
                       return (
                         <div
-                          className={`mb-3 flex ${isSelf ? 'justify-end' : 'justify-start'}`}
+                          className={`mb-3 flex items-end ${isSelf ? 'justify-end' : 'justify-start'}`}
                           key={message.id}
                         >
+                          {!isSelf ? (
+                            <MessageAvatar
+                              imageUrl={peerDisplayImage}
+                              name={peerDisplayName}
+                              side="left"
+                            />
+                          ) : null}
                           <div
                             className={`max-w-[78%] rounded-xl border px-3 py-2 shadow-sm ${
-                              isSelf
-                                ? 'border-teal-200 bg-teal-50'
-                                : 'border-slate-200 bg-white'
+                              message.deleted
+                                ? 'cursor-default border-slate-200 bg-slate-100'
+                                : isSelf
+                                  ? 'cursor-pointer border-teal-200 bg-teal-50'
+                                  : 'cursor-pointer border-slate-200 bg-white'
                             }`}
                             onContextMenu={(event) => {
+                              if (message.deleted) return
                               event.preventDefault()
-                              setReplyTo(message)
+                              setMessageMenu({
+                                message,
+                                x: event.clientX,
+                                y: event.clientY,
+                              })
                             }}
                           >
+                            {mode === 'vendor' && !isSelf ? (
+                              <p className="mb-1 text-[11px] font-semibold text-slate-500">
+                                {peerDisplayName}
+                              </p>
+                            ) : null}
                             {replied ? (
                               <div className="mb-2 rounded-md border-l-2 border-slate-300 bg-slate-100/80 px-2 py-1">
                                 <p className="text-[11px] font-semibold text-slate-500">Reply</p>
                                 <p className="truncate text-xs text-slate-600">{replyPreview(replied)}</p>
                               </div>
                             ) : null}
-                            {attachmentUrl && message.attachmentKind === 'image' ? (
-                              <button
-                                className="mb-2 block overflow-hidden rounded-lg"
-                                onClick={() => setPreviewUrl(attachmentUrl)}
-                                type="button"
-                              >
-                                <img
-                                  alt={message.attachmentName ?? 'Attachment'}
-                                  className="max-h-48 max-w-full object-cover"
-                                  src={attachmentUrl}
-                                />
-                              </button>
-                            ) : null}
-                            {attachmentUrl && message.attachmentKind === 'pdf' ? (
-                              <a
-                                className="mb-2 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50"
-                                href={attachmentUrl}
-                                rel="noreferrer"
-                                target="_blank"
-                              >
-                                <FiPaperclip className="h-4 w-4" />
-                                {message.attachmentName ?? 'View PDF'}
-                              </a>
-                            ) : null}
-                            {message.body ? (
-                              <p className="whitespace-pre-wrap text-sm text-slate-800">{message.body}</p>
-                            ) : null}
+                            {message.deleted ? (
+                              <p className="text-sm italic text-slate-400">This message was deleted</p>
+                            ) : (
+                              <>
+                                {attachmentUrl && message.attachmentKind === 'image' ? (
+                                  <button
+                                    className="mb-2 block cursor-pointer overflow-hidden rounded-lg"
+                                    onClick={() => setPreviewUrl(attachmentUrl)}
+                                    type="button"
+                                  >
+                                    <img
+                                      alt={message.attachmentName ?? 'Attachment'}
+                                      className="max-h-48 max-w-full object-cover"
+                                      src={attachmentUrl}
+                                    />
+                                  </button>
+                                ) : null}
+                                {attachmentUrl && message.attachmentKind === 'pdf' ? (
+                                  <a
+                                    className="mb-2 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50"
+                                    href={attachmentUrl}
+                                    rel="noreferrer"
+                                    target="_blank"
+                                  >
+                                    <FiPaperclip className="h-4 w-4" />
+                                    {message.attachmentName ?? 'View PDF'}
+                                  </a>
+                                ) : null}
+                                {message.body ? (
+                                  <p className="whitespace-pre-wrap text-sm text-slate-800">{message.body}</p>
+                                ) : null}
+                              </>
+                            )}
                             <p className="mt-1 text-[11px] text-slate-400">{formatMessageTime(message.createdAt)}</p>
                           </div>
+                          {isSelf ? (
+                            <MessageAvatar
+                              imageUrl={selfUser?.profileImage ?? null}
+                              name={selfUser?.fullName ?? selfUser?.email ?? 'You'}
+                              side="right"
+                            />
+                          ) : null}
                         </div>
                       )
                     })
@@ -574,7 +806,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                       </div>
                       <button
                         aria-label="Cancel reply"
-                        className="rounded-md p-1 text-slate-500 hover:bg-slate-200"
+                        className="cursor-pointer rounded-md p-1 text-slate-500 hover:bg-slate-200"
                         onClick={() => setReplyTo(null)}
                         type="button"
                       >
@@ -583,13 +815,25 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                     </div>
                   ) : null}
                   {pendingAttachment ? (
-                    <div className="mb-2 flex items-center justify-between rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
-                      <span className="truncate">
-                        {pendingAttachment.kind === 'image' ? 'Image' : 'PDF'} ready: {pendingAttachment.fileName}
+                    <div className="mb-2 flex items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
+                      {pendingAttachment.kind === 'image' ? (
+                        <img
+                          alt={pendingAttachment.fileName}
+                          className="h-12 w-12 shrink-0 rounded-md border border-teal-200 object-cover"
+                          src={resolveMediaUrl(pendingAttachment.url) ?? pendingAttachment.url}
+                        />
+                      ) : (
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-teal-200 bg-white">
+                          <FiPaperclip className="h-5 w-5 text-teal-700" />
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1 truncate">
+                        {pendingAttachment.kind === 'image' ? 'Image' : 'PDF'} ready:{' '}
+                        {pendingAttachment.fileName}
                       </span>
                       <button
                         aria-label="Remove attachment"
-                        className="rounded-md p-1 hover:bg-teal-100"
+                        className="shrink-0 cursor-pointer rounded-md p-1 hover:bg-teal-100"
                         onClick={() => setPendingAttachment(null)}
                         type="button"
                       >
@@ -607,7 +851,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                     />
                     <button
                       aria-label="Attach image or PDF"
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={uploading || selectedId == null}
                       onClick={() => fileInputRef.current?.click()}
                       type="button"
@@ -629,7 +873,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                     />
                     <button
                       aria-label="Send message"
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-50"
+                      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-teal-700 text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={sending || uploading || (!draft.trim() && !pendingAttachment)}
                       onClick={() => void handleSend()}
                       type="button"
@@ -637,9 +881,11 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                       <FiSend className="h-4 w-4" />
                     </button>
                   </div>
-                  <p className={`text-[11px] text-slate-400 ${isPanel ? 'hidden' : 'mt-2'}`}>
-                    Share product photos or PDFs. Right-click a message to reply.
-                  </p>
+                  {mode === 'user' && !isPanel ? (
+                    <p className="mt-2 text-[11px] text-slate-400">
+                      Share product photos or PDFs. Right-click a message and choose Reply.
+                    </p>
+                  ) : null}
                 </div>
               </>
             ) : !isPanel ? (
@@ -653,15 +899,77 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
       </div>
 
       {previewUrl ? (
-        <button
-          aria-label="Close image preview"
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/80 p-4"
+        <div
+          aria-label="Image preview"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] flex cursor-default items-center justify-center bg-slate-900/80 p-4"
           onClick={() => setPreviewUrl(null)}
-          type="button"
+          role="dialog"
         >
-          <img alt="Preview" className="max-h-[90vh] max-w-full rounded-lg object-contain" src={previewUrl} />
-        </button>
+          <button
+            aria-label="Close image preview"
+            className="absolute right-4 top-4 cursor-pointer rounded-full border border-white/30 bg-slate-900/50 p-2 text-white transition hover:bg-slate-900/80"
+            onClick={() => setPreviewUrl(null)}
+            type="button"
+          >
+            <FiX className="h-5 w-5" />
+          </button>
+          <img
+            alt="Preview"
+            className="max-h-[90vh] max-w-full rounded-lg object-contain"
+            draggable={false}
+            onClick={(event) => event.stopPropagation()}
+            src={previewUrl}
+          />
+        </div>
       ) : null}
+
+      {messageMenu
+        ? createPortal(
+            <div
+              className="fixed z-[70] min-w-[188px] overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+              onClick={(event) => event.stopPropagation()}
+              role="menu"
+              style={{ left: messageMenu.x, top: messageMenu.y }}
+            >
+              {canReplyToMessage(messageMenu.message) ? (
+                <button
+                  className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  onClick={() => {
+                    setReplyTo(messageMenu.message)
+                    setMessageMenu(null)
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <FiCornerUpLeft className="h-4 w-4 shrink-0" />
+                  Reply
+                </button>
+              ) : null}
+              <button
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => void handleDeleteForMe(messageMenu.message)}
+                role="menuitem"
+                type="button"
+              >
+                <FiTrash2 className="h-4 w-4 shrink-0" />
+                Delete for myself
+              </button>
+              {isOwnMessage(messageMenu.message) ? (
+                <button
+                  className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm font-medium text-rose-700 transition hover:bg-rose-50"
+                  onClick={() => void handleDeleteForEveryone(messageMenu.message)}
+                  role="menuitem"
+                  type="button"
+                >
+                  <FiTrash2 className="h-4 w-4 shrink-0" />
+                  Delete for everyone
+                </button>
+              ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   )
 }

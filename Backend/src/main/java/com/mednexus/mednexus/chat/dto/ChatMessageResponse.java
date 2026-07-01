@@ -11,7 +11,8 @@ public record ChatMessageResponse(
 		String attachmentMimeType,
 		String attachmentKind,
 		Long replyToMessageId,
-		String createdAt) {
+		String createdAt,
+		boolean deleted) {
 
 	public enum MessageSenderTypeDto {
 		USER,
