@@ -206,6 +206,57 @@ final class EmailHtmlBuilder {
 				frontendUrl);
 	}
 
+	static String storeStatusChange(
+			String greetingName,
+			String businessName,
+			boolean storeOpen,
+			boolean changedByAdmin,
+			String logoUrl,
+			String frontendUrl) {
+		String safeName = escape(greetingName);
+		String safeBusiness = escape(businessName);
+		String vendorPortalUrl = escape(frontendUrl + "/vendordashboard");
+		String bannerLabel = storeOpen ? "Store open" : "Store temporarily closed";
+		String bannerBg = storeOpen ? TEAL_LIGHT : "#fff7ed";
+		String bannerText = storeOpen ? TEAL : "#c2410c";
+		String bannerBorder = storeOpen ? "#99f6e4" : "#fed7aa";
+		String headline = storeOpen ? "Your store is now open" : "Your store has been temporarily closed";
+		String body;
+		if (storeOpen) {
+			body = changedByAdmin
+					? "An administrator has reopened your store on %s. Customers can browse your products and place orders again."
+					: "Your store status on %s is now set to open. Customers can browse your products and place orders.";
+		} else {
+			body = changedByAdmin
+					? "An administrator has temporarily closed your store on %s. Customers will not be able to place new orders until your store is reopened by an administrator."
+					: "You have temporarily closed your store on %s. Customers will not be able to place new orders until you reopen your store from the vendor portal.";
+		}
+		String safeBody = escape(body.formatted(BRAND));
+		return layout(
+				"""
+				%s
+				<h1 style="margin:0 0 10px;font-size:26px;line-height:1.25;color:#0f172a;font-weight:700;">%s</h1>
+				<p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:%s;">Hello <strong>%s</strong>,</p>
+				%s
+				<p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:%s;">%s</p>
+				%s
+				<p style="margin:0;font-size:14px;line-height:1.65;color:%s;">Manage your store anytime from the vendor portal.</p>
+				"""
+						.formatted(
+								statusBanner(bannerLabel, bannerBg, bannerText, bannerBorder),
+								escape(headline),
+								SLATE,
+								safeName,
+								businessCard(safeBusiness),
+								SLATE,
+								safeBody,
+								ctaButton(vendorPortalUrl, "Go to vendor portal", TEAL),
+								MUTED),
+				headline,
+				logoUrl,
+				frontendUrl);
+	}
+
 	static String orderStatusUpdate(OrderEmailDetails details, String logoUrl, String frontendUrl) {
 		String safeName = escape(details.customerName());
 		String safeEmail = escape(details.customerEmail());

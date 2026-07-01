@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.mednexus.mednexus.order.OrderStatus;
 import com.mednexus.mednexus.order.dto.OrderEmailDetails;
 import com.mednexus.mednexus.order.dto.OrderEmailLineItem;
+import com.mednexus.mednexus.vendor.StoreStatus;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -174,6 +175,64 @@ public class EmailService {
 				— The MedNexus Team
 				""".formatted(greetingName, business, frontendBaseUrl);
 		sendHtmlEmail(toEmail, "Update on your MedNexus vendor application", html, plainText);
+	}
+
+	public void sendStoreStatusChangeEmail(
+			String toEmail,
+			String vendorName,
+			String businessName,
+			StoreStatus newStatus,
+			boolean changedByAdmin) {
+		if (toEmail == null || toEmail.isBlank() || newStatus == null) {
+			return;
+		}
+		boolean storeOpen = newStatus == StoreStatus.OPEN;
+		String greetingName = vendorName == null || vendorName.isBlank() ? "there" : vendorName.trim();
+		String business = businessName == null || businessName.isBlank() ? "your pharmacy" : businessName.trim();
+		String subject = storeOpen
+				? "Your MedNexus store is now open"
+				: "Your MedNexus store has been temporarily closed";
+		String html = EmailHtmlBuilder.storeStatusChange(
+				greetingName,
+				business,
+				storeOpen,
+				changedByAdmin,
+				emailLogoService.getLogoUrl(),
+				frontendBaseUrl);
+		String plainText = buildStoreStatusPlainText(greetingName, business, storeOpen, changedByAdmin);
+		sendHtmlEmail(toEmail, subject, html, plainText);
+	}
+
+	private String buildStoreStatusPlainText(
+			String greetingName,
+			String businessName,
+			boolean storeOpen,
+			boolean changedByAdmin) {
+		String headline = storeOpen ? "Your store is now open" : "Your store has been temporarily closed";
+		String detail;
+		if (storeOpen) {
+			detail = changedByAdmin
+					? "An administrator has reopened your store on MedNexus. Customers can browse your products and place orders again."
+					: "Your store status on MedNexus is now set to open. Customers can browse your products and place orders.";
+		} else {
+			detail = changedByAdmin
+					? "An administrator has temporarily closed your store on MedNexus. Customers will not be able to place new orders until an administrator reopens it."
+					: "You have temporarily closed your store on MedNexus. Customers will not be able to place new orders until you reopen it from the vendor portal.";
+		}
+		return """
+				Hello %s,
+
+				%s
+
+				Business: %s
+
+				%s
+
+				Go to vendor portal: %s/vendordashboard
+
+				— The MedNexus Team
+				"""
+				.formatted(greetingName, headline, businessName, detail, frontendBaseUrl);
 	}
 
 	public void sendOrderStatusEmail(OrderEmailDetails details) {

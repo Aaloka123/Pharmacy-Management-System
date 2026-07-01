@@ -235,6 +235,7 @@ public class VendorService {
 			throw new InvalidVendorStateException("Only approved vendors can change store status");
 		}
 
+		StoreStatus previousStatus = vendor.getStoreStatus();
 		StoreStatus requested = request.storeStatus();
 		if (!isAdmin && vendor.isStoreLockedByAdmin() && requested == StoreStatus.OPEN) {
 			throw new InvalidVendorStateException(
@@ -247,6 +248,21 @@ public class VendorService {
 		} else {
 			vendor.setStoreStatus(StoreStatus.CLOSED);
 			vendor.setStoreLockedByAdmin(isAdmin);
+		}
+
+		if (previousStatus != vendor.getStoreStatus()) {
+			String recipient = vendor.getEmail();
+			String vendorName = vendor.getName();
+			String businessName = vendor.getBusinessName();
+			StoreStatus newStatus = vendor.getStoreStatus();
+			boolean changedByAdmin = isAdmin;
+			mailDispatcher.sendAfterCommit(
+					() -> emailService.sendStoreStatusChangeEmail(
+							recipient,
+							vendorName,
+							businessName,
+							newStatus,
+							changedByAdmin));
 		}
 		return toResponse(vendor);
 	}
