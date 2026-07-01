@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -115,4 +116,94 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 	List<Object[]> findTopVendorsByRevenue(@Param("limit") int limit);
 
 	List<VendorOrder> findTop10ByOrderByCreatedAtDesc();
+
+	long countByVendorIdAndStatusNot(Long vendorId, OrderStatus status);
+
+	long countByVendorIdAndCreatedAtGreaterThanEqual(Long vendorId, Instant createdAt);
+
+	long countByVendorIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+			Long vendorId,
+			Instant start,
+			Instant end);
+
+	@Query(value = """
+			SELECT COALESCE(SUM(o.unit_price * o.quantity), 0)
+			FROM vendor_order o
+			WHERE o.vendor_id = :vendorId AND o.status <> 'CANCELED'
+			""", nativeQuery = true)
+	java.math.BigDecimal sumRevenueByVendor(@Param("vendorId") Long vendorId);
+
+	@Query(value = """
+			SELECT COALESCE(SUM(o.unit_price * o.quantity), 0)
+			FROM vendor_order o
+			WHERE o.vendor_id = :vendorId
+			AND o.status <> 'CANCELED'
+			AND o.created_at >= :start AND o.created_at < :end
+			""", nativeQuery = true)
+	java.math.BigDecimal sumRevenueByVendorBetween(
+			@Param("vendorId") Long vendorId,
+			@Param("start") Instant start,
+			@Param("end") Instant end);
+
+	@Query(value = """
+			SELECT MONTH(o.created_at), COALESCE(SUM(o.unit_price * o.quantity), 0)
+			FROM vendor_order o
+			WHERE o.vendor_id = :vendorId
+			AND YEAR(o.created_at) = :year AND o.status <> 'CANCELED'
+			GROUP BY MONTH(o.created_at)
+			ORDER BY MONTH(o.created_at)
+			""", nativeQuery = true)
+	List<Object[]> sumRevenueGroupedByMonthForVendor(
+			@Param("vendorId") Long vendorId,
+			@Param("year") int year);
+
+	@Query(value = """
+			SELECT o.status, COUNT(o.id)
+			FROM vendor_order o
+			WHERE o.vendor_id = :vendorId
+			GROUP BY o.status
+			""", nativeQuery = true)
+	List<Object[]> countOrdersByStatusForVendor(@Param("vendorId") Long vendorId);
+
+	@Query(value = """
+			SELECT o.payment_method, COUNT(o.id)
+			FROM vendor_order o
+			WHERE o.vendor_id = :vendorId AND o.status <> 'CANCELED'
+			GROUP BY o.payment_method
+			""", nativeQuery = true)
+	List<Object[]> countOrdersByPaymentMethodForVendor(@Param("vendorId") Long vendorId);
+
+	@Query(value = """
+			SELECT DATE(o.created_at), COUNT(o.id)
+			FROM vendor_order o
+			WHERE o.vendor_id = :vendorId AND o.created_at >= :since
+			GROUP BY DATE(o.created_at)
+			ORDER BY DATE(o.created_at)
+			""", nativeQuery = true)
+	List<Object[]> countOrdersGroupedByDayForVendor(
+			@Param("vendorId") Long vendorId,
+			@Param("since") Instant since);
+
+	@Query(value = """
+			SELECT o.product_id, o.product_name, COALESCE(SUM(o.quantity), 0),
+			       COALESCE(SUM(o.unit_price * o.quantity), 0), MAX(o.product_image)
+			FROM vendor_order o
+			WHERE o.vendor_id = :vendorId AND o.status <> 'CANCELED'
+			GROUP BY o.product_id, o.product_name
+			ORDER BY SUM(o.quantity) DESC
+			LIMIT :limit
+			""", nativeQuery = true)
+	List<Object[]> findTopProductsByVendor(
+			@Param("vendorId") Long vendorId,
+			@Param("limit") int limit);
+
+	@Query("""
+			SELECT o FROM VendorOrder o
+			JOIN FETCH o.user
+			JOIN FETCH o.vendor
+			JOIN FETCH o.product
+			WHERE o.vendor.id = :vendorId
+			ORDER BY o.createdAt DESC
+			""")
+	List<VendorOrder> findRecentByVendorId(@Param("vendorId") Long vendorId, Pageable pageable);
 }

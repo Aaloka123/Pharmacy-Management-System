@@ -160,3 +160,25 @@ body {
     animation: none;
   }
 }
+
+@keyframes chatbot-soft-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70%,
+  100% {
+    transform: scale(1.28);
+    opacity: 0;
+  }
+}
+
+.chatbot-soft-ping {
+  animation: chatbot-soft-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatbot-soft-ping {
+    animation: none;
+  }
+}

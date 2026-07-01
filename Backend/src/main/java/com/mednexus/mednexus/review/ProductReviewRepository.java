@@ -75,4 +75,12 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, Lo
 			GROUP BY p.vendor.id
 			""")
 	List<Object[]> averageRatingByVendor();
+
+	@Query("""
+			SELECT AVG(r.rating), COUNT(r)
+			FROM ProductReview r
+			JOIN r.product p
+			WHERE p.vendor.id = :vendorId
+			""")
+	Object[] averageRatingAndCountForVendor(@Param("vendorId") Long vendorId);
 }

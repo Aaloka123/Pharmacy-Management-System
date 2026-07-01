@@ -81,4 +81,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 			@Param("vendorStatus") VendorStatus vendorStatus,
 			@Param("storeStatus") StoreStatus storeStatus,
 			@Param("productStatus") ProductStatus productStatus);
+
+	long countByVendorIdAndStatus(Long vendorId, ProductStatus status);
+
+	long countByVendorIdAndStatusAndStockLessThanEqual(Long vendorId, ProductStatus status, int stock);
 }

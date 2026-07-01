@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { FiArrowLeft, FiCornerUpLeft, FiImage, FiPaperclip, FiSend, FiTrash2, FiX } from 'react-icons/fi'
+import { FiArrowLeft, FiCornerUpLeft, FiImage, FiMoreHorizontal, FiPaperclip, FiSend, FiTrash2, FiX } from 'react-icons/fi'
 import { HiOutlineMagnifyingGlass } from 'react-icons/hi2'
+import { LuBan, LuBell, LuBellOff, LuMailOpen, LuPin, LuPinOff } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import { resolveMediaUrl, resolveProfileImageUrl } from '../lib/api'
 import { getStoredUser } from '../lib/auth'
@@ -24,6 +25,7 @@ import {
   sendMessageRest,
 } from '../lib/messageApi'
 import { refreshVendorNavBadges } from '../lib/vendorNavBadges'
+import { notifyMessagesUnreadChanged } from '../lib/messagePanelEvents'
 import type { Client, StompSubscription } from '@stomp/stompjs'
 
 type MessagingPageProps = {
@@ -56,21 +58,6 @@ function formatMessageTime(iso: string): string {
   })
 }
 
-function formatListTime(iso: string | null): string {
-  if (!iso) return ''
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  const now = new Date()
-  const sameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate()
-  if (sameDay) {
-    return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-  }
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-}
-
 function MessageAvatar({
   imageUrl,
   name,
@@ -83,9 +70,9 @@ function MessageAvatar({
   const resolved = resolveProfileImageUrl(imageUrl)
   return (
     <div
-      className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-teal-700 text-[10px] font-bold text-white ${
-        side === 'left' ? 'mr-2' : 'ml-2'
-      }`}
+      className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 ${
+        resolved ? 'bg-white' : 'bg-teal-700 text-[10px] font-bold text-white'
+      } ${side === 'left' ? 'mr-2' : 'ml-2'}`}
       title={name}
     >
       {resolved ? (
@@ -97,11 +84,67 @@ function MessageAvatar({
   )
 }
 
+const CHATBOT_PREVIEW = 'Hi! I am your AI assistant. How can I help you today?'
+
+type ChatbotMessage = {
+  id: number
+  role: 'assistant' | 'user'
+  body: string
+  createdAt: string
+  imageUrl?: string
+}
+
+function createWelcomeChatbotMessage(): ChatbotMessage {
+  return {
+    id: 0,
+    role: 'assistant',
+    body: CHATBOT_PREVIEW,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+function ChatbotListItem({
+  active,
+  onClick,
+}: {
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      aria-selected={active}
+      className={`flex w-full shrink-0 cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50 ${
+        active ? 'bg-teal-50/70 hover:bg-teal-50/70' : 'bg-white'
+      }`}
+      onClick={onClick}
+      type="button"
+    >
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
+        AI
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-semibold text-slate-900">Chatbot</span>
+          <span className="shrink-0 text-[11px] font-medium text-violet-600">Assistant</span>
+        </div>
+        <p className="truncate text-xs text-slate-500">{CHATBOT_PREVIEW}</p>
+      </div>
+    </button>
+  )
+}
+
 const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 'page' }: MessagingPageProps) => {
   const isPanel = layout === 'panel'
   const selfSenderType = mode === 'vendor' ? 'VENDOR' : 'USER'
   const [conversations, setConversations] = useState<ConversationDto[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [chatbotSelected, setChatbotSelected] = useState(false)
+  const [chatbotMessages, setChatbotMessages] = useState<ChatbotMessage[]>(() => [createWelcomeChatbotMessage()])
+  const [chatbotDraft, setChatbotDraft] = useState('')
+  const [chatbotPendingImage, setChatbotPendingImage] = useState<{
+    url: string
+    fileName: string
+  } | null>(null)
   const [messages, setMessages] = useState<ChatMessageDto[]>([])
   const [search, setSearch] = useState('')
   const [draft, setDraft] = useState('')
@@ -116,6 +159,14 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     x: number
     y: number
   } | null>(null)
+  const [conversationMenu, setConversationMenu] = useState<{
+    conversationId: number
+    x: number
+    y: number
+  } | null>(null)
+  const [pinnedConversationIds, setPinnedConversationIds] = useState<number[]>([])
+  const [mutedConversationIds, setMutedConversationIds] = useState<number[]>([])
+  const [blockedConversationIds, setBlockedConversationIds] = useState<number[]>([])
   const [pendingAttachment, setPendingAttachment] = useState<{
     url: string
     fileName: string
@@ -124,8 +175,10 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   } | null>(null)
 
   const messageListRef = useRef<HTMLDivElement>(null)
+  const chatbotMessageListRef = useRef<HTMLDivElement>(null)
   const conversationListRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const chatbotFileInputRef = useRef<HTMLInputElement>(null)
   const stompClientRef = useRef<Client | null>(null)
   const subscriptionRef = useRef<StompSubscription | null>(null)
   const initialVendorHandled = useRef(false)
@@ -138,12 +191,39 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
 
   const filteredConversations = useMemo(() => {
     const query = search.trim().toLowerCase()
-    if (!query) return conversations
-    return conversations.filter((conversation) => conversation.peerName.toLowerCase().includes(query))
-  }, [conversations, search])
+    let list = conversations
+    if (query) {
+      list = list.filter((conversation) => conversation.peerName.toLowerCase().includes(query))
+    }
+    if (pinnedConversationIds.length === 0) return list
+    return [...list].sort((a, b) => {
+      const aPinned = pinnedConversationIds.includes(a.id)
+      const bPinned = pinnedConversationIds.includes(b.id)
+      if (aPinned !== bPinned) return aPinned ? -1 : 1
+      if (aPinned && bPinned) {
+        return pinnedConversationIds.indexOf(a.id) - pinnedConversationIds.indexOf(b.id)
+      }
+      return 0
+    })
+  }, [conversations, search, pinnedConversationIds])
+
+  const conversationMenuTarget = useMemo(
+    () =>
+      conversationMenu
+        ? (conversations.find((conversation) => conversation.id === conversationMenu.conversationId) ?? null)
+        : null,
+    [conversationMenu, conversations],
+  )
 
   const scrollToBottom = useCallback(() => {
     const el = messageListRef.current
+    if (el) {
+      el.scrollTop = el.scrollHeight
+    }
+  }, [])
+
+  const scrollChatbotToBottom = useCallback(() => {
+    const el = chatbotMessageListRef.current
     if (el) {
       el.scrollTop = el.scrollHeight
     }
@@ -163,9 +243,11 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
 
   const openConversation = useCallback(
     async (conversationId: number) => {
+      setChatbotSelected(false)
       setSelectedId(conversationId)
       setReplyTo(null)
       setMessageMenu(null)
+      setConversationMenu(null)
       setPendingAttachment(null)
       setLoadingThread(true)
       try {
@@ -191,9 +273,59 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     [mode, scrollToBottom],
   )
 
+  const openChatbot = useCallback(() => {
+    setChatbotSelected(true)
+    setSelectedId(null)
+    setReplyTo(null)
+    setMessageMenu(null)
+    setPendingAttachment(null)
+    setMessages([])
+    setDraft('')
+    window.setTimeout(scrollChatbotToBottom, 50)
+  }, [scrollChatbotToBottom])
+
+  const handleChatbotFilePick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.info('Only images can be attached in the assistant chat for now.')
+      event.target.value = ''
+      return
+    }
+    setChatbotPendingImage({
+      url: URL.createObjectURL(file),
+      fileName: file.name,
+    })
+    event.target.value = ''
+  }
+
+  const handleChatbotSend = () => {
+    const text = chatbotDraft.trim()
+    if (!text && !chatbotPendingImage) return
+
+    const userMessage: ChatbotMessage = {
+      id: Date.now(),
+      role: 'user',
+      body: text,
+      createdAt: new Date().toISOString(),
+      imageUrl: chatbotPendingImage?.url,
+    }
+
+    setChatbotMessages((prev) => [...prev, userMessage])
+    setChatbotDraft('')
+    setChatbotPendingImage(null)
+    window.setTimeout(scrollChatbotToBottom, 50)
+  }
+
   useEffect(() => {
     void loadConversations()
   }, [loadConversations])
+
+  useEffect(() => {
+    if (mode !== 'user') return
+    const totalUnread = conversations.reduce((sum, conversation) => sum + conversation.unreadCount, 0)
+    notifyMessagesUnreadChanged(totalUnread)
+  }, [conversations, mode])
 
   useEffect(() => {
     if (!isPanel) return undefined
@@ -214,14 +346,14 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
       return () => element.removeEventListener('wheel', onWheel)
     }
 
-    const cleanups = [messageListRef.current, conversationListRef.current]
+    const cleanups = [messageListRef.current, chatbotMessageListRef.current, conversationListRef.current]
       .filter((element): element is HTMLDivElement => element != null)
       .map(lockScrollChain)
 
     return () => {
       cleanups.forEach((cleanup) => cleanup())
     }
-  }, [isPanel, messages.length, filteredConversations.length, selectedId])
+  }, [isPanel, messages.length, chatbotMessages.length, filteredConversations.length, selectedId, chatbotSelected])
 
   useEffect(() => {
     if (initialConversationId == null || initialConversationHandled.current) {
@@ -502,6 +634,86 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     }
   }
 
+  const openConversationMenu = (
+    conversationId: number,
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.stopPropagation()
+    if (conversationMenu?.conversationId === conversationId) {
+      closeConversationMenu()
+      return
+    }
+    const rect = event.currentTarget.getBoundingClientRect()
+    const menuWidth = 220
+    setConversationMenu({
+      conversationId,
+      x: Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)),
+      y: rect.bottom + 6,
+    })
+  }
+
+  const closeConversationMenu = () => setConversationMenu(null)
+
+  const handleMarkConversationUnread = (conversationId: number) => {
+    setConversations((prev) =>
+      prev.map((conversation) =>
+        conversation.id === conversationId
+          ? { ...conversation, unreadCount: Math.max(1, conversation.unreadCount) }
+          : conversation,
+      ),
+    )
+    closeConversationMenu()
+    if (mode === 'vendor') {
+      refreshVendorNavBadges()
+    }
+  }
+
+  const handleTogglePinConversation = (conversationId: number) => {
+    setPinnedConversationIds((prev) =>
+      prev.includes(conversationId)
+        ? prev.filter((id) => id !== conversationId)
+        : [conversationId, ...prev],
+    )
+    closeConversationMenu()
+  }
+
+  const handleToggleMuteConversation = (conversationId: number) => {
+    setMutedConversationIds((prev) =>
+      prev.includes(conversationId)
+        ? prev.filter((id) => id !== conversationId)
+        : [...prev, conversationId],
+    )
+    closeConversationMenu()
+  }
+
+  const handleDeleteConversation = (conversationId: number) => {
+    const conversation = conversations.find((item) => item.id === conversationId)
+    const peerName = conversation?.peerName ?? (mode === 'vendor' ? 'this customer' : 'this vendor')
+    closeConversationMenu()
+
+    const confirmed = window.confirm(
+      `Delete conversation with ${peerName}? It will be removed from your list until you refresh the page.`,
+    )
+    if (!confirmed) return
+
+    setConversations((prev) => prev.filter((item) => item.id !== conversationId))
+    if (selectedId === conversationId) {
+      setSelectedId(null)
+      setMessages([])
+    }
+    setPinnedConversationIds((prev) => prev.filter((id) => id !== conversationId))
+    setMutedConversationIds((prev) => prev.filter((id) => id !== conversationId))
+  }
+
+  const handleBlockConversation = (conversationId: number) => {
+    setBlockedConversationIds((prev) =>
+      prev.includes(conversationId)
+        ? prev.filter((id) => id !== conversationId)
+        : [...prev, conversationId],
+    )
+    closeConversationMenu()
+  }
+
   useEffect(() => {
     if (!messageMenu) return undefined
     const closeMenu = () => setMessageMenu(null)
@@ -518,14 +730,32 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     }
   }, [messageMenu])
 
-  const showConversationList = !isPanel || selectedId == null
-  const showConversationThread = !isPanel || selectedId != null
+  useEffect(() => {
+    if (!conversationMenu) return undefined
+    const closeMenu = () => closeConversationMenu()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu()
+    }
+    window.addEventListener('click', closeMenu)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('scroll', closeMenu, true)
+    return () => {
+      window.removeEventListener('click', closeMenu)
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('scroll', closeMenu, true)
+    }
+  }, [conversationMenu])
+
+  const showConversationList = !isPanel || (!selectedId && !chatbotSelected)
+  const showConversationThread = !isPanel || selectedId != null || chatbotSelected
 
   const backToList = () => {
+    setChatbotSelected(false)
     setSelectedId(null)
     setMessages([])
     setReplyTo(null)
     setMessageMenu(null)
+    setConversationMenu(null)
     setPendingAttachment(null)
   }
 
@@ -572,58 +802,135 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
               </div>
             </div>
 
+            <ChatbotListItem active={chatbotSelected} onClick={openChatbot} />
+
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain" ref={conversationListRef}>
               {loadingList ? (
                 <p className="px-4 py-6 text-sm text-slate-500">Loading conversations...</p>
               ) : filteredConversations.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-slate-500">
-                  {mode === 'user'
-                    ? 'No conversations yet. Message a vendor from their profile page.'
-                    : 'No customer messages yet.'}
+                  {search.trim()
+                    ? 'No matching conversations.'
+                    : mode === 'user'
+                      ? 'No vendor conversations yet. Message a vendor from their profile page.'
+                      : 'No customer messages yet.'}
                 </p>
               ) : (
                 filteredConversations.map((conversation) => {
                   const avatar = resolveProfileImageUrl(conversation.peerProfileImage)
-                  const active = conversation.id === selectedId
+                  const active = !chatbotSelected && conversation.id === selectedId
+                  const menuOpen = conversationMenu?.conversationId === conversation.id
+                  const isPinned = pinnedConversationIds.includes(conversation.id)
+                  const isMuted = mutedConversationIds.includes(conversation.id)
+                  const isBlocked = blockedConversationIds.includes(conversation.id)
+                  const hasUnread = conversation.unreadCount > 0
+                  const rowClass = `group flex w-full cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition ${
+                    isBlocked
+                      ? active
+                        ? 'bg-slate-100/90 hover:bg-slate-100'
+                        : 'bg-slate-50/90 hover:bg-slate-100/80'
+                      : active
+                        ? 'bg-teal-50/70 hover:bg-teal-50/70'
+                        : 'hover:bg-slate-50'
+                  }`
+
                   return (
-                    <button
-                      className={`flex w-full cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50 ${
-                        active ? 'bg-teal-50/70' : ''
-                      }`}
+                    <div
+                      aria-selected={active}
+                      className={rowClass}
                       key={conversation.id}
                       onClick={() => void openConversation(conversation.id)}
-                      type="button"
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          void openConversation(conversation.id)
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                     >
                       {avatar ? (
                         <img
                           alt=""
-                          className="h-11 w-11 shrink-0 rounded-full border border-slate-200 object-cover"
+                          className={`h-11 w-11 shrink-0 rounded-full border border-slate-200 object-cover ${
+                            isBlocked ? 'opacity-60' : ''
+                          }`}
                           src={avatar}
                         />
                       ) : (
-                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-700 text-sm font-bold text-white">
+                        <span
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-700 text-sm font-bold text-white ${
+                            isBlocked ? 'opacity-60' : ''
+                          }`}
+                        >
                           {peerInitial(conversation.peerName)}
                         </span>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-semibold text-slate-900">
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <span
+                            className={`truncate text-sm font-semibold ${
+                              isBlocked ? 'text-slate-500' : 'text-slate-900'
+                            }`}
+                          >
                             {conversation.peerName}
                           </span>
-                          <span className="shrink-0 text-[11px] text-slate-400">
-                            {formatListTime(conversation.lastMessageAt)}
-                          </span>
+                          {isBlocked ? (
+                            <span className="shrink-0 text-xs font-medium text-rose-400">Blocked</span>
+                          ) : null}
+                          {isPinned ? (
+                            <LuPin
+                              aria-label="Pinned conversation"
+                              className={`h-3.5 w-3.5 shrink-0 text-teal-600 ${isBlocked ? 'opacity-60' : ''}`}
+                              strokeWidth={2}
+                            />
+                          ) : null}
                         </div>
-                        <p className="truncate text-xs text-slate-500">
+                        <p
+                          className={`truncate text-xs ${
+                            isBlocked ? 'text-slate-400' : 'text-slate-500'
+                          }`}
+                        >
                           {conversation.lastMessagePreview ?? 'Start a conversation'}
                         </p>
                       </div>
-                      {conversation.unreadCount > 0 ? (
-                        <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-white">
-                          {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
-                        </span>
-                      ) : null}
-                    </button>
+                      <div className="relative flex h-8 w-8 shrink-0 items-center justify-center self-center">
+                        {hasUnread ? (
+                          <span
+                            className={`absolute inset-0 flex items-center justify-center transition-opacity ${
+                              menuOpen ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'
+                            }`}
+                          >
+                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-white">
+                              {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
+                            </span>
+                          </span>
+                        ) : isMuted ? (
+                          <span
+                            aria-label="Muted conversation"
+                            className={`absolute inset-0 flex items-center justify-center transition-opacity ${
+                              menuOpen ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'
+                            }`}
+                          >
+                            <LuBellOff className="h-4 w-4 text-slate-500" strokeWidth={1.8} />
+                          </span>
+                        ) : null}
+                        <button
+                          aria-expanded={menuOpen}
+                          aria-haspopup="menu"
+                          aria-label="Conversation options"
+                          className={`absolute inset-0 flex cursor-pointer items-center justify-center rounded-full border text-slate-500 transition hover:border-slate-200 hover:bg-slate-100 ${
+                            menuOpen
+                              ? 'border-slate-200 bg-slate-100 opacity-100'
+                              : 'border-transparent opacity-0 group-hover:opacity-100'
+                          }`}
+                          onClick={(event) => openConversationMenu(conversation.id, event)}
+                          type="button"
+                        >
+                          <FiMoreHorizontal className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   )
                 })
               )}
@@ -633,7 +940,144 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
 
           {showConversationThread ? (
           <section className={`flex min-w-0 flex-col ${isPanel ? 'min-h-0 flex-1' : 'min-h-[420px] lg:min-h-0'}`}>
-            {selectedConversation ? (
+            {chatbotSelected ? (
+              <>
+                <header className="flex items-center gap-3 border-b border-slate-200 px-4 py-3">
+                  {isPanel ? (
+                    <button
+                      aria-label="Back to conversations"
+                      className="cursor-pointer rounded-lg p-1.5 text-slate-600 hover:bg-slate-100"
+                      onClick={backToList}
+                      type="button"
+                    >
+                      <FiArrowLeft className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
+                    AI
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h2 className="truncate text-sm font-semibold text-slate-900">Chatbot</h2>
+                      <span className="text-[11px] font-medium text-violet-600">Assistant</span>
+                    </div>
+                  </div>
+                </header>
+
+                <div
+                  className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-slate-50 p-4"
+                  ref={chatbotMessageListRef}
+                >
+                  {chatbotMessages.map((message) => {
+                    const isSelf = message.role === 'user'
+                    return (
+                      <div
+                        className={`mb-3 flex min-w-0 items-end ${isSelf ? 'justify-end' : 'justify-start'}`}
+                        key={message.id}
+                      >
+                        {!isSelf ? (
+                          <span className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
+                            AI
+                          </span>
+                        ) : null}
+                        <div
+                          className={`min-w-0 max-w-[78%] overflow-hidden rounded-xl border px-3 py-2 shadow-sm ${
+                            isSelf ? 'border-teal-200 bg-teal-50' : 'border-slate-200 bg-white'
+                          }`}
+                        >
+                          {message.imageUrl ? (
+                            <button
+                              className="mb-2 block cursor-pointer overflow-hidden rounded-lg"
+                              onClick={() => setPreviewUrl(message.imageUrl!)}
+                              type="button"
+                            >
+                              <img
+                                alt="Attachment"
+                                className="max-h-48 max-w-full object-cover"
+                                src={message.imageUrl}
+                              />
+                            </button>
+                          ) : null}
+                          {message.body ? (
+                            <p className="whitespace-pre-wrap break-words text-sm text-slate-800">{message.body}</p>
+                          ) : null}
+                          <p className="mt-1 text-[11px] text-slate-400">
+                            {formatMessageTime(message.createdAt)}
+                          </p>
+                        </div>
+                        {isSelf ? (
+                          <MessageAvatar
+                            imageUrl={selfUser?.profileImage ?? null}
+                            name={selfUser?.fullName ?? selfUser?.email ?? 'You'}
+                            side="right"
+                          />
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="border-t border-slate-200 bg-white p-3">
+                  {chatbotPendingImage ? (
+                    <div className="mb-2 flex items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
+                      <img
+                        alt={chatbotPendingImage.fileName}
+                        className="h-12 w-12 shrink-0 rounded-md border border-teal-200 object-cover"
+                        src={chatbotPendingImage.url}
+                      />
+                      <span className="min-w-0 flex-1 truncate">Image ready: {chatbotPendingImage.fileName}</span>
+                      <button
+                        aria-label="Remove attachment"
+                        className="shrink-0 cursor-pointer rounded-md p-1 hover:bg-teal-100"
+                        onClick={() => setChatbotPendingImage(null)}
+                        type="button"
+                      >
+                        <FiX className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                  <div className="flex items-end gap-2">
+                    <input
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={handleChatbotFilePick}
+                      ref={chatbotFileInputRef}
+                      type="file"
+                    />
+                    <button
+                      aria-label="Attach image"
+                      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      onClick={() => chatbotFileInputRef.current?.click()}
+                      type="button"
+                    >
+                      <FiImage className="h-5 w-5" />
+                    </button>
+                    <textarea
+                      className="min-h-[42px] flex-1 resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500"
+                      onChange={(event) => setChatbotDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault()
+                          handleChatbotSend()
+                        }
+                      }}
+                      placeholder="Type a message..."
+                      rows={1}
+                      value={chatbotDraft}
+                    />
+                    <button
+                      aria-label="Send message"
+                      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-teal-700 text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={!chatbotDraft.trim() && !chatbotPendingImage}
+                      onClick={handleChatbotSend}
+                      type="button"
+                    >
+                      <FiSend className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : selectedConversation ? (
               <>
                 <header className="flex items-center gap-3 border-b border-slate-200 px-4 py-3">
                   {isPanel ? (
@@ -693,7 +1137,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                 </header>
 
                 <div
-                  className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50 p-4"
+                  className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-slate-50 p-4"
                   ref={messageListRef}
                 >
                   {loadingThread ? (
@@ -710,7 +1154,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                         : null
                       return (
                         <div
-                          className={`mb-3 flex items-end ${isSelf ? 'justify-end' : 'justify-start'}`}
+                          className={`mb-3 flex min-w-0 items-end ${isSelf ? 'justify-end' : 'justify-start'}`}
                           key={message.id}
                         >
                           {!isSelf ? (
@@ -721,7 +1165,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                             />
                           ) : null}
                           <div
-                            className={`max-w-[78%] rounded-xl border px-3 py-2 shadow-sm ${
+                            className={`min-w-0 max-w-[78%] overflow-hidden rounded-xl border px-3 py-2 shadow-sm ${
                               message.deleted
                                 ? 'cursor-default border-slate-200 bg-slate-100'
                                 : isSelf
@@ -778,7 +1222,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                                   </a>
                                 ) : null}
                                 {message.body ? (
-                                  <p className="whitespace-pre-wrap text-sm text-slate-800">{message.body}</p>
+                                  <p className="whitespace-pre-wrap break-words text-sm text-slate-800">{message.body}</p>
                                 ) : null}
                               </>
                             )}
@@ -966,6 +1410,78 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                   Delete for everyone
                 </button>
               ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {conversationMenu && conversationMenuTarget
+        ? createPortal(
+            <div
+              className="fixed z-[70] w-[220px] overflow-hidden rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl"
+              onClick={(event) => event.stopPropagation()}
+              role="menu"
+              style={{ left: conversationMenu.x, top: conversationMenu.y }}
+            >
+              <button
+                className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => handleMarkConversationUnread(conversationMenu.conversationId)}
+                role="menuitem"
+                type="button"
+              >
+                <span>Mark as unread</span>
+                <LuMailOpen className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
+              </button>
+              <button
+                className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => handleTogglePinConversation(conversationMenu.conversationId)}
+                role="menuitem"
+                type="button"
+              >
+                <span>
+                  {pinnedConversationIds.includes(conversationMenu.conversationId) ? 'Unpin' : 'Pin'}
+                </span>
+                {pinnedConversationIds.includes(conversationMenu.conversationId) ? (
+                  <LuPinOff className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
+                ) : (
+                  <LuPin className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
+                )}
+              </button>
+              <button
+                className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => handleToggleMuteConversation(conversationMenu.conversationId)}
+                role="menuitem"
+                type="button"
+              >
+                <span>
+                  {mutedConversationIds.includes(conversationMenu.conversationId) ? 'Unmute' : 'Mute'}
+                </span>
+                {mutedConversationIds.includes(conversationMenu.conversationId) ? (
+                  <LuBell className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
+                ) : (
+                  <LuBellOff className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
+                )}
+              </button>
+              <button
+                className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                onClick={() => handleDeleteConversation(conversationMenu.conversationId)}
+                role="menuitem"
+                type="button"
+              >
+                <span>Delete</span>
+                <FiTrash2 className="h-4 w-4 shrink-0" />
+              </button>
+              <button
+                className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => handleBlockConversation(conversationMenu.conversationId)}
+                role="menuitem"
+                type="button"
+              >
+                <span>
+                  {blockedConversationIds.includes(conversationMenu.conversationId) ? 'Unblock' : 'Block'}
+                </span>
+                <LuBan className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
+              </button>
             </div>,
             document.body,
           )
