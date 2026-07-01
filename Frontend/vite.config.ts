@@ -4,6 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    global: 'globalThis',
+  },
   server: {
     open: true, // ✅ THIS is the missing part
     proxy: {
@@ -14,6 +17,11 @@ export default defineConfig({
       "/uploads": {
         target: "http://localhost:8080",
         changeOrigin: true,
+      },
+      "/ws": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        ws: true,
       },
     },
   },

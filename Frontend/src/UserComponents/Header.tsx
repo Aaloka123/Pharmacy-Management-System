@@ -342,7 +342,8 @@ const Header = () => {
                 </NavLink>
               </div>
             ) : (
-              <NavLink
+              <div className="flex items-center gap-2">
+                <NavLink
                 aria-label="Profile"
                 className={({ isActive }) =>
                   `hidden h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold transition duration-200 lg:flex ${
@@ -366,6 +367,7 @@ const Header = () => {
                   </span>
                 )}
               </NavLink>
+              </div>
             )
           ) : (
             <NavLink

@@ -6,6 +6,8 @@ import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartStorage'
 import { getPublicProduct, getProductImageUrls, type ProductDto } from '../lib/productsApi'
+import { sendProductInquiry } from '../lib/messageApi'
+import { openMessagePanel } from '../lib/messagePanelEvents'
 import {
   fetchProductReviews,
   fetchReviewEligibility,
@@ -16,7 +18,7 @@ import {
   type ReviewEligibilityDto,
 } from '../lib/reviewApi'
 import { ApiRequestError } from '../lib/api'
-import { getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
+import { getAccessToken, getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
 import { FaStar } from 'react-icons/fa'
 import TopProduct from '../UserComponents/TopProduct'
 import FadeInOnScroll from '../components/FadeInOnScroll'
@@ -71,6 +73,7 @@ const ProductsDetail = () => {
   const [brokenVendorAvatars, setBrokenVendorAvatars] = useState<Set<number>>(() => new Set())
   const [previewReviewImage, setPreviewReviewImage] = useState<{ url: string; alt: string } | null>(null)
   const [addingToCart, setAddingToCart] = useState(false)
+  const [sendingInquiry, setSendingInquiry] = useState(false)
 
   useEffect(() => onAuthChange(() => setCurrentUser(getStoredUser())), [])
 
@@ -98,6 +101,28 @@ const ProductsDetail = () => {
       console.error(err)
     } finally {
       setAddingToCart(false)
+    }
+  }
+
+  const handleInquiryNow = async () => {
+    if (!product?.vendorId) {
+      toast.error('Vendor information is not available for this product.')
+      return
+    }
+    if (!getAccessToken() || currentUser?.role !== 'USER') {
+      toast.info('Please log in to send a product inquiry.')
+      navigate('/login', { state: { from: `/productsdetail?id=${product.id}` } })
+      return
+    }
+    setSendingInquiry(true)
+    try {
+      const conversation = await sendProductInquiry(product)
+      openMessagePanel({ vendorId: product.vendorId, conversationId: conversation.id })
+      toast.success('Inquiry sent. You can continue chatting with the vendor.')
+    } catch {
+      toast.error('Could not send inquiry. Please try again.')
+    } finally {
+      setSendingInquiry(false)
     }
   }
 
@@ -425,10 +450,12 @@ const ProductsDetail = () => {
                   {addingToCart ? 'Adding...' : 'Add to Cart'}
                 </button>
                 <button
-                  className="cursor-pointer rounded-lg border border-teal-700 bg-transparent px-6 py-2.5 text-sm font-semibold text-teal-700 transition duration-200 hover:bg-teal-50"
+                  className="cursor-pointer rounded-lg border border-teal-700 bg-transparent px-6 py-2.5 text-sm font-semibold text-teal-700 transition duration-200 hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={sendingInquiry || !product.vendorId}
+                  onClick={() => void handleInquiryNow()}
                   type="button"
                 >
-                  Inquiry Now
+                  {sendingInquiry ? 'Sending...' : 'Inquiry Now'}
                 </button>
               </div>
             </div>

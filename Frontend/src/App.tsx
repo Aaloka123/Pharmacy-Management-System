@@ -20,6 +20,7 @@ import Cart from './UserPages/Cart'
 import Checkout from './UserPages/Checkout'
 import PaymentSuccess from './UserPages/PaymentSuccess'
 import OrderTracking from './UserPages/OrderTracking'
+import UserMessage from './UserPages/UserMessage'
 import Dashboard from './VendorPages/VendorDashboard'
 import Message from './VendorPages/VendorMessage'
 import Product from './VendorPages/VendorProduct'
@@ -50,8 +51,10 @@ const AppContent = () => {
   }, [pathname])
 
   const normalizedPath = pathname.replace(/\/+$/, '') || '/'
-  const userRoutes = ['/', '/products', '/productsdetail', '/about', '/contacts', '/profile', '/cart', '/checkout', '/ordertracking', '/vendorprofile']
-  const showChatbot = userRoutes.some((route) => normalizedPath === route || normalizedPath.startsWith(`${route}/`))
+  const showMessageChatbot =
+    !normalizedPath.startsWith('/vendor') &&
+    !normalizedPath.startsWith('/admin') &&
+    !['/login', '/signup', '/forgetpassword', '/vendorlogin', '/vendorsignup'].includes(normalizedPath)
 
   return (
     <>
@@ -71,6 +74,7 @@ const AppContent = () => {
         <Route path="/checkout" element={<RequireAuth roles={['USER']}><Checkout /></RequireAuth>} />
         <Route path="/payment/success" element={<RequireAuth roles={['USER']}><PaymentSuccess /></RequireAuth>} />
         <Route path="/ordertracking" element={<RequireAuth roles={['USER']}><OrderTracking /></RequireAuth>} />
+        <Route path="/usermessage" element={<RequireAuth roles={['USER']}><UserMessage /></RequireAuth>} />
         <Route path="/prescription" element={<RequireAuth roles={['USER']}><Prescription /></RequireAuth>} />
         
 
@@ -108,7 +112,7 @@ const AppContent = () => {
       </Routes>
       </PageTransition>
 
-      {showChatbot && <ChatbotButton />}
+      {showMessageChatbot ? <ChatbotButton /> : null}
     </>
   )
 }

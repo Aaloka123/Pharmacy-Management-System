@@ -7,6 +7,8 @@ import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
 import { resolveProfileImageUrl } from '../lib/api'
+import { getAccessToken, getStoredUser } from '../lib/auth'
+import { openMessagePanel } from '../lib/messagePanelEvents'
 import { getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
 import { getPublicVendor, listPublicVendorProducts, type PublicVendorDto } from '../lib/vendorsApi'
 
@@ -218,7 +220,30 @@ const VendorProfile = () => {
 
                 <span
                   aria-hidden="true"
-                  className="ml-auto mt-6 inline-flex shrink-0 items-center gap-2 self-start rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
+                  className="ml-auto mt-6 inline-flex shrink-0 items-center gap-2 self-start rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"
+                  onClick={() => {
+                    if (!vendorId) return
+                    if (!getAccessToken() || getStoredUser()?.role !== 'USER') {
+                      toast.info('Please log in as a customer to message this vendor.')
+                      navigate('/login')
+                      return
+                    }
+                    openMessagePanel({ vendorId })
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      if (!vendorId) return
+                      if (!getAccessToken() || getStoredUser()?.role !== 'USER') {
+                        toast.info('Please log in as a customer to message this vendor.')
+                        navigate('/login')
+                        return
+                      }
+                      openMessagePanel({ vendorId })
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                 >
                   <FiMail className="h-4 w-4" />
                   Message

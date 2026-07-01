@@ -76,6 +76,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/payments/khalti/callback")
 						.permitAll()
 						.requestMatchers("/uploads/**").permitAll()
+						.requestMatchers("/ws/**").permitAll()
 						.requestMatchers("/api/**").authenticated());
 		return http.build();
 	}

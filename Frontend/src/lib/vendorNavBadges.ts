@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { fetchVendorOrders } from './orderApi'
+import { fetchUnreadMessageCount } from './messageApi'
 import { listVendorProducts, type ProductDto } from './productsApi'
 import { fetchVendorReviews } from './reviewApi'
 import { getStoredUser, onAuthChange } from './auth'
@@ -44,7 +45,7 @@ export type VendorNavBadges = {
 }
 
 const DEFAULT_BADGES: VendorNavBadges = {
-  message: 1,
+  message: 0,
   product: 0,
   order: 0,
   review: 0,
@@ -85,10 +86,11 @@ export function refreshVendorNavBadges() {
 }
 
 export async function fetchVendorNavBadges(): Promise<VendorNavBadges> {
-  const [orders, reviews, productsRes] = await Promise.all([
+  const [orders, reviews, productsRes, unreadMessages] = await Promise.all([
     fetchVendorOrders().catch(() => []),
     fetchVendorReviews().catch(() => []),
     listVendorProducts().catch(() => ({ data: [] as ProductDto[] })),
+    fetchUnreadMessageCount().catch(() => 0),
   ])
 
   const seenPendingOrders = readSeenIds(SEEN_PENDING_ORDERS_KEY)
@@ -98,7 +100,7 @@ export async function fetchVendorNavBadges(): Promise<VendorNavBadges> {
   const unrepliedReviews = reviews.filter((review) => !review.vendorReplyBody)
 
   return {
-    message: 1,
+    message: unreadMessages,
     order: pendingOrders.filter((order) => !seenPendingOrders.has(order.id)).length,
     review: unrepliedReviews.filter((review) => !seenUnrepliedReviews.has(review.id)).length,
     product: countProductAlerts(productsRes.data),
@@ -125,6 +127,9 @@ export function useVendorNavBadges(): VendorNavBadges {
         }
         if (location.pathname === '/vendorreview') {
           next.review = 0
+        }
+        if (location.pathname === '/vendormessage') {
+          next.message = 0
         }
         if (!cancelled) setBadges(next)
       } catch {
