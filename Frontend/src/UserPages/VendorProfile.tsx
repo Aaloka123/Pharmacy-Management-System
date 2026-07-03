@@ -148,7 +148,7 @@ const VendorProfile = () => {
         <main className="px-4 py-16 text-center md:px-8 lg:px-[80px]">
           <p className="text-slate-600">{error ?? 'Vendor not found.'}</p>
           <button
-            className="mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
+            className="cursor-pointer mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
             onClick={() => navigate('/products')}
             type="button"
           >

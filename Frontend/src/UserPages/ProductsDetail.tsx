@@ -334,7 +334,7 @@ const ProductsDetail = () => {
         <main className="px-4 py-16 text-center md:px-8 lg:px-[80px]">
           <p className="text-slate-600">{error ?? 'Product not found.'}</p>
           <button
-            className="mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
+            className="cursor-pointer mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
             onClick={() => navigate('/products')}
             type="button"
           >
@@ -376,7 +376,7 @@ const ProductsDetail = () => {
                 <div className="mt-4 flex items-center gap-3">
                   {thumbnailImages.map((image, index) => (
                     <button
-                      className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white p-1 transition hover:border-slate-300"
+                      className="cursor-pointer flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white p-1 transition hover:border-slate-300"
                       key={`${image}-${index}`}
                       onClick={() => setSelectedImage(image)}
                       type="button"
@@ -522,7 +522,7 @@ const ProductsDetail = () => {
                         onClick={() => setReviewRating(star)}
                         type="button"
                       >
-                        <FaStar className="h-6 w-6" />
+                        <FaStar className="cursor-pointer h-6 w-6" />
                       </button>
                     ))}
                   </div>
@@ -661,7 +661,7 @@ const ProductsDetail = () => {
                               >
                                 <svg
                                   aria-hidden="true"
-                                  className="h-4 w-4"
+                                  className="cursor-pointer h-4 w-4"
                                   fill={r.likedByMe ? 'currentColor' : 'none'}
                                   stroke="currentColor"
                                   strokeLinecap="round"

@@ -149,7 +149,7 @@ const Signup = () => {
               </div>
               <button
                 type="button"
-                className="absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
+                className="cursor-pointer absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <IoEyeOffOutline className="size-4" /> : <IoEyeOutline className="size-4" />}
@@ -172,7 +172,7 @@ const Signup = () => {
               </div>
               <button
                 type="button"
-                className="absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
+                className="cursor-pointer absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 {showConfirmPassword ? <IoEyeOffOutline className="size-4" /> : <IoEyeOutline className="size-4" />}
@@ -180,7 +180,7 @@ const Signup = () => {
             </div>
 
             <button
-              className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+              className="cursor-pointer w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
               type="submit"
               disabled={loading}
             >

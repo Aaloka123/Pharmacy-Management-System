@@ -218,7 +218,7 @@ const Vendorlogin = () => {
                         type="button"
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 transition hover:text-slate-700"
                       >
                         {showPassword ? <IoEyeOffOutline className="size-5" /> : <IoEyeOutline className="size-5" />}
                       </button>
@@ -235,7 +235,7 @@ const Vendorlogin = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+                      className="w-full cursor-pointer rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loading ? 'Please wait…' : 'Continue'}
                     </button>
@@ -283,7 +283,7 @@ const Vendorlogin = () => {
                   </div>
 
                   <button
-                    className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+                    className="w-full cursor-pointer rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={loading}
                     type="submit"
                   >
@@ -291,7 +291,7 @@ const Vendorlogin = () => {
                   </button>
 
                   <button
-                    className="w-full text-sm font-medium text-slate-600 transition hover:text-teal-700"
+                    className="w-full cursor-pointer text-sm font-medium text-slate-600 transition hover:text-teal-700"
                     onClick={handleBackToLogin}
                     type="button"
                   >
@@ -319,7 +319,7 @@ const Vendorlogin = () => {
 
             <button
               type="button"
-              className="mt-6 w-full rounded-xl bg-white/20 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30"
+              className="mt-6 w-full cursor-pointer rounded-xl bg-white/20 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30"
             >
               Contact Seller Support
             </button>

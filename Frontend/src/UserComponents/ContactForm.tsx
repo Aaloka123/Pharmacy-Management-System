@@ -39,7 +39,7 @@ const ContactForm = () => {
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <button
-          className="inline-flex items-center gap-2 rounded-full bg-teal-700 px-8 py-3 text-[15px] font-semibold text-white transition hover:bg-teal-800"
+          className="cursor-pointer inline-flex items-center gap-2 rounded-full bg-teal-700 px-8 py-3 text-[15px] font-semibold text-white transition hover:bg-teal-800"
           type="submit"
         >
           <FiMail className="h-4 w-4" />

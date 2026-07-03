@@ -927,7 +927,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                           onClick={(event) => openConversationMenu(conversation.id, event)}
                           type="button"
                         >
-                          <FiMoreHorizontal className="h-4 w-4" />
+                          <FiMoreHorizontal className="cursor-pointer h-4 w-4" />
                         </button>
                       </div>
                     </div>

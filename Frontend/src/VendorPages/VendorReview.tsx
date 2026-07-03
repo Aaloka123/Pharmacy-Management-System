@@ -231,7 +231,7 @@ const VendorReview = () => {
                             >
                               <svg
                                 aria-hidden="true"
-                                className="h-4 w-4"
+                                className="cursor-pointer h-4 w-4"
                                 fill={review.likedByMe ? 'currentColor' : 'none'}
                                 stroke="currentColor"
                                 strokeLinecap="round"
@@ -257,7 +257,7 @@ const VendorReview = () => {
                               onClick={() => toggleCommentSection(review.id)}
                               type="button"
                             >
-                              <FaRegComment className="h-4 w-4" aria-hidden="true" />
+                              <FaRegComment className="cursor-pointer h-4 w-4" aria-hidden="true" />
                               {review.vendorReplyBody ? <span>1</span> : null}
                             </button>
                           </div>

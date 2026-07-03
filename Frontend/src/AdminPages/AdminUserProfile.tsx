@@ -196,7 +196,7 @@ const AdminUserProfile = () => {
             <p className="text-sm text-slate-600">{error ?? 'User not found.'}</p>
             <button
               type="button"
-              className="mt-4 text-sm font-semibold text-teal-700 hover:text-teal-800"
+              className="cursor-pointer mt-4 text-sm font-semibold text-teal-700 hover:text-teal-800"
               onClick={() => navigate('/adminusers')}
             >
               Go to users list

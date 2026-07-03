@@ -205,7 +205,7 @@ const Checkout = () => {
               Log in to review your cart and complete your purchase.
             </p>
             <button
-              className="mt-8 inline-flex items-center justify-center rounded-lg bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition hover:from-teal-700 hover:to-teal-800"
+              className="cursor-pointer mt-8 inline-flex items-center justify-center rounded-lg bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition hover:from-teal-700 hover:to-teal-800"
               onClick={() => navigate('/login', { state: { from: '/checkout' } })}
               type="button"
             >
@@ -348,7 +348,7 @@ const Checkout = () => {
               </dl>
 
               <button
-                className="mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={placingOrder || orderBlocked}
                 onClick={() => void handlePlaceOrder()}
                 type="button"

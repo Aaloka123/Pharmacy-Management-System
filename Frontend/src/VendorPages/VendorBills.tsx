@@ -265,7 +265,7 @@ const Bills = () => {
             <button
               type="button"
               onClick={startNewInvoice}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700"
+              className="cursor-pointer rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700"
             >
               New Invoice
             </button>
@@ -288,7 +288,7 @@ const Bills = () => {
                       setDraftInvoice(invoice);
                       setShowEditor(true);
                     }}
-                    className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                    className={`cursor-pointer w-full rounded-xl border px-4 py-3 text-left transition ${
                       selectedInvoiceId === invoice.id
                         ? 'border-teal-300 bg-slate-50'
                         : 'border-slate-200 bg-white hover:border-slate-300'
@@ -350,7 +350,7 @@ const Bills = () => {
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  className="cursor-pointer inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
                 >
                   <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                     <path d="M6 9V3h12v6M6 17H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
@@ -470,7 +470,7 @@ const Bills = () => {
                                 <button
                                   type="button"
                                   onClick={() => removeLine(line.id)}
-                                  className="print-hide rounded-md border border-slate-200 p-1 text-slate-400 hover:bg-slate-50 disabled:opacity-40"
+                                  className="cursor-pointer print-hide rounded-md border border-slate-200 p-1 text-slate-400 hover:bg-slate-50 disabled:opacity-40"
                                   aria-label="Remove line"
                                   disabled={draftInvoice.lines.length <= 1}
                                 >
@@ -495,7 +495,7 @@ const Bills = () => {
                 <button
                   type="button"
                   onClick={addLine}
-                  className="print-hide mt-3 ml-3 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer print-hide mt-3 ml-3 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                 >
                   <span className="text-lg leading-none">+</span>
                   Add line
@@ -520,7 +520,7 @@ const Bills = () => {
                 <button
                   type="button"
                   onClick={saveInvoice}
-                  className="hide-on-print mt-4 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700"
+                  className="cursor-pointer hide-on-print mt-4 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700"
                 >
                   Save Invoice
                 </button>

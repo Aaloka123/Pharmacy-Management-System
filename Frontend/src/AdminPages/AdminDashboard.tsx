@@ -252,7 +252,7 @@ const AdminDashboard = () => {
           <div className="flex shrink-0 items-center justify-end gap-2 sm:ml-6">
             <button
               aria-label="Notifications"
-              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:text-teal-700"
+              className="cursor-pointer relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:text-teal-700"
               title="Notifications"
               type="button"
             >

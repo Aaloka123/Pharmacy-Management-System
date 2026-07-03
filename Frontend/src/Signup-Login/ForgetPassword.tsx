@@ -226,7 +226,7 @@ const ForgetPassword = () => {
                 </div>
 
                 <button
-                  className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+                  className="w-full cursor-pointer rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={loading}
                   type="submit"
                 >
@@ -270,14 +270,14 @@ const ForgetPassword = () => {
                 </div>
 
                 <button
-                  className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+                  className="w-full cursor-pointer rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                   type="submit"
                 >
                   Continue
                 </button>
 
                 <button
-                  className="w-full text-sm font-medium text-slate-600 transition hover:text-teal-700"
+                  className="w-full cursor-pointer text-sm font-medium text-slate-600 transition hover:text-teal-700"
                   onClick={handleBackToEmail}
                   type="button"
                 >
@@ -306,7 +306,7 @@ const ForgetPassword = () => {
                       value={newPassword}
                     />
                     <button
-                      className="absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer p-0.5 text-slate-500 transition hover:text-slate-700"
                       onClick={() => setShowNewPassword((prev) => !prev)}
                       type="button"
                     >
@@ -328,7 +328,7 @@ const ForgetPassword = () => {
                       value={confirmPassword}
                     />
                     <button
-                      className="absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer p-0.5 text-slate-500 transition hover:text-slate-700"
                       onClick={() => setShowConfirmPassword((prev) => !prev)}
                       type="button"
                     >
@@ -342,7 +342,7 @@ const ForgetPassword = () => {
                 </div>
 
                 <button
-                  className="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+                  className="w-full cursor-pointer rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={loading}
                   type="submit"
                 >
@@ -350,7 +350,7 @@ const ForgetPassword = () => {
                 </button>
 
                 <button
-                  className="w-full text-sm font-medium text-slate-600 transition hover:text-teal-700"
+                  className="w-full cursor-pointer text-sm font-medium text-slate-600 transition hover:text-teal-700"
                   onClick={handleBackToOtp}
                   type="button"
                 >

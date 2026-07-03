@@ -106,7 +106,7 @@ const Header = () => {
         <>
           <button
             aria-label="Close menu"
-            className="mobile-menu-backdrop fixed inset-0 z-[200] bg-slate-900/50 lg:hidden"
+            className="cursor-pointer mobile-menu-backdrop fixed inset-0 z-[200] bg-slate-900/50 lg:hidden"
             onClick={closeMenu}
             type="button"
           />

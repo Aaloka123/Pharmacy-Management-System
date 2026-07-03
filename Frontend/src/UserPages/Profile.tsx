@@ -352,7 +352,7 @@ const Profile = () => {
                               />
                               <button
                                 aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-700"
+                                className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-700"
                                 onClick={() => setShowCurrentPassword((prev) => !prev)}
                                 type="button"
                               >
@@ -371,7 +371,7 @@ const Profile = () => {
                               />
                               <button
                                 aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-700"
+                                className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-700"
                                 onClick={() => setShowNewPassword((prev) => !prev)}
                                 type="button"
                               >
@@ -390,7 +390,7 @@ const Profile = () => {
                               />
                               <button
                                 aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-700"
+                                className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-700"
                                 onClick={() => setShowConfirmPassword((prev) => !prev)}
                                 type="button"
                               >

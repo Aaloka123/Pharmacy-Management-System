@@ -130,7 +130,7 @@ const OrderTracking = () => {
                   <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                     {canUserCancelOrder(order.status) ? (
                       <button
-                        className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
+                        className="cursor-pointer rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
                         disabled={cancelingId === order.id}
                         onClick={() => void handleCancel(order.id)}
                         type="button"

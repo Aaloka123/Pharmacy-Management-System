@@ -188,7 +188,7 @@ const AdminApproveVendor = () => {
             </div>
             <button
               aria-label="Dismiss notification"
-              className="shrink-0 rounded-md p-1 text-rose-600 transition hover:bg-rose-100"
+              className="cursor-pointer shrink-0 rounded-md p-1 text-rose-600 transition hover:bg-rose-100"
               onClick={() => setTopNotice(null)}
               type="button"
             >
@@ -275,7 +275,7 @@ const AdminApproveVendor = () => {
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Pharmacy Management Certificate</p>
                       <button
-                        className="w-full"
+                        className="cursor-pointer w-full"
                         onClick={() =>
                           setSelectedCertificate({
                             title: 'Pharmacy Management Certificate',
@@ -294,7 +294,7 @@ const AdminApproveVendor = () => {
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">PAN / VAT Certificate</p>
                       <button
-                        className="w-full"
+                        className="cursor-pointer w-full"
                         onClick={() =>
                           setSelectedCertificate({
                             title: 'PAN / VAT Certificate',
@@ -362,7 +362,7 @@ const AdminApproveVendor = () => {
               <h3 className="text-lg font-semibold text-slate-900">{selectedCertificate.title}</h3>
               <button
                 aria-label="Close preview"
-                className="rounded-md border border-slate-300 p-2 text-slate-700"
+                className="cursor-pointer rounded-md border border-slate-300 p-2 text-slate-700"
                 onClick={() => setSelectedCertificate(null)}
                 type="button"
               >
@@ -378,14 +378,14 @@ const AdminApproveVendor = () => {
 
             <div className="mt-4 flex gap-3">
               <button
-                className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white"
+                className="cursor-pointer rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white"
                 onClick={handlePrintCertificate}
                 type="button"
               >
                 Print
               </button>
               <button
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+                className="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
                 onClick={handleDownloadCertificate}
                 type="button"
               >

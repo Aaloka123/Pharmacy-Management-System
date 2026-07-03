@@ -284,7 +284,7 @@ const VendorSignup = () => {
                       type="button"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
+                      className="cursor-pointer absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
                     >
                       {showPassword ? <IoEyeOffOutline className="size-4" /> : <IoEyeOutline className="size-4" />}
                     </button>
@@ -307,7 +307,7 @@ const VendorSignup = () => {
                       type="button"
                       aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                       onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
+                      className="cursor-pointer absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 transition hover:text-slate-700"
                     >
                       {showConfirmPassword ? <IoEyeOffOutline className="size-4" /> : <IoEyeOutline className="size-4" />}
                     </button>
@@ -370,7 +370,7 @@ const VendorSignup = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+                className="cursor-pointer w-full rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
               >
                 {loading ? 'Submitting…' : 'Submit Application'}
               </button>

@@ -192,7 +192,7 @@ const Order = () => {
               key={filter}
               type="button"
               onClick={() => setActiveFilter(filter)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+              className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                 activeFilter === filter
                   ? 'border-teal-300 bg-teal-50 text-teal-700'
                   : 'border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:text-teal-700'
@@ -291,7 +291,7 @@ const Order = () => {
                             <button
                               type="button"
                               onClick={() => setExpandedOrderId((prev) => (prev === order.id ? null : order.id))}
-                              className="w-24 rounded-md bg-teal-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-teal-700"
+                              className="cursor-pointer w-24 rounded-md bg-teal-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-teal-700"
                             >
                               {expandedOrderId === order.id ? 'Hide Detail' : 'View Detail'}
                             </button>
@@ -299,7 +299,7 @@ const Order = () => {
                               <button
                                 type="button"
                                 onClick={() => navigate('/vendorbills')}
-                                className="w-24 whitespace-nowrap rounded-md border border-teal-600 px-3 py-1.5 text-xs font-medium text-teal-700 transition hover:bg-teal-50"
+                                className="cursor-pointer w-24 whitespace-nowrap rounded-md border border-teal-600 px-3 py-1.5 text-xs font-medium text-teal-700 transition hover:bg-teal-50"
                               >
                                 View Invoice
                               </button>

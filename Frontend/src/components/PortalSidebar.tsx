@@ -155,7 +155,7 @@ export default function PortalSidebar({ subtitle, menuItems, onLogout, menuId, s
         <>
           <button
             aria-label="Close menu"
-            className="mobile-menu-backdrop fixed inset-0 z-[200] bg-slate-900/50 lg:hidden"
+            className="cursor-pointer mobile-menu-backdrop fixed inset-0 z-[200] bg-slate-900/50 lg:hidden"
             onClick={closeMenu}
             type="button"
           />
@@ -211,7 +211,7 @@ export default function PortalSidebar({ subtitle, menuItems, onLogout, menuId, s
 
             <div className="shrink-0 border-t border-slate-200 px-5 py-4">
               <button className={mobileLogoutClass} onClick={handleLogout} type="button">
-                <LuLogOut className="h-5 w-5 shrink-0" strokeWidth={2} />
+                <LuLogOut className="cursor-pointer h-5 w-5 shrink-0" strokeWidth={2} />
                 Logout
               </button>
             </div>

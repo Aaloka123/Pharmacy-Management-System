@@ -194,7 +194,7 @@ const Cart = () => {
               Log in to save items to your account and manage your cart from any device.
             </p>
             <button
-              className="mt-8 inline-flex items-center justify-center rounded-lg bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition hover:from-teal-700 hover:to-teal-800"
+              className="cursor-pointer mt-8 inline-flex items-center justify-center rounded-lg bg-linear-to-br from-teal-600 to-teal-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition hover:from-teal-700 hover:to-teal-800"
               onClick={() => navigate('/login', { state: { from: '/cart' } })}
               type="button"
             >
@@ -205,7 +205,7 @@ const Cart = () => {
           <section className="mt-10 rounded-3xl border border-rose-200 bg-rose-50 px-8 py-12 text-center">
             <p className="text-sm text-rose-700">{error}</p>
             <button
-              className="mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
+              className="cursor-pointer mt-4 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
               onClick={() => void loadCart()}
               type="button"
             >
@@ -258,7 +258,7 @@ const Cart = () => {
                   </p>
                 </div>
                 <button
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-rose-600 transition hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="cursor-pointer inline-flex items-center gap-1.5 text-sm font-semibold text-rose-600 transition hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={selectedIds.length === 0 || actionId === 'bulk'}
                   onClick={() => void removeSelected()}
                   type="button"
@@ -334,7 +334,7 @@ const Cart = () => {
                       <div className="mt-1 flex items-center justify-between rounded-lg bg-white">
                         <button
                           aria-label="Decrease quantity"
-                          className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="cursor-pointer rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
                           disabled={line.qty <= 1 || actionId === line.id || !line.vendorStoreOpen}
                           onClick={() => void updateQty(line.id, line.qty - 1)}
                           type="button"
@@ -344,7 +344,7 @@ const Cart = () => {
                         <span className="min-w-8 text-center text-xs font-semibold text-slate-900">{line.qty}</span>
                         <button
                           aria-label="Increase quantity"
-                          className="rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="cursor-pointer rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
                           disabled={actionId === line.id || line.qty >= line.stock || line.stock <= 0 || !line.vendorStoreOpen}
                           onClick={() => void updateQty(line.id, line.qty + 1)}
                           type="button"
@@ -355,7 +355,7 @@ const Cart = () => {
                     </div>
                     <button
                       aria-label={`Remove ${line.name} from cart`}
-                      className="justify-self-end rounded-lg border border-transparent p-2 text-rose-600 transition hover:border-rose-100 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                      className="cursor-pointer justify-self-end rounded-lg border border-transparent p-2 text-rose-600 transition hover:border-rose-100 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
                       disabled={actionId === line.id}
                       onClick={() => void removeLine(line.id)}
                       type="button"
@@ -418,7 +418,7 @@ const Cart = () => {
                 </p>
               ) : null}
               <button
-                className="mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={selectedLines.length === 0 || hasClosedVendorItems(selectedLines)}
                 onClick={handleProceedToCheckout}
                 type="button"
