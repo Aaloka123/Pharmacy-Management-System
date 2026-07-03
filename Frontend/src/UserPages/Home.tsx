@@ -18,9 +18,9 @@ const Home = () => {
         <FadeInOnScroll><Guarantee /></FadeInOnScroll>
         <FadeInOnScroll delay={80}><TopProduct /></FadeInOnScroll>
         <FadeInOnScroll delay={120}><ProductSuggestion /></FadeInOnScroll>
-        <FadeInOnScroll delay={80}><CTA /></FadeInOnScroll>
+        <FAQ />
         <FadeInOnScroll delay={100}><New /></FadeInOnScroll>
-        <FadeInOnScroll delay={120}><FAQ /></FadeInOnScroll>
+        <FadeInOnScroll delay={80}><CTA /></FadeInOnScroll>
         <Footer />
         <Copyright />
     </div>

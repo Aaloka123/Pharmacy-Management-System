@@ -59,7 +59,7 @@ const Guarantee = () => {
 
   if (loading) {
     return (
-      <section className="bg-slate-50 px-4 py-10 md:px-8">
+      <section className="bg-white px-4 py-10 md:px-8">
         <p className="text-center text-sm text-slate-500">Loading partner pharmacies...</p>
       </section>
     )
@@ -73,7 +73,7 @@ const Guarantee = () => {
   const marqueeItems = Array.from({ length: repeatCount }, () => vendors).flat()
 
   return (
-    <section className="w-full overflow-hidden bg-slate-50 py-12 md:py-14">
+    <section className="w-full overflow-hidden bg-white py-12 md:py-14">
       <p className="mb-8 text-center font-['Geist',sans-serif] text-sm font-normal uppercase tracking-[0.2em] text-slate-500">
         Our partner pharmacies
       </p>
@@ -81,11 +81,11 @@ const Guarantee = () => {
       <div className="relative w-full overflow-hidden">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-slate-50 to-transparent"
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-white to-transparent"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-slate-50 to-transparent"
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-white to-transparent"
         />
 
         <div className="vendor-marquee-track flex w-max items-center gap-12 px-6 md:gap-16 md:px-10">

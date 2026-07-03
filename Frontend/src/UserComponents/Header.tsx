@@ -251,7 +251,7 @@ const Header = () => {
     : null
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[#F8FAFC] px-4 py-2.5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur md:px-8 lg:px-[80px]">
+    <header className="sticky top-0 z-50 bg-[#F8FAFC] px-4 py-2.5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur md:px-8 lg:px-[80px]">
       <nav className="flex w-full items-center justify-between gap-3">
         <NavLink className="inline-flex shrink-0 items-center" onClick={closeMenu} to="/">
           <img alt="MedNexus logo" className="h-10 w-auto object-contain sm:h-12" src={mednexuxLogo} />
@@ -311,7 +311,7 @@ const Header = () => {
                 >
                   <LuShoppingCart className="h-5 w-5" strokeWidth={2} />
                   {cartCount > 0 ? (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-slate-200 bg-white px-1 text-[10px] font-semibold tabular-nums text-teal-700 shadow-sm">
+                    <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-semibold tabular-nums text-white shadow-sm">
                       {cartCount}
                     </span>
                   ) : null}

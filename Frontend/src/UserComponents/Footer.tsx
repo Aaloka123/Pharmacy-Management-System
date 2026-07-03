@@ -3,6 +3,9 @@ import { NavLink } from 'react-router-dom'
 import mednexuxLogo from '../assets/Mednexux.png'
 import { getStoredUser, onAuthChange } from '../lib/auth'
 
+const footerLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `cursor-pointer transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`
+
 const Footer = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => getStoredUser() != null)
 
@@ -29,22 +32,22 @@ const Footer = () => {
             <h4 className="text-[16px] font-[600] text-teal-700">Quick Links</h4>
             <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
-                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`} end to="/">
+                <NavLink className={footerLinkClass} end to="/">
                   Home
                 </NavLink>
               </li>
               <li>
-                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`} to="/products">
+                <NavLink className={footerLinkClass} to="/products">
                   Product
                 </NavLink>
               </li>
               <li>
-                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`} to="/about">
+                <NavLink className={footerLinkClass} to="/about">
                   About
                 </NavLink>
               </li>
               <li>
-                <NavLink className={({ isActive }) => `transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`} to="/contacts">
+                <NavLink className={footerLinkClass} to="/contacts">
                   Contacts
                 </NavLink>
               </li>
@@ -55,23 +58,23 @@ const Footer = () => {
             <h4 className="text-[16px] font-[600] text-teal-700">Company</h4>
             <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
-                <a className="transition hover:text-teal-700" href="#">
+                <NavLink className={footerLinkClass} to="/about">
                   About Us
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a className="transition hover:text-teal-700" href="#">
+                <NavLink className={footerLinkClass} to="/contacts">
                   Careers
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a className="transition hover:text-teal-700" href="#">
+                <NavLink className={footerLinkClass} to="/products">
                   Blog
-                </a>
+                </NavLink>
               </li>
               {!isLoggedIn ? (
                 <li>
-                  <NavLink className="font-semibold text-teal-700 underline underline-offset-2 transition hover:text-teal-800" to="/vendorsignup">
+                  <NavLink className="cursor-pointer font-semibold text-teal-700 underline underline-offset-2 transition hover:text-teal-800" to="/vendorsignup">
                     Become a vendor
                   </NavLink>
                 </li>
@@ -83,24 +86,24 @@ const Footer = () => {
             <h4 className="text-[16px] font-[600] text-teal-700">Support</h4>
             <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
-                <a className="transition hover:text-teal-700" href="#">
+                <NavLink className={footerLinkClass} to="/contacts">
                   Help Center
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a className="transition hover:text-teal-700" href="#">
+                <NavLink className={footerLinkClass} to="/contacts">
                   Privacy Policy
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a className="transition hover:text-teal-700" href="#">
+                <NavLink className={footerLinkClass} to="/contacts">
                   Terms of Service
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a className="transition hover:text-teal-700" href="#">
+                <NavLink className={footerLinkClass} to="/contacts">
                   Contact Support
-                </a>
+                </NavLink>
               </li>
             </ul>
           </div>

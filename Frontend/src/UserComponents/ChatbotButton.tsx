@@ -179,7 +179,7 @@ const ChatbotButton = () => {
               />
             </svg>
             {hasUnread ? (
-              <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-semibold text-white shadow-sm ring-2 ring-white">
+              <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-semibold tabular-nums text-white shadow-sm">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             ) : null}

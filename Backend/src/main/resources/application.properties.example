@@ -32,6 +32,7 @@ spring.mail.properties.mail.smtp.writetimeout=10000
 # Set true only for local dev if you see "PKIX path building failed" (e.g. antivirus SSL inspection)
 mednexus.mail.ssl-relaxed=false
 mednexus.mail.from=${EMAIL_USER}
+mednexus.mail.admin-email=${EMAIL_USER}
 mednexus.mail.frontend-base-url=http://localhost:5173
 
 # Cloudinary (mednexus/users, mednexus/vendor, mednexus/vendor-certificates, mednexus/products, …)

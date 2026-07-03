@@ -1,156 +1,63 @@
-import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { HiOutlineArrowLeft, HiOutlineArrowRight } from 'react-icons/hi2'
-import Hero1 from '../assets/Hero1.png'
-import Hero2 from '../assets/Hero2.jpg'
-import Hero3 from '../assets/Hero3.png'
+import heroImage from '../assets/herobackground.png'
 
-const SLIDE_INTERVAL_MS = 7000
-
-const slides = [
-  {
-    title: 'Your trusted multi-vendor pharmacy platform',
-    description:
-      'Discover medicines from verified partner pharmacies, compare options, and order with confidence — all in one place.',
-    image: Hero1,
-  },
-  {
-    title: 'Quality medicines from approved partners',
-    description:
-      'Every pharmacy on MedNexus is reviewed for compliance so you receive safe, authentic products every time.',
-    image: Hero2,
-  },
-  {
-    title: 'Simple ordering, clear visibility',
-    description:
-      'Browse inventory, track availability, and manage your health needs with a modern experience built for patients and pharmacies.',
-    image: Hero3,
-  },
+const stats = [
+  { value: '24/7', label: 'Emergency Service' },
+  { value: '50+', label: 'Pharmacy' },
+  { value: '100k+', label: 'Happy Patient' },
 ]
 
 const Hero = () => {
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-
-  const goToPreviousSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
-  }, [])
-
-  const goToNextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length)
-  }, [])
-
-  useEffect(() => {
-    if (isPaused) return
-
-    const timer = window.setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length)
-    }, SLIDE_INTERVAL_MS)
-
-    return () => window.clearInterval(timer)
-  }, [isPaused])
-
-  const activeSlide = slides[currentSlide]
-
   return (
-    <section className="bg-white">
+    <section className="relative w-full overflow-x-clip overflow-y-visible">
       <div
-        className="group relative min-h-[min(720px,calc(100vh-80px))] overflow-hidden text-white"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
-        {slides.map((slide, index) => (
-          <div
-            key={slide.title}
-            aria-hidden={index !== currentSlide}
-            className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ease-in-out ${
-              index === currentSlide ? 'opacity-100' : 'opacity-0'
-            } ${index === currentSlide ? 'hero-slide-zoom' : ''}`}
-            style={{ backgroundImage: `url(${slide.image})` }}
-          />
-        ))}
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(180deg, #ffffff 0%, #eef8f6 16%, #b8e4dc 32%, #6ebfb4 52%, #449a92 75%, #2f7570 100%)',
+        }}
+      />
 
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-linear-to-r from-slate-950/90 via-slate-900/65 to-slate-900/25"
-        />
-        <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-slate-950/50 via-transparent to-transparent" />
-
-        <div className="relative z-10 mx-auto flex h-full min-h-[inherit] max-w-[1400px] flex-col justify-center px-6 py-16 md:px-12 lg:px-16">
-          <div className="max-w-2xl">
-            <h1
-              key={activeSlide.title}
-              className="hero-fade-in text-3xl font-bold leading-[1.15] tracking-tight text-white md:text-5xl lg:text-[3.25rem]"
-            >
-              {activeSlide.title}
+      <div className="relative mx-auto grid min-h-[640px] max-w-[1280px] grid-cols-1 items-end gap-8 px-6 py-12 sm:px-10 lg:min-h-[700px] lg:grid-cols-2 lg:items-stretch lg:gap-10 lg:px-12 lg:py-0 xl:px-14">
+        <div className="flex flex-col justify-between pt-6 sm:pt-8 lg:py-16 lg:pt-24">
+          <div className="max-w-[520px]">
+            <h1 className="text-[1.9rem] leading-[1.2] tracking-tight text-slate-900 sm:text-[2.2rem] lg:text-[2.55rem] lg:leading-[1.16]">
+              The <span className="font-bold text-teal-800">Best Medical</span> and Treatment Center for You
             </h1>
 
-            <p
-              key={activeSlide.description}
-              className="hero-fade-in mt-5 max-w-xl text-base leading-relaxed text-slate-200/95 md:text-lg"
+            <p className="mt-5 max-w-[440px] text-[15px] leading-7 text-slate-600 sm:text-base">
+              We understand that injuries and acute pain can happen unexpectedly. Our emergency
+              support and verified partner pharmacies help you get the care you need, when you need it.
+            </p>
+
+            <Link
+              className="mt-7 inline-flex cursor-pointer items-center justify-center rounded-full bg-teal-700 px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_8px_24px_rgba(15,118,110,0.25)] transition hover:bg-teal-800 hover:shadow-[0_10px_28px_rgba(15,118,110,0.3)] lg:mt-8"
+              to="/products"
             >
-              {activeSlide.description}
-            </p>
+              View Products
+            </Link>
+          </div>
 
-            <div className="hero-fade-in mt-9 flex flex-wrap items-center gap-3">
-              <Link
-                className="inline-flex items-center justify-center rounded-xl bg-linear-to-br from-teal-500 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-teal-950/25 transition hover:from-teal-400 hover:to-teal-500"
-                to="/products"
-              >
-                Browse Medicines
-              </Link>
-              <Link
-                className="inline-flex items-center justify-center rounded-xl border border-white/35 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:border-white/55 hover:bg-white/15"
-                to="/vendorsignup"
-              >
-                Partner With Us
-              </Link>
-            </div>
-
-            <p className="mt-8 text-sm text-white/70">
-              Join a growing network of partner pharmacies delivering care across the region.
-            </p>
+          <div className="mt-12 grid max-w-[500px] grid-cols-3 gap-4 border-t border-white/25 pt-8 text-white sm:gap-6 lg:mt-10">
+            {stats.map((item) => (
+              <div key={item.label}>
+                <p className="text-[1.7rem] font-bold leading-none sm:text-[1.9rem] lg:text-[2rem]">
+                  {item.value}
+                </p>
+                <p className="mt-2 text-xs leading-snug text-white/90 sm:text-sm">{item.label}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        <button
-          aria-label="Previous slide"
-          className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition hover:bg-white/20 md:left-8 md:flex lg:left-12"
-          onClick={goToPreviousSlide}
-          type="button"
-        >
-          <HiOutlineArrowLeft className="h-5 w-5" />
-        </button>
-        <button
-          aria-label="Next slide"
-          className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-md transition hover:bg-white/20 md:right-8 md:flex lg:right-12"
-          onClick={goToNextSlide}
-          type="button"
-        >
-          <HiOutlineArrowRight className="h-5 w-5" />
-        </button>
-
-        <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-white/10 bg-slate-950/20 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-[1400px] items-center gap-2 px-6 py-4 md:px-12 lg:px-16">
-            {slides.map((slide, index) => (
-              <button
-                key={slide.title}
-                aria-current={currentSlide === index ? 'true' : undefined}
-                aria-label={`Go to slide ${index + 1}: ${slide.title}`}
-                className="group/dot flex cursor-pointer flex-col items-center gap-2 p-1"
-                onClick={() => setCurrentSlide(index)}
-                type="button"
-              >
-                <span
-                  className={`block h-1 rounded-full transition-all duration-300 ${
-                    currentSlide === index
-                      ? 'w-10 bg-teal-400'
-                      : 'w-6 bg-white/40 group-hover/dot:bg-white/65'
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
+        <div className="flex items-end justify-center overflow-visible -mr-8 pb-2 sm:-mr-12 lg:-mr-16 lg:justify-end lg:pb-0 xl:-mr-20">
+          <img
+            alt="Healthcare professional ready to assist"
+            className="h-auto max-h-[min(680px,88vh)] w-full max-w-[620px] object-contain object-bottom drop-shadow-[0_18px_40px_rgba(0,0,0,0.18)] lg:max-h-[720px] lg:max-w-[680px]"
+            draggable={false}
+            src={heroImage}
+          />
         </div>
       </div>
     </section>

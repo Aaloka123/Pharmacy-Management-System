@@ -1,57 +1,128 @@
-const faqs = [
+import {
+  LuClipboardList,
+  LuCreditCard,
+  LuPackage,
+  LuPackageSearch,
+  LuRotateCcw,
+  LuTruck,
+} from 'react-icons/lu'
+import type { IconType } from 'react-icons'
+
+const faqs: { question: string; answer: string; icon: IconType }[] = [
   {
     question: 'How do I place an order?',
     answer:
-      'Go to the Products page, choose your medicine, and proceed through checkout. You can review your items in the cart before confirming.',
+      'Browse Products, add items to your cart, and complete checkout. Review everything before you confirm.',
+    icon: LuPackage,
   },
   {
     question: 'Do I need a prescription for all medicines?',
     answer:
-      'Prescription-only medicines require a valid prescription. Over-the-counter products can be ordered directly without prescription upload.',
+      'Prescription-only items require a valid prescription. Over-the-counter products can be ordered directly.',
+    icon: LuClipboardList,
   },
   {
     question: 'How long does delivery take?',
     answer:
-      'Most orders are delivered within 24-48 hours depending on your location and product availability.',
+      'Most orders arrive within 24–48 hours, depending on your location and product availability.',
+    icon: LuTruck,
   },
   {
     question: 'Can I return or cancel my order?',
     answer:
-      'You can cancel before dispatch. Returns are accepted for damaged or incorrect items according to our pharmacy return policy.',
+      'Cancel before dispatch. Returns are accepted for damaged or incorrect items per our policy.',
+    icon: LuRotateCcw,
+  },
+  {
+    question: 'How can I track my order?',
+    answer:
+      'Use Order Tracking in the menu after checkout to follow your order from dispatch to delivery.',
+    icon: LuPackageSearch,
+  },
+  {
+    question: 'Is online payment secure?',
+    answer:
+      'Yes. Payments use secure checkout and your card details are encrypted and never stored by us.',
+    icon: LuCreditCard,
   },
 ]
 
+const faqGradientTop = '#7FCBC3'
+const faqGradientMid = '#4DB6AB'
+const faqGradientBottom = '#2f7570'
+const faqSectionBackground = `linear-gradient(180deg, ${faqGradientTop} 0%, ${faqGradientMid} 48%, ${faqGradientBottom} 100%)`
+
+const FaqWaveTop = () => (
+  <div aria-hidden className="relative z-10 leading-0">
+    <svg
+      className="block h-24 w-full md:h-32"
+      preserveAspectRatio="none"
+      viewBox="0 0 1440 120"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M0,120 L0,16 Q360,58 720,28 T1440,16 L1440,120 Z"
+        fill={faqGradientTop}
+      />
+    </svg>
+  </div>
+)
+
+const FaqWaveBottom = () => (
+  <div aria-hidden className="relative z-10 leading-0">
+    <svg
+      className="block h-24 w-full md:h-32"
+      preserveAspectRatio="none"
+      viewBox="0 0 1440 120"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M0,0 L1440,0 L1440,16 Q1080,58 720,28 T0,16 Z"
+        fill={faqGradientBottom}
+      />
+    </svg>
+  </div>
+)
+
 const FAQ = () => {
   return (
-    <section className="bg-white px-6 py-14 md:px-8">
-      <div className="mx-auto max-w-[1200px]">
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold text-slate-900">Frequently Asked Questions</h2>
-        </div>
+    <section className="relative bg-white">
+      <FaqWaveTop />
 
-        <div className="space-y-4">
-          {faqs.map((faq) => (
-            <details
-              key={faq.question}
-              className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition open:shadow-md"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-left text-[16px] font-semibold text-slate-900">
-                <span>{faq.question}</span>
-                <svg
-                  aria-hidden="true"
-                  className="h-4 w-4 text-teal-700 transition-transform duration-200 group-open:rotate-180"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
+      <div className="px-6 py-12 md:px-8 md:py-16" style={{ background: faqSectionBackground }}>
+        <div className="mx-auto max-w-[1100px]">
+          <div className="mb-10 text-center md:mb-12">
+            <h2 className="text-2xl font-bold tracking-tight text-white md:text-[2rem]">
+              Frequently Asked Questions
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:auto-rows-[210px]">
+            {faqs.map((faq) => {
+              const Icon = faq.icon
+
+              return (
+                <article
+                  className="group box-border flex h-[210px] w-full flex-col overflow-hidden rounded-2xl border border-white/90 bg-white/10 p-4 shadow-[0_8px_30px_rgba(15,23,42,0.1)] transition duration-300 hover:border-white hover:bg-white/15 hover:shadow-[0_14px_40px_rgba(15,23,42,0.14)]"
+                  key={faq.question}
                 >
-                  <path d="m6 9 6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                </svg>
-              </summary>
-              <p className="mt-3 text-[14px] leading-6 text-slate-600">{faq.answer}</p>
-            </details>
-          ))}
+                  <div className="mb-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 transition group-hover:bg-white/20">
+                    <Icon aria-hidden className="h-5 w-5 text-white" strokeWidth={1.8} />
+                  </div>
+                  <h3 className="line-clamp-2 shrink-0 text-[15px] font-bold leading-snug text-white">
+                    {faq.question}
+                  </h3>
+                  <p className="mt-2 line-clamp-4 min-h-0 flex-1 overflow-hidden text-xs leading-5 text-white/90">
+                    {faq.answer}
+                  </p>
+                </article>
+              )
+            })}
+          </div>
         </div>
       </div>
+
+      <FaqWaveBottom />
     </section>
   )
 }

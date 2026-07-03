@@ -247,7 +247,7 @@ const Cart = () => {
                   <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-semibold text-slate-700">
                     <input
                       checked={allSelected}
-                      className="h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-700"
+                      className="h-4 w-4 cursor-pointer rounded border-slate-300 text-teal-700 focus:ring-teal-700"
                       onChange={toggleSelectAll}
                       type="checkbox"
                     />
@@ -289,7 +289,7 @@ const Cart = () => {
                   }`}>
                     <input
                       checked={selectedIds.includes(line.id)}
-                      className="h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-700 disabled:cursor-not-allowed"
+                      className="h-4 w-4 cursor-pointer rounded border-slate-300 text-teal-700 focus:ring-teal-700 disabled:cursor-not-allowed"
                       disabled={!line.vendorStoreOpen}
                       onChange={() => toggleSelect(line.id)}
                       type="checkbox"

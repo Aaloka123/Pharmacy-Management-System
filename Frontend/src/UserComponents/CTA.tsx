@@ -1,40 +1,29 @@
 import { Link } from 'react-router-dom'
-import CtaImage from '../assets/cta.png'
+import { HiOutlineArrowRight } from 'react-icons/hi2'
 
 const CTA = () => {
   return (
-    <section className="relative overflow-hidden px-6 py-14 text-white md:px-12">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${CtaImage})` }}
-      />
-      <div aria-hidden="true" className="absolute inset-0 bg-slate-900/55" />
-      <div className="relative z-10 mx-auto max-w-[1200px]">
-        <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">Need help fast?</p>
-            <h2 className="mt-3 text-2xl font-bold leading-tight md:text-3xl">Get trusted medicines delivered to your doorstep.</h2>
-            <p className="mt-4 text-base text-white/90 md:text-lg">
-              Browse products, compare options, and place your order in minutes with our easy and secure pharmacy platform.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-teal-700 transition hover:bg-slate-100"
-              to="/products"
-            >
-              Shop Now
-            </Link>
-            <Link
-              className="rounded-xl border border-white/70 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-              to="/contacts"
-            >
-              Contact Us
-            </Link>
-          </div>
-        </div>
+    <section
+      className="px-6 py-12 md:px-8 md:py-16"
+      style={{
+        background: 'linear-gradient(180deg, #7FCBC3 0%, #4DB6AB 48%, #2f7570 100%)',
+      }}
+    >
+      <div className="mx-auto max-w-[920px] text-center">
+        <h2 className="mx-auto max-w-[420px] text-[1.85rem] font-bold leading-tight tracking-tight text-white md:text-[2.1rem]">
+          Ready to get started?
+        </h2>
+        <p className="mx-auto mt-4 max-w-[400px] text-sm leading-6 text-white/90">
+          Browse trusted medicines, compare options, and order from verified pharmacies in just a few
+          clicks.
+        </p>
+        <Link
+          className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-teal-800 transition hover:bg-white/90"
+          to="/products"
+        >
+          Shop Now
+          <HiOutlineArrowRight aria-hidden className="h-4 w-4" strokeWidth={2.2} />
+        </Link>
       </div>
     </section>
   )

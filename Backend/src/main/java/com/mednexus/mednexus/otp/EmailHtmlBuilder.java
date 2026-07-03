@@ -257,6 +257,56 @@ final class EmailHtmlBuilder {
 				frontendUrl);
 	}
 
+	static String contactMessageAdmin(
+			String fullName,
+			String email,
+			String phone,
+			String message,
+			String logoUrl,
+			String frontendUrl) {
+		String safeName = escape(fullName);
+		String safeEmail = escape(email);
+		String safePhone = escape(phone);
+		String safeMessage = escape(message);
+		return layout(
+				"""
+				<h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:#0f172a;font-weight:700;">New contact message</h1>
+				<p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:%s;">Someone submitted the contact form on the %s website.</p>
+				%s
+				<p style="margin:20px 0 0;font-size:14px;line-height:1.65;color:%s;">Reply directly to this email to respond to the sender.</p>
+				"""
+						.formatted(SLATE, BRAND, contactDetailsTable(safeName, safeEmail, safePhone, safeMessage), MUTED),
+				"New contact message from " + fullName,
+				logoUrl,
+				frontendUrl);
+	}
+
+	private static String contactDetailsTable(String safeName, String safeEmail, String safePhone, String safeMessage) {
+		return """
+				<table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
+				  %s
+				  %s
+				  %s
+				  %s
+				</table>
+				"""
+				.formatted(
+						deliveryDetailRow("Full name", safeName, false),
+						deliveryDetailRow("Email", emailLink(safeEmail), false),
+						deliveryDetailRow("Phone", safePhone, false),
+						contactMessageRow(safeMessage));
+	}
+
+	private static String contactMessageRow(String safeMessage) {
+		return """
+				<tr>
+				  <td width="110" valign="top" style="padding:14px 16px;background:#f8fafc;font-size:14px;font-weight:600;color:#334155;">Message</td>
+				  <td valign="top" style="padding:14px 16px;background:#ffffff;font-size:14px;line-height:1.55;color:#334155;white-space:pre-wrap;word-break:break-word;">%s</td>
+				</tr>
+				"""
+				.formatted(safeMessage);
+	}
+
 	static String orderStatusUpdate(OrderEmailDetails details, String logoUrl, String frontendUrl) {
 		String safeName = escape(details.customerName());
 		String safeEmail = escape(details.customerEmail());

@@ -49,7 +49,7 @@ const Aboutuscontent = () => {
         </div>
       </section>
 
-      <section className="mt-14 pb-4">
+      <section className="mt-14">
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">What Makes Us Different</h2>
         <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-5">

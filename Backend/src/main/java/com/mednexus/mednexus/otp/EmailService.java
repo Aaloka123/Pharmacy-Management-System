@@ -242,7 +242,44 @@ public class EmailService {
 		String subject = orderStatusSubject(details.status());
 		String html = EmailHtmlBuilder.orderStatusUpdate(details, emailLogoService.getLogoUrl(), frontendBaseUrl);
 		String plainText = buildOrderStatusPlainText(details, frontendBaseUrl);
-		sendHtmlEmail(details.toEmail(), subject, html, plainText);
+		sendHtmlEmail(details.toEmail(), subject, html, plainText, null);
+	}
+
+	public void sendContactMessageToAdmin(
+			String adminEmail,
+			String fullName,
+			String senderEmail,
+			String phone,
+			String message) {
+		if (adminEmail == null || adminEmail.isBlank()) {
+			return;
+		}
+		String html = EmailHtmlBuilder.contactMessageAdmin(
+				fullName,
+				senderEmail,
+				phone,
+				message,
+				emailLogoService.getLogoUrl(),
+				frontendBaseUrl);
+		String plainText = """
+				New contact message
+
+				Full name: %s
+				Email: %s
+				Phone: %s
+
+				Message:
+				%s
+
+				— %s
+				"""
+				.formatted(fullName, senderEmail, phone, message, "MedNexus Contact Form");
+		sendHtmlEmail(
+				adminEmail,
+				"New contact message from " + fullName,
+				html,
+				plainText,
+				senderEmail);
 	}
 
 	private static String orderStatusSubject(OrderStatus status) {
@@ -316,6 +353,10 @@ public class EmailService {
 	}
 
 	private void sendHtmlEmail(String toEmail, String subject, String html, String plainText) {
+		sendHtmlEmail(toEmail, subject, html, plainText, null);
+	}
+
+	private void sendHtmlEmail(String toEmail, String subject, String html, String plainText, String replyTo) {
 		try {
 			MimeMessage message = mailSender.createMimeMessage();
 			MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -323,6 +364,9 @@ public class EmailService {
 			helper.setTo(toEmail);
 			helper.setSubject(subject);
 			helper.setText(plainText, html);
+			if (replyTo != null && !replyTo.isBlank()) {
+				helper.setReplyTo(replyTo);
+			}
 			mailSender.send(message);
 		} catch (Exception ex) {
 			log.error("Failed to send email to {}", toEmail, ex);

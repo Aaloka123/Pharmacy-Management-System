@@ -67,6 +67,7 @@ public class SecurityConfig {
 								"/api/auth/vendor/reset-password",
 								"/api/auth/logout").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/vendors/signup").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/payments/esewa/success", "/api/payments/esewa/failure")
