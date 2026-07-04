@@ -9,6 +9,10 @@ export default defineConfig({
   },
   server: {
     open: true, // ✅ THIS is the missing part
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none',
+    },
     proxy: {
       "/api": {
         target: "http://localhost:8080",

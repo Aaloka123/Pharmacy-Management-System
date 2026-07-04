@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -15,15 +15,21 @@ type GoogleSignInButtonProps = {
 const GoogleSignInButton = ({ allowedRoles = PLATFORM_ROLES }: GoogleSignInButtonProps) => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const busyRef = useRef(false)
 
   const handleSuccess = useCallback(
     async (response: CredentialResponse) => {
+      if (busyRef.current) {
+        return
+      }
+
       const idToken = response.credential
       if (!idToken) {
         toast.error('Google did not return a sign-in token. Please try again.')
         return
       }
 
+      busyRef.current = true
       setLoading(true)
       try {
         const session = await completeGoogleSignIn(idToken)
@@ -48,6 +54,7 @@ const GoogleSignInButton = ({ allowedRoles = PLATFORM_ROLES }: GoogleSignInButto
         }
         toast.error(err instanceof Error ? err.message : 'Google sign-in failed. Please try again.')
       } finally {
+        busyRef.current = false
         setLoading(false)
       }
     },
@@ -55,8 +62,10 @@ const GoogleSignInButton = ({ allowedRoles = PLATFORM_ROLES }: GoogleSignInButto
   )
 
   const handleError = useCallback(() => {
-    toast.error('Google sign-in was cancelled or could not start.')
-  }, [])
+    if (!loading) {
+      toast.error('Google sign-in was cancelled or could not start.')
+    }
+  }, [loading])
 
   return (
     <div className="relative w-full">
@@ -81,7 +90,7 @@ const GoogleSignInButton = ({ allowedRoles = PLATFORM_ROLES }: GoogleSignInButto
         title="Continue with Google"
       >
         <GoogleLogin
-          onSuccess={handleSuccess}
+          onSuccess={(response) => void handleSuccess(response)}
           onError={handleError}
           type="standard"
           theme="outline"
@@ -89,6 +98,7 @@ const GoogleSignInButton = ({ allowedRoles = PLATFORM_ROLES }: GoogleSignInButto
           text="continue_with"
           shape="rectangular"
           width="400"
+          useOneTap={false}
         />
       </div>
     </div>

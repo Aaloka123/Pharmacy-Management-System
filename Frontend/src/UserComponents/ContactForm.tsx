@@ -57,7 +57,10 @@ const ContactForm = () => {
 
   return (
     <form className="space-y-6" onSubmit={(event) => void handleSubmit(event)}>
-      <h2 className="text-2xl font-bold tracking-tight text-slate-900">Get in Touch</h2>
+      <div>
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Send a message</h2>
+        <p className="mt-1 text-sm text-slate-500">Fill in the form and we will get back to you soon.</p>
+      </div>
 
       <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
         <input
