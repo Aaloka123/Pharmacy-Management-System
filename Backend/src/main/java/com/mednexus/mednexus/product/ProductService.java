@@ -78,6 +78,13 @@ public class ProductService {
 	}
 
 	@Transactional
+	public List<ProductResponse> listForAdmin() {
+		List<Product> products = productRepository.findAllWithVendorOrderByCreatedAtDesc();
+		deactivateExpiredInMemory(products);
+		return products.stream().map(this::toResponse).toList();
+	}
+
+	@Transactional
 	public void deactivateExpiredProducts() {
 		productRepository.deactivateExpiredActiveProducts(LocalDate.now());
 	}
@@ -378,6 +385,7 @@ public class ProductService {
 				product.getId(),
 				vendor.getId(),
 				vendor.getBusinessName(),
+				vendor.getBusinessLocation(),
 				product.getProductName(),
 				product.getSku(),
 				product.getCategory(),

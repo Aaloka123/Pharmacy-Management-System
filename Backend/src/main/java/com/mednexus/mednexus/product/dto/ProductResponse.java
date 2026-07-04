@@ -11,6 +11,7 @@ public record ProductResponse(
 		Long id,
 		Long vendorId,
 		String vendorBusinessName,
+		String vendorBusinessLocation,
 		String productName,
 		String sku,
 		String category,

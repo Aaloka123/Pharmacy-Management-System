@@ -6,6 +6,7 @@ export type ProductDto = {
   id: number
   vendorId: number
   vendorBusinessName: string
+  vendorBusinessLocation: string | null
   productName: string
   sku: string
   category: string
@@ -120,6 +121,10 @@ export function listVendorProducts() {
 
 export function listVendorProductsByVendorId(vendorId: number) {
   return api.get<ProductDto[]>(`/api/vendors/${vendorId}/products`)
+}
+
+export function listAdminProducts() {
+  return api.get<ProductDto[]>('/api/admin/products')
 }
 
 export function createVendorProduct(formData: FormData) {

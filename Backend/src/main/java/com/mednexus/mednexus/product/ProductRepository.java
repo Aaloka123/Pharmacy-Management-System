@@ -16,6 +16,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 	List<Product> findByVendorIdOrderByCreatedAtDesc(Long vendorId);
 
+	@Query("""
+			SELECT p FROM Product p
+			JOIN FETCH p.vendor v
+			ORDER BY p.createdAt DESC
+			""")
+	List<Product> findAllWithVendorOrderByCreatedAtDesc();
+
 	boolean existsByVendorIdAndSkuIgnoreCase(Long vendorId, String sku);
 
 	boolean existsByVendorIdAndSkuIgnoreCaseAndIdNot(Long vendorId, String sku, Long id);
