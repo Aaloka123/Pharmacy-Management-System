@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import Navbar from '../VendorComponents/Navbar';
 import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain';
 import { invalidatePublicProductsCache } from '../hooks/usePublicProducts';
+import { markVendorProductAlertsViewed } from '../lib/vendorNavBadges';
 import {
   buildProductFormData,
   createVendorProduct,
@@ -86,6 +87,7 @@ const VendorProduct = () => {
     try {
       const { data } = await listVendorProducts();
       setProducts(data.map(mapDtoToRow));
+      markVendorProductAlertsViewed(data);
     } catch (err) {
       toast.error('Failed to load products.');
       console.error(err);

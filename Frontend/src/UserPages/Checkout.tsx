@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { LuBanknote } from 'react-icons/lu'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -20,6 +21,7 @@ import { placeOrder, toApiPaymentMethod } from '../lib/orderApi'
 import { getStoredUser, hasUserLocation, LOCATION_REQUIRED_MESSAGE, onAuthChange } from '../lib/auth'
 import { ApiRequestError } from '../lib/api'
 import FadeInOnScroll from '../components/FadeInOnScroll'
+import PaymentRedirectOverlay from '../components/PaymentRedirectOverlay'
 
 type PaymentMethod = 'cod' | 'esewa' | 'khalti'
 
@@ -87,6 +89,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(true)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod')
   const [placingOrder, setPlacingOrder] = useState(false)
+  const [redirectingPayment, setRedirectingPayment] = useState<'cod' | 'esewa' | 'khalti' | null>(null)
   const [user, setUser] = useState(() => getStoredUser())
 
   useEffect(() => {
@@ -137,6 +140,14 @@ const Checkout = () => {
   const orderBlocked = checkoutBlocked || missingLocation
   const loggedIn = isCartUserLoggedIn()
 
+  const schedulePaymentRedirect = (provider: 'cod' | 'esewa' | 'khalti', redirect: () => void) => {
+    flushSync(() => {
+      setRedirectingPayment(provider)
+      setPlacingOrder(false)
+    })
+    window.setTimeout(redirect, 900)
+  }
+
   const handlePlaceOrder = async () => {
     if (lines.length === 0) {
       toast.warn('Your cart is empty.')
@@ -155,13 +166,17 @@ const Checkout = () => {
     try {
       if (paymentMethod === 'esewa') {
         const esewa = await initiateEsewaPayment(lines.map((line) => Number(line.id)))
-        submitEsewaPaymentForm(esewa.formUrl, esewa.fields)
+        schedulePaymentRedirect('esewa', () => {
+          submitEsewaPaymentForm(esewa.formUrl, esewa.fields)
+        })
         return
       }
 
       if (paymentMethod === 'khalti') {
         const khalti = await initiateKhaltiPayment(lines.map((line) => Number(line.id)))
-        redirectToPaymentUrl(khalti.paymentUrl)
+        schedulePaymentRedirect('khalti', () => {
+          redirectToPaymentUrl(khalti.paymentUrl)
+        })
         return
       }
 
@@ -170,8 +185,12 @@ const Checkout = () => {
         cartItemIds: lines.map((line) => Number(line.id)),
       })
       notifyCartChanged()
-      navigate('/payment/success?method=cod', { replace: true })
+      schedulePaymentRedirect('cod', () => {
+        navigate('/payment/success?method=cod', { replace: true })
+      })
+      return
     } catch (err) {
+      setRedirectingPayment(null)
       if (err instanceof ApiRequestError && err.response.status === 400) {
         toast.error('Some items are unavailable or from closed vendors. Please review your cart.')
       } else {
@@ -383,25 +402,7 @@ const Checkout = () => {
           </div>
         )}
       </main>
-      {placingOrder && paymentMethod !== 'cod' ? (
-        <div
-          aria-busy="true"
-          aria-live="polite"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-white/85 px-4 backdrop-blur-sm"
-        >
-          <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-10">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-teal-50">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-100 border-t-teal-600" />
-            </div>
-            <h1 className="mt-6 text-xl font-bold text-slate-900">
-              {paymentMethod === 'esewa' ? 'Redirecting to eSewa' : 'Redirecting to Khalti'}
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Please wait while we connect you to complete payment.
-            </p>
-          </section>
-        </div>
-      ) : null}
+      {redirectingPayment ? <PaymentRedirectOverlay provider={redirectingPayment} /> : null}
       <Footer />
       <Copyright />
     </div>

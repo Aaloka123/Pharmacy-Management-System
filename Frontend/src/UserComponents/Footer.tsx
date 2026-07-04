@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import mednexuxLogo from '../assets/Mednexux.png'
 import { getStoredUser, onAuthChange } from '../lib/auth'
 
 const footerLinkClass = ({ isActive }: { isActive: boolean }) =>
   `cursor-pointer transition hover:text-slate-900 ${isActive ? 'font-[600] text-slate-900' : ''}`
+
+const staticContactLinkClass = 'cursor-pointer transition hover:text-slate-900'
 
 const Footer = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => getStoredUser() != null)
@@ -58,19 +60,24 @@ const Footer = () => {
             <h4 className="text-[16px] font-[600] text-teal-700">Company</h4>
             <ul className="mt-4 space-y-2.5 text-[14px] text-slate-600">
               <li>
-                <NavLink className={footerLinkClass} to="/about">
+                <Link className={staticContactLinkClass} to="/contacts">
                   About Us
-                </NavLink>
+                </Link>
               </li>
               <li>
-                <NavLink className={footerLinkClass} to="/contacts">
+                <Link className={staticContactLinkClass} to="/contacts">
                   Careers
-                </NavLink>
+                </Link>
               </li>
               <li>
-                <NavLink className={footerLinkClass} to="/products">
+                <Link className={staticContactLinkClass} to="/contacts">
                   Blog
-                </NavLink>
+                </Link>
+              </li>
+              <li>
+                <Link className={staticContactLinkClass} to="/contacts">
+                  Contact Us
+                </Link>
               </li>
               {!isLoggedIn ? (
                 <li>

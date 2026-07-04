@@ -13,9 +13,7 @@ import { toast } from 'react-toastify'
 import PortalSidebar, { type PortalMenuItem } from '../components/PortalSidebar'
 import { api } from '../lib/api'
 import { clearAuthSession } from '../lib/auth'
-
-const PENDING_VENDORS_EVENT = 'mednexus:pending-vendors-changed'
-const PENDING_VENDORS_URL = '/api/vendors?status=PENDING'
+import { PENDING_VENDORS_EVENT, PENDING_VENDORS_URL } from '../lib/adminNotificationApi'
 
 const baseMenuItems: Omit<PortalMenuItem, 'badge'>[] = [
   { label: 'Dashboard', Icon: LuLayoutDashboard, to: '/admindashboard' },

@@ -1,6 +1,5 @@
 import {
   LuArrowUpRight,
-  LuBell,
   LuCircleDollarSign,
   LuShoppingBag,
   LuStore,
@@ -10,6 +9,7 @@ import {
 import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import { Link } from 'react-router-dom'
 import AdminNavbar from '../AdminComponents/AdminNavbar'
+import AdminNotificationBell from '../AdminComponents/AdminNotificationBell'
 import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { getStoredUser } from '../lib/auth'
 import { resolveProfileImageUrl } from '../lib/api'
@@ -250,15 +250,9 @@ const AdminDashboard = () => {
             </p>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-2 sm:ml-6">
-            <button
-              aria-label="Notifications"
-              className="cursor-pointer relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:text-teal-700"
-              title="Notifications"
-              type="button"
-            >
-              <LuBell className="h-5 w-5" strokeWidth={2} />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
-            </button>
+            <div className="hidden lg:block">
+              <AdminNotificationBell />
+            </div>
             <span className="inline-flex h-10 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm">
               Last 30 days
             </span>

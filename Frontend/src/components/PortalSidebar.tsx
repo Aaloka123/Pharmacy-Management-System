@@ -227,7 +227,8 @@ export default function PortalSidebar({ subtitle, menuItems, onLogout, menuId, s
         <div className="flex min-w-0 items-center gap-2">
           <img alt="MedNexus logo" className="h-8 w-auto shrink-0 object-contain" src={mednexuxLogo} />
         </div>
-        <button
+        <div className="flex items-center gap-2">
+          <button
           aria-controls={menuId}
           aria-expanded={menuOpen}
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -237,6 +238,7 @@ export default function PortalSidebar({ subtitle, menuItems, onLogout, menuId, s
         >
           {menuOpen ? <LuX className="h-5 w-5" strokeWidth={2} /> : <LuMenu className="h-5 w-5" strokeWidth={2} />}
         </button>
+        </div>
       </header>
 
       <aside className="sticky top-0 hidden h-screen w-[280px] min-w-[280px] shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 shadow-sm lg:flex">

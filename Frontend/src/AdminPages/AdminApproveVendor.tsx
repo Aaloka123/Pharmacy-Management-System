@@ -4,6 +4,12 @@ import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { api } from '../lib/api'
+import {
+  formatSubmittedAgo,
+  markAllPendingVendorsSeen,
+  PENDING_VENDORS_URL,
+  refreshAdminNotifications,
+} from '../lib/adminNotificationApi'
 
 type VendorStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
@@ -22,22 +28,6 @@ type Vendor = {
   status: VendorStatus
   createdAt: string
   decidedAt: string | null
-}
-
-const PENDING_VENDORS_URL = '/api/vendors?status=PENDING'
-const PENDING_VENDORS_EVENT = 'mednexus:pending-vendors-changed'
-
-const formatSubmittedAgo = (iso: string): string => {
-  const submittedAt = new Date(iso).getTime()
-  if (Number.isNaN(submittedAt)) return 'recently'
-  const diffMs = Date.now() - submittedAt
-  const minutes = Math.floor(diffMs / 60000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes} min ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hr ago`
-  const days = Math.floor(hours / 24)
-  return `${days} day${days === 1 ? '' : 's'} ago`
 }
 
 const AdminApproveVendor = () => {
@@ -61,7 +51,8 @@ const AdminApproveVendor = () => {
     try {
       const { data } = await api.get<Vendor[]>(PENDING_VENDORS_URL)
       setVendors(data)
-      window.dispatchEvent(new Event(PENDING_VENDORS_EVENT))
+      markAllPendingVendorsSeen(data.map((vendor) => vendor.id))
+      refreshAdminNotifications()
     } catch (err) {
       setError('Could not load vendor requests. Is the backend running?')
       toast.error('Failed to load vendor requests.')
@@ -104,7 +95,7 @@ const AdminApproveVendor = () => {
     try {
       await api.post(`/api/vendors/${vendor.id}/${decision}`)
       setVendors((prev) => prev.filter((v) => v.id !== vendor.id))
-      window.dispatchEvent(new Event(PENDING_VENDORS_EVENT))
+      refreshAdminNotifications()
       if (decision === 'reject') {
         setTopNotice(`${vendor.businessName} was rejected. The vendor has been notified by email.`)
         toast.warn(`${vendor.businessName} rejected.`, { position: 'top-center' })

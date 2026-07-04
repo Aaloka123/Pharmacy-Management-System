@@ -8,7 +8,77 @@ import { getStoredUser, onAuthChange } from './auth'
 
 const SEEN_PENDING_ORDERS_KEY = 'vendorSeenPendingOrderIds'
 const SEEN_UNREPLIED_REVIEWS_KEY = 'vendorSeenUnrepliedReviewIds'
+export const SEEN_MESSAGE_NOTIFICATIONS_KEY = 'vendorSeenMessageNotificationIds'
+const SEEN_PRODUCT_ALERTS_KEY = 'vendorSeenProductAlertKeys'
 export const VENDOR_BADGES_REFRESH_EVENT = 'vendor-badges-refresh'
+
+export { SEEN_PENDING_ORDERS_KEY, SEEN_UNREPLIED_REVIEWS_KEY }
+
+export function readSeenIds(base: string): Set<number> {
+  try {
+    const raw = localStorage.getItem(storageKey(base))
+    if (!raw) return new Set()
+    const parsed = JSON.parse(raw) as number[]
+    return new Set(parsed.filter((id) => Number.isFinite(id)))
+  } catch {
+    return new Set()
+  }
+}
+
+export function writeSeenIds(base: string, ids: number[]) {
+  localStorage.setItem(storageKey(base), JSON.stringify(ids))
+}
+
+export function readSeenProductAlertKeys(): Set<string> {
+  try {
+    const raw = localStorage.getItem(storageKey(SEEN_PRODUCT_ALERTS_KEY))
+    if (!raw) return new Set()
+    const parsed = JSON.parse(raw) as string[]
+    return new Set(parsed.filter((key) => typeof key === 'string' && key.length > 0))
+  } catch {
+    return new Set()
+  }
+}
+
+function writeSeenProductAlertKeys(keys: string[]) {
+  localStorage.setItem(storageKey(SEEN_PRODUCT_ALERTS_KEY), JSON.stringify(keys))
+}
+
+export function writeAllSeenProductAlertKeys(keys: string[]) {
+  writeSeenProductAlertKeys(keys)
+}
+
+function getCurrentProductAlertKeys(products: ProductDto[]): string[] {
+  const keys: string[] = []
+  for (const product of products) {
+    if (isProductExpired(product.expiryDate)) keys.push(`expired:${product.id}`)
+    if (product.stock <= 0) keys.push(`stock:${product.id}`)
+  }
+  return keys
+}
+
+const NOTIFICATIONS_BASELINE_KEY = 'vendorNotificationsBaselined'
+
+export function ensureVendorNotificationBaseline(products: ProductDto[]) {
+  const baselineKey = storageKey(NOTIFICATIONS_BASELINE_KEY)
+  if (localStorage.getItem(baselineKey)) return
+  writeSeenProductAlertKeys(getCurrentProductAlertKeys(products))
+  localStorage.setItem(baselineKey, '1')
+}
+
+export function markVendorProductAlertsViewed(products: ProductDto[]) {
+  const snapshot = readSeenProductAlertKeys()
+  for (const key of getCurrentProductAlertKeys(products)) {
+    snapshot.add(key)
+  }
+  writeSeenProductAlertKeys([...snapshot])
+  refreshVendorNavBadges()
+}
+
+export function countUnreadProductAlerts(products: ProductDto[]): number {
+  const snapshot = readSeenProductAlertKeys()
+  return getCurrentProductAlertKeys(products).filter((key) => !snapshot.has(key)).length
+}
 
 export function getProductExpiryStatus(expiryDate: string): { label: string; classes: string } {
   const today = new Date()
@@ -56,19 +126,25 @@ function storageKey(base: string): string {
   return vendorId != null ? `${base}:${vendorId}` : base
 }
 
-function readSeenIds(base: string): Set<number> {
-  try {
-    const raw = localStorage.getItem(storageKey(base))
-    if (!raw) return new Set()
-    const parsed = JSON.parse(raw) as number[]
-    return new Set(parsed.filter((id) => Number.isFinite(id)))
-  } catch {
-    return new Set()
-  }
+export function markVendorOrderSeen(orderId: number) {
+  const seen = readSeenIds(SEEN_PENDING_ORDERS_KEY)
+  seen.add(orderId)
+  writeSeenIds(SEEN_PENDING_ORDERS_KEY, [...seen])
+  refreshVendorNavBadges()
 }
 
-function writeSeenIds(base: string, ids: number[]) {
-  localStorage.setItem(storageKey(base), JSON.stringify(ids))
+export function markVendorReviewSeen(reviewId: number) {
+  const seen = readSeenIds(SEEN_UNREPLIED_REVIEWS_KEY)
+  seen.add(reviewId)
+  writeSeenIds(SEEN_UNREPLIED_REVIEWS_KEY, [...seen])
+  refreshVendorNavBadges()
+}
+
+export function markVendorProductAlertSeen(alertKey: string) {
+  const seen = readSeenProductAlertKeys()
+  seen.add(alertKey)
+  writeSeenProductAlertKeys([...seen])
+  refreshVendorNavBadges()
 }
 
 export function markVendorOrdersViewed(pendingOrderIds: number[]) {
@@ -103,7 +179,7 @@ export async function fetchVendorNavBadges(): Promise<VendorNavBadges> {
     message: unreadMessages,
     order: pendingOrders.filter((order) => !seenPendingOrders.has(order.id)).length,
     review: unrepliedReviews.filter((review) => !seenUnrepliedReviews.has(review.id)).length,
-    product: countProductAlerts(productsRes.data),
+    product: countUnreadProductAlerts(productsRes.data),
   }
 }
 

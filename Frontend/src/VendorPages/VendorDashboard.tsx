@@ -1,7 +1,6 @@
 import {
   LuArrowDownRight,
   LuArrowUpRight,
-  LuBell,
   LuCircleDollarSign,
   LuPackage,
   LuShoppingBag,
@@ -9,8 +8,9 @@ import {
   LuTrendingUp,
 } from 'react-icons/lu'
 import { useEffect, useMemo, useState, type ComponentType } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Navbar from '../VendorComponents/Navbar'
+import VendorNotificationBell from '../VendorComponents/VendorNotificationBell'
 import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain'
 import { getStoredUser } from '../lib/auth'
 import { resolveMediaUrl } from '../lib/api'
@@ -174,7 +174,6 @@ function TopProductImage({ imageUrl, name }: { imageUrl: string | null; name: st
 }
 
 const VendorDashboard = () => {
-  const navigate = useNavigate()
   const vendorName = getStoredUser()?.fullName?.trim() || 'Vendor'
   const [dashboard, setDashboard] = useState<VendorDashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -258,18 +257,9 @@ const VendorDashboard = () => {
               </p>
             </div>
             <div className="flex shrink-0 items-center justify-end gap-2 sm:ml-6">
-              <button
-                aria-label="Messages"
-                className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:text-teal-700"
-                onClick={() => navigate('/vendormessage')}
-                title="Messages"
-                type="button"
-              >
-                <LuBell className="h-5 w-5" strokeWidth={2} />
-                {dashboard && dashboard.unreadMessages > 0 ? (
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
-                ) : null}
-              </button>
+              <div className="hidden lg:block">
+                <VendorNotificationBell />
+              </div>
               {dashboard ? (
                 <span className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-teal-50 px-3 text-sm font-semibold text-teal-800">
                   <LuTrendingUp className="h-4 w-4" />
