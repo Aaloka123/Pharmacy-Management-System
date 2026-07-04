@@ -1,8 +1,19 @@
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import Navbar from '../VendorComponents/Navbar';
 import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain';
 import mednexuxLogo from '../assets/Mednexux.png';
 import { phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils';
+import {
+  createVendorBill,
+  deleteVendorBill,
+  fetchVendorBills,
+  fromApiBillStatus,
+  fromApiPaymentMethod,
+  toApiBillStatus,
+  toApiPaymentMethod,
+  type BillDto,
+} from '../lib/billApi';
+import { toast } from 'react-toastify';
 
 type InvoiceStatus = 'Unpaid' | 'Paid' | 'Partially Paid';
 type InvoiceLine = {
@@ -27,10 +38,43 @@ type InvoiceForm = {
   discount: string;
   paymentMethod: 'e-sewa' | 'khalti' | 'COD';
   status: InvoiceStatus;
+  vendorBusinessName?: string;
+  vendorPanVatId?: string;
+  vendorBusinessLocation?: string;
+  vendorPhone?: string;
+  vendorEmail?: string;
 };
 
 type SavedInvoice = InvoiceForm & { id: number };
 const FIXED_TAX_PERCENT = 13;
+
+const billToInvoiceForm = (bill: BillDto): SavedInvoice => ({
+  id: bill.id,
+  invoiceNumber: bill.invoiceNumber,
+  invoiceDate: bill.invoiceDate,
+  dueDate: bill.dueDate ?? '',
+  paymentTerms: bill.paymentTerms ?? 'Net 15',
+  billToName: bill.billToName,
+  billToEmail: bill.billToEmail ?? '',
+  billToPhone: bill.billToPhone ?? '',
+  billToAddress: bill.billToAddress ?? '',
+  lines: bill.lines.map((line) => ({
+    id: line.id,
+    productName: line.productName,
+    description: line.description ?? '',
+    quantity: String(line.quantity),
+    unitPrice: String(line.unitPrice),
+  })),
+  taxPercent: String(bill.taxPercent),
+  discount: String(bill.discountPercent),
+  paymentMethod: fromApiPaymentMethod(bill.paymentMethod),
+  status: fromApiBillStatus(bill.status),
+  vendorBusinessName: bill.vendorBusinessName,
+  vendorPanVatId: bill.vendorPanVatId ?? undefined,
+  vendorBusinessLocation: bill.vendorBusinessLocation ?? undefined,
+  vendorPhone: bill.vendorPhone ?? undefined,
+  vendorEmail: bill.vendorEmail ?? undefined,
+});
 
 const createEmptyInvoice = (sequence: number): InvoiceForm => ({
   invoiceNumber: `INV-2026-${String(sequence).padStart(3, '0')}`,
@@ -62,6 +106,27 @@ const Bills = () => {
   const [draftInvoice, setDraftInvoice] = useState<InvoiceForm>(createEmptyInvoice(1));
   const [showEditor, setShowEditor] = useState(false);
   const [invoiceSearchTerm, setInvoiceSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const loadBills = async () => {
+      try {
+        const bills = await fetchVendorBills();
+        if (!active) return;
+        setInvoices(bills.map(billToInvoiceForm));
+      } catch {
+        if (active) toast.error('Could not load invoices.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void loadBills();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const calculations = useMemo(() => {
     const subtotal = draftInvoice.lines.reduce((sum, line) => {
@@ -145,21 +210,66 @@ const Bills = () => {
     setShowEditor(true);
   };
 
-  const saveInvoice = () => {
-    if (selectedInvoiceId) return;
-    const newInvoice: SavedInvoice = { ...draftInvoice, id: Date.now() };
-    setInvoices((prev) => [newInvoice, ...prev]);
-    setSelectedInvoiceId(newInvoice.id);
-    setShowEditor(true);
+  const saveInvoice = async () => {
+    if (selectedInvoiceId || saving) return;
+    if (!draftInvoice.billToName.trim()) {
+      toast.error('Customer name is required.');
+      return;
+    }
+    if (draftInvoice.lines.every((line) => !line.productName.trim())) {
+      toast.error('Add at least one product line.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const created = await createVendorBill({
+        invoiceNumber: draftInvoice.invoiceNumber.trim() || undefined,
+        invoiceDate: draftInvoice.invoiceDate,
+        dueDate: draftInvoice.dueDate || undefined,
+        paymentTerms: draftInvoice.paymentTerms,
+        paymentMethod: toApiPaymentMethod(draftInvoice.paymentMethod),
+        status: toApiBillStatus(draftInvoice.status),
+        billToName: draftInvoice.billToName.trim(),
+        billToEmail: draftInvoice.billToEmail.trim() || undefined,
+        billToPhone: draftInvoice.billToPhone.trim() || undefined,
+        billToAddress: draftInvoice.billToAddress.trim() || undefined,
+        discountPercent: Math.min(100, Math.max(0, Number(draftInvoice.discount) || 0)),
+        lines: draftInvoice.lines
+          .filter((line) => line.productName.trim())
+          .map((line) => ({
+            productName: line.productName.trim(),
+            description: line.description.trim() || undefined,
+            quantity: Math.max(1, Number(line.quantity) || 1),
+            unitPrice: Math.max(0, Number(line.unitPrice) || 0),
+          })),
+      });
+      const saved = billToInvoiceForm(created);
+      setInvoices((prev) => [saved, ...prev]);
+      setSelectedInvoiceId(saved.id);
+      setDraftInvoice(saved);
+      setShowEditor(true);
+      toast.success('Invoice saved.');
+    } catch {
+      toast.error('Could not save invoice.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDeleteInvoice = (invoiceId: number) => {
+  const handleDeleteInvoice = async (invoiceId: number) => {
     const shouldDelete = window.confirm('Are you sure you want to delete this invoice?');
     if (!shouldDelete) return;
-    setInvoices((prev) => prev.filter((invoice) => invoice.id !== invoiceId));
-    if (selectedInvoiceId === invoiceId) {
-      setSelectedInvoiceId(null);
-      setShowEditor(false);
+    try {
+      await deleteVendorBill(invoiceId);
+      setInvoices((prev) => prev.filter((invoice) => invoice.id !== invoiceId));
+      if (selectedInvoiceId === invoiceId) {
+        setSelectedInvoiceId(null);
+        setShowEditor(false);
+      }
+      toast.success('Invoice deleted.');
+    } catch {
+      toast.error('Could not delete invoice.');
     }
   };
 
@@ -275,7 +385,9 @@ const Bills = () => {
         <div className="mt-6 grid gap-6 xl:grid-cols-[300px_1fr]">
           <aside className="hide-on-print rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700">All Invoices ({invoices.length})</h2>
-            {invoices.length === 0 ? (
+            {loading ? (
+              <p className="mt-3 text-sm text-slate-500">Loading invoices...</p>
+            ) : invoices.length === 0 ? (
               <p className="mt-3 text-sm text-slate-500">No invoices yet. Click New Invoice to start.</p>
             ) : (
               <div className="mt-3 space-y-2">
@@ -362,12 +474,21 @@ const Bills = () => {
 
               <div className="mb-4 flex items-start justify-between border-b border-slate-200 pb-4">
                 <div className="flex items-center gap-3">
-                  <img src={mednexuxLogo} alt="Mednexux logo" className="h-12 w-12 rounded-md object-cover" />
+                  <img src={mednexuxLogo} alt="Mednexux logo" className="h-12 w-auto shrink-0 object-contain" />
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900">Mednexux Pharmacy</h3>
-                    <p className="text-xs text-slate-500">Kathmandu, Nepal | +977 9800000000</p>
-                    <p className="text-xs text-slate-500">mednexux.pharmacy@gmail.com</p>
-                    <p className="text-xs text-slate-500">VAT/PAN: 123456789</p>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      {draftInvoice.vendorBusinessName ?? 'Mednexux Pharmacy'}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {draftInvoice.vendorBusinessLocation ?? 'Kathmandu, Nepal'}
+                      {draftInvoice.vendorPhone ? ` | ${draftInvoice.vendorPhone}` : ' | +977 9800000000'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {draftInvoice.vendorEmail ?? 'mednexux.pharmacy@gmail.com'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      VAT/PAN: {draftInvoice.vendorPanVatId ?? '123456789'}
+                    </p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -519,10 +640,11 @@ const Bills = () => {
               {selectedInvoiceId === null ? (
                 <button
                   type="button"
-                  onClick={saveInvoice}
-                  className="cursor-pointer hide-on-print mt-4 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700"
+                  onClick={() => void saveInvoice()}
+                  disabled={saving}
+                  className="cursor-pointer hide-on-print mt-4 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Save Invoice
+                  {saving ? 'Saving...' : 'Save Invoice'}
                 </button>
               ) : null}
               <p className="hidden border-t border-slate-300 pt-3 text-center text-xs text-slate-600 print:block">

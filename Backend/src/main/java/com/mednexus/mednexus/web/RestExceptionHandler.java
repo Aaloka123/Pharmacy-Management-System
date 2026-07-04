@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.auth.InvalidGoogleTokenException;
+import com.mednexus.mednexus.bill.BillNotFoundException;
 import com.mednexus.mednexus.cart.CartItemNotFoundException;
 import com.mednexus.mednexus.cart.InsufficientStockException;
 import com.mednexus.mednexus.cart.VendorStoreClosedException;
@@ -68,6 +69,13 @@ public class RestExceptionHandler {
 	public ProblemDetail handleVendorStoreClosed(VendorStoreClosedException ex) {
 		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
 		pd.setTitle("Vendor closed");
+		return pd;
+	}
+
+	@ExceptionHandler(BillNotFoundException.class)
+	public ProblemDetail handleBillNotFound(BillNotFoundException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+		pd.setTitle("Not found");
 		return pd;
 	}
 

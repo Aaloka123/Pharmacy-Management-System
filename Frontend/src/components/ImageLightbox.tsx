@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import ScrollLockPortal from './ScrollLockPortal'
 
 type ImageLightboxProps = {
   imageUrl: string
@@ -7,40 +7,30 @@ type ImageLightboxProps = {
 }
 
 const ImageLightbox = ({ imageUrl, alt, onClose }: ImageLightboxProps) => {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
-
   return (
-    <div
-      aria-label="Image preview"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex cursor-default items-center justify-center bg-slate-900/75 p-4"
-      onClick={onClose}
-      role="dialog"
-    >
+    <ScrollLockPortal aria-label="Image preview" className="bg-slate-900/75" onClose={onClose}>
       <button
         aria-label="Close preview"
-        className="absolute right-4 top-4 cursor-pointer rounded-full border border-white/30 bg-slate-900/50 p-2 text-white transition hover:bg-slate-900/80"
+        className="fixed right-5 top-5 z-[10000] flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white text-slate-800 shadow-lg transition hover:bg-slate-100"
         onClick={onClose}
         type="button"
       >
-        <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
           <path d="M6 18 18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
-      <img
-        alt={alt}
-        className="max-h-[90vh] max-w-[92vw] rounded-xl object-contain shadow-2xl"
-        draggable={false}
-        onClick={(event) => event.stopPropagation()}
-        src={imageUrl}
-      />
-    </div>
+
+      <div className="flex h-dvh max-h-dvh w-full items-center justify-center p-4">
+        <div className="rounded-2xl bg-white p-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+          <img
+            alt={alt}
+            className="block max-h-[calc(100dvh-8rem)] max-w-[min(480px,calc(100vw-2rem))] object-contain"
+            draggable={false}
+            src={imageUrl}
+          />
+        </div>
+      </div>
+    </ScrollLockPortal>
   )
 }
 

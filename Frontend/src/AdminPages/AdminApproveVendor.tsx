@@ -1,4 +1,5 @@
 import AdminNavbar from '../AdminComponents/AdminNavbar'
+import CertificatePreviewModal from '../components/CertificatePreviewModal'
 import { AdminLayout, AdminMain, FadeInOnScroll } from '../components/PortalMain'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
@@ -356,44 +357,13 @@ const AdminApproveVendor = () => {
       </AdminMain>
 
       {selectedCertificate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="w-full max-w-5xl rounded-xl bg-white p-5 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h3 className="text-lg font-semibold text-slate-900">{selectedCertificate.title}</h3>
-              <button
-                aria-label="Close preview"
-                className="cursor-pointer rounded-md border border-slate-300 p-2 text-slate-700"
-                onClick={() => setSelectedCertificate(null)}
-                type="button"
-              >
-                <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M6 18 18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <img alt={selectedCertificate.title} className="max-h-[72vh] w-full rounded-md border border-slate-200 object-contain" src={selectedCertificate.src} />
-            </div>
-
-            <div className="mt-4 flex gap-3">
-              <button
-                className="cursor-pointer rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white"
-                onClick={handlePrintCertificate}
-                type="button"
-              >
-                Print
-              </button>
-              <button
-                className="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-                onClick={handleDownloadCertificate}
-                type="button"
-              >
-                Download
-              </button>
-            </div>
-          </div>
-        </div>
+        <CertificatePreviewModal
+          onClose={() => setSelectedCertificate(null)}
+          onDownload={handleDownloadCertificate}
+          onPrint={handlePrintCertificate}
+          src={selectedCertificate.src}
+          title={selectedCertificate.title}
+        />
       )}
     </AdminLayout>
   )
