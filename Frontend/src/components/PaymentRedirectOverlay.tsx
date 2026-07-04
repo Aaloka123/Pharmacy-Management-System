@@ -1,7 +1,7 @@
 import { LuBanknote } from 'react-icons/lu'
-import { createPortal } from 'react-dom'
 import esewaLogo from '../assets/E-sewa.png'
 import khaltiLogo from '../assets/Khalti.png'
+import ScrollLockPortal from './ScrollLockPortal'
 
 type PaymentRedirectOverlayProps = {
   provider: 'cod' | 'esewa' | 'khalti'
@@ -20,13 +20,17 @@ const PaymentRedirectOverlay = ({ provider }: PaymentRedirectOverlayProps) => {
     ? 'Please wait while we confirm your cash on delivery order.'
     : 'Please wait while we securely connect you to complete your payment.'
 
-  return createPortal(
-    <div
-      aria-busy="true"
-      aria-live="polite"
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-[2px]"
+  return (
+    <ScrollLockPortal
+      aria-label="Payment redirect"
+      className="grid min-h-dvh place-items-center bg-slate-900/40 p-4 backdrop-blur-[2px]"
     >
-      <section className="w-full max-w-sm animate-[paymentOverlayIn_0.35s_ease-out] rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-2xl sm:p-10">
+      <section
+        aria-busy="true"
+        aria-live="polite"
+        className="w-full max-w-sm animate-[paymentOverlayIn_0.35s_ease-out] rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-2xl sm:p-10"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
           <span className={`absolute inset-0 animate-ping rounded-full ${ringClass}`} />
           <span className={`absolute inset-2 animate-pulse rounded-full ${pulseClass}`} />
@@ -66,8 +70,7 @@ const PaymentRedirectOverlay = ({ provider }: PaymentRedirectOverlayProps) => {
           }
         }
       `}</style>
-    </div>,
-    document.body,
+    </ScrollLockPortal>
   )
 }
 

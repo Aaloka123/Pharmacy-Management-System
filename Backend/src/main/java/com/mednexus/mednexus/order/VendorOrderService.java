@@ -149,6 +149,8 @@ public class VendorOrderService {
 		Product product = order.getProduct();
 		product.setStock(product.getStock() + order.getQuantity());
 		order.setStatus(OrderStatus.CANCELED);
+		orderEmailService.sendStatusUpdateEmail(order, OrderStatus.CANCELED);
+		notificationService.notifyOrderCanceledByUser(order);
 		return toResponse(order);
 	}
 

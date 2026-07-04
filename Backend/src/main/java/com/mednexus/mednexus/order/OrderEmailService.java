@@ -42,7 +42,7 @@ public class OrderEmailService {
 	}
 
 	public void sendStatusUpdateEmail(VendorOrder order, OrderStatus status) {
-		if (order == null || status == OrderStatus.CANCELED) {
+		if (order == null || status == null) {
 			return;
 		}
 		sendAfterCommit(order.getUser(), List.of(order), status, order.getPaymentMethod());

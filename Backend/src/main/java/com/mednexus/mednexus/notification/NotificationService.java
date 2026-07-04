@@ -33,6 +33,21 @@ public class NotificationService {
 	}
 
 	@Transactional
+	public void notifyOrderCanceledByUser(VendorOrder order) {
+		User user = order.getUser();
+		String productName = order.getProductName();
+
+		Notification notification = new Notification();
+		notification.setUser(user);
+		notification.setOrderId(order.getId());
+		notification.setMessage("You canceled your order for %s.".formatted(productName));
+		notification.setProductImage(
+				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), order.getProduct()));
+		notification.setRead(false);
+		notificationRepository.save(notification);
+	}
+
+	@Transactional
 	public void notifyOrderStatusUpdated(VendorOrder order, OrderStatus newStatus) {
 		User user = order.getUser();
 		String vendorName = order.getVendor().getBusinessName();
