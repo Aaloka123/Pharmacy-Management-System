@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,6 +24,7 @@ import com.mednexus.mednexus.chat.dto.ChatMessageResponse;
 import com.mednexus.mednexus.chat.dto.ConversationResponse;
 import com.mednexus.mednexus.chat.dto.SendMessageRequest;
 import com.mednexus.mednexus.chat.dto.UnreadCountResponse;
+import com.mednexus.mednexus.chat.dto.UpdateConversationSettingsRequest;
 import com.mednexus.mednexus.security.PlatformUser;
 
 @RestController
@@ -86,6 +88,24 @@ public class MessageController {
 			@PathVariable Long conversationId) {
 		messageService.markRead(principal, conversationId);
 		return ResponseEntity.noContent().build();
+	}
+
+	@PostMapping("/conversations/{conversationId}/unread")
+	@PreAuthorize("hasAnyRole('USER','VENDOR')")
+	public ResponseEntity<Void> markUnread(
+			@AuthenticationPrincipal PlatformUser principal,
+			@PathVariable Long conversationId) {
+		messageService.markUnread(principal, conversationId);
+		return ResponseEntity.noContent().build();
+	}
+
+	@PatchMapping("/conversations/{conversationId}/settings")
+	@PreAuthorize("hasAnyRole('USER','VENDOR')")
+	public ResponseEntity<ConversationResponse> updateConversationSettings(
+			@AuthenticationPrincipal PlatformUser principal,
+			@PathVariable Long conversationId,
+			@RequestBody UpdateConversationSettingsRequest request) {
+		return ResponseEntity.ok(messageService.updateConversationSettings(principal, conversationId, request));
 	}
 
 	@GetMapping("/unread-count")

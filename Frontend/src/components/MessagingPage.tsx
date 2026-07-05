@@ -5,6 +5,7 @@ import { FiArrowLeft, FiCornerUpLeft, FiImage, FiMoreHorizontal, FiPaperclip, Fi
 import { HiOutlineMagnifyingGlass } from 'react-icons/hi2'
 import { LuBan, LuBell, LuBellOff, LuMailOpen, LuPin, LuPinOff } from 'react-icons/lu'
 import { toast } from 'react-toastify'
+import mednexuxLogo from '../assets/Mednexux.png'
 import { resolveMediaUrl, resolveProfileImageUrl } from '../lib/api'
 import { getStoredUser } from '../lib/auth'
 import {
@@ -19,6 +20,8 @@ import {
   fetchConversations,
   fetchMessages,
   markConversationRead,
+  markConversationUnread,
+  updateConversationSettings,
   type ChatMessageDto,
   type ConversationDto,
   uploadMessageAttachment,
@@ -109,6 +112,21 @@ function createWelcomeChatbotMessage(mode: 'user' | 'vendor'): ChatbotMessage {
   }
 }
 
+function ChatbotAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const shellClass =
+    size === 'sm' ? 'h-8 w-8' : size === 'lg' ? 'h-11 w-11' : 'h-10 w-10'
+  const logoClass =
+    size === 'sm' ? 'h-5 w-auto max-w-full' : size === 'lg' ? 'h-7 w-auto max-w-full' : 'h-6 w-auto max-w-full'
+
+  return (
+    <span
+      className={`flex ${shellClass} shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-1`}
+    >
+      <img alt="MedNexus assistant" className={`${logoClass} object-contain`} src={mednexuxLogo} />
+    </span>
+  )
+}
+
 function ChatbotListItem({
   active,
   onClick,
@@ -127,9 +145,7 @@ function ChatbotListItem({
       onClick={onClick}
       type="button"
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
-        AI
-      </span>
+      <ChatbotAvatar size="lg" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-semibold text-slate-900">Chatbot</span>
@@ -138,6 +154,24 @@ function ChatbotListItem({
         <p className="truncate text-xs text-slate-500">{preview}</p>
       </div>
     </button>
+  )
+}
+
+function sortConversations(list: ConversationDto[]): ConversationDto[] {
+  return [...list].sort((left, right) => {
+    if (left.pinned !== right.pinned) {
+      return left.pinned ? -1 : 1
+    }
+    const leftTime = left.lastMessageAt ? new Date(left.lastMessageAt).getTime() : 0
+    const rightTime = right.lastMessageAt ? new Date(right.lastMessageAt).getTime() : 0
+    return rightTime - leftTime
+  })
+}
+
+function countVisibleUnread(conversations: ConversationDto[]): number {
+  return conversations.reduce(
+    (sum, conversation) => sum + (conversation.muted ? 0 : conversation.unreadCount),
+    0,
   )
 }
 
@@ -174,9 +208,6 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     x: number
     y: number
   } | null>(null)
-  const [pinnedConversationIds, setPinnedConversationIds] = useState<number[]>([])
-  const [mutedConversationIds, setMutedConversationIds] = useState<number[]>([])
-  const [blockedConversationIds, setBlockedConversationIds] = useState<number[]>([])
   const [pendingAttachment, setPendingAttachment] = useState<{
     url: string
     fileName: string
@@ -205,17 +236,8 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     if (query) {
       list = list.filter((conversation) => conversation.peerName.toLowerCase().includes(query))
     }
-    if (pinnedConversationIds.length === 0) return list
-    return [...list].sort((a, b) => {
-      const aPinned = pinnedConversationIds.includes(a.id)
-      const bPinned = pinnedConversationIds.includes(b.id)
-      if (aPinned !== bPinned) return aPinned ? -1 : 1
-      if (aPinned && bPinned) {
-        return pinnedConversationIds.indexOf(a.id) - pinnedConversationIds.indexOf(b.id)
-      }
-      return 0
-    })
-  }, [conversations, search, pinnedConversationIds])
+    return sortConversations(list)
+  }, [conversations, search])
 
   const conversationMenuTarget = useMemo(
     () =>
@@ -406,8 +428,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
 
   useEffect(() => {
     if (mode !== 'user') return
-    const totalUnread = conversations.reduce((sum, conversation) => sum + conversation.unreadCount, 0)
-    notifyMessagesUnreadChanged(totalUnread)
+    notifyMessagesUnreadChanged(countVisibleUnread(conversations))
   }, [conversations, mode])
 
   useEffect(() => {
@@ -578,7 +599,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   }, [scrollToBottom, selectedId, selfSenderType])
 
   const handleSend = async () => {
-    if (selectedId == null || sending) return
+    if (selectedId == null || sending || selectedConversation?.blocked) return
     const text = draft.trim()
     if (!text && !pendingAttachment) return
 
@@ -652,6 +673,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   const selfUser = getStoredUser()
   const peerDisplayName = selectedConversation?.peerName ?? (mode === 'vendor' ? 'Customer' : 'Vendor')
   const peerDisplayImage = selectedConversation?.peerProfileImage ?? null
+  const isConversationBlocked = selectedConversation?.blocked ?? false
 
   const canReplyToMessage = useCallback(
     (message: ChatMessageDto) => {
@@ -737,64 +759,91 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
 
   const closeConversationMenu = () => setConversationMenu(null)
 
-  const handleMarkConversationUnread = (conversationId: number) => {
-    setConversations((prev) =>
-      prev.map((conversation) =>
-        conversation.id === conversationId
-          ? { ...conversation, unreadCount: Math.max(1, conversation.unreadCount) }
-          : conversation,
-      ),
-    )
+  const handleMarkConversationUnread = async (conversationId: number) => {
     closeConversationMenu()
-    if (mode === 'vendor') {
-      refreshVendorNavBadges()
+    try {
+      await markConversationUnread(conversationId)
+      const list = await fetchConversations()
+      setConversations(list)
+      if (mode === 'vendor') {
+        refreshVendorNavBadges()
+      } else {
+        notifyMessagesUnreadChanged(countVisibleUnread(list))
+      }
+    } catch {
+      toast.error('Could not mark conversation as unread.')
     }
   }
 
-  const handleTogglePinConversation = (conversationId: number) => {
-    setPinnedConversationIds((prev) =>
-      prev.includes(conversationId)
-        ? prev.filter((id) => id !== conversationId)
-        : [conversationId, ...prev],
-    )
+  const handleTogglePinConversation = async (conversationId: number) => {
+    const conversation = conversations.find((item) => item.id === conversationId)
+    if (!conversation) return
     closeConversationMenu()
+    try {
+      const updated = await updateConversationSettings(conversationId, { pinned: !conversation.pinned })
+      setConversations((prev) => sortConversations(prev.map((item) => (item.id === conversationId ? updated : item))))
+    } catch {
+      toast.error('Could not update conversation.')
+    }
   }
 
-  const handleToggleMuteConversation = (conversationId: number) => {
-    setMutedConversationIds((prev) =>
-      prev.includes(conversationId)
-        ? prev.filter((id) => id !== conversationId)
-        : [...prev, conversationId],
-    )
+  const handleToggleMuteConversation = async (conversationId: number) => {
+    const conversation = conversations.find((item) => item.id === conversationId)
+    if (!conversation) return
     closeConversationMenu()
+    try {
+      const updated = await updateConversationSettings(conversationId, { muted: !conversation.muted })
+      setConversations((prev) => prev.map((item) => (item.id === conversationId ? updated : item)))
+      if (mode === 'vendor') {
+        refreshVendorNavBadges()
+      } else {
+        notifyMessagesUnreadChanged(
+          countVisibleUnread(
+            conversations.map((item) => (item.id === conversationId ? updated : item)),
+          ),
+        )
+      }
+    } catch {
+      toast.error('Could not update conversation.')
+    }
   }
 
-  const handleDeleteConversation = (conversationId: number) => {
+  const handleDeleteConversation = async (conversationId: number) => {
     const conversation = conversations.find((item) => item.id === conversationId)
     const peerName = conversation?.peerName ?? (mode === 'vendor' ? 'this customer' : 'this vendor')
     closeConversationMenu()
 
-    const confirmed = window.confirm(
-      `Delete conversation with ${peerName}? It will be removed from your list until you refresh the page.`,
-    )
+    const confirmed = window.confirm(`Delete conversation with ${peerName}? It will be removed from your list.`)
     if (!confirmed) return
 
-    setConversations((prev) => prev.filter((item) => item.id !== conversationId))
-    if (selectedId === conversationId) {
-      setSelectedId(null)
-      setMessages([])
+    try {
+      await updateConversationSettings(conversationId, { hidden: true })
+      const nextConversations = conversations.filter((item) => item.id !== conversationId)
+      setConversations(nextConversations)
+      if (selectedId === conversationId) {
+        setSelectedId(null)
+        setMessages([])
+      }
+      if (mode === 'vendor') {
+        refreshVendorNavBadges()
+      } else {
+        notifyMessagesUnreadChanged(countVisibleUnread(nextConversations))
+      }
+    } catch {
+      toast.error('Could not delete conversation.')
     }
-    setPinnedConversationIds((prev) => prev.filter((id) => id !== conversationId))
-    setMutedConversationIds((prev) => prev.filter((id) => id !== conversationId))
   }
 
-  const handleBlockConversation = (conversationId: number) => {
-    setBlockedConversationIds((prev) =>
-      prev.includes(conversationId)
-        ? prev.filter((id) => id !== conversationId)
-        : [...prev, conversationId],
-    )
+  const handleBlockConversation = async (conversationId: number) => {
+    const conversation = conversations.find((item) => item.id === conversationId)
+    if (!conversation) return
     closeConversationMenu()
+    try {
+      const updated = await updateConversationSettings(conversationId, { blocked: !conversation.blocked })
+      setConversations((prev) => prev.map((item) => (item.id === conversationId ? updated : item)))
+    } catch {
+      toast.error('Could not update conversation.')
+    }
   }
 
   useEffect(() => {
@@ -903,9 +952,9 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                   const avatar = resolveProfileImageUrl(conversation.peerProfileImage)
                   const active = !chatbotSelected && conversation.id === selectedId
                   const menuOpen = conversationMenu?.conversationId === conversation.id
-                  const isPinned = pinnedConversationIds.includes(conversation.id)
-                  const isMuted = mutedConversationIds.includes(conversation.id)
-                  const isBlocked = blockedConversationIds.includes(conversation.id)
+                  const isPinned = conversation.pinned ?? false
+                  const isMuted = conversation.muted ?? false
+                  const isBlocked = conversation.blocked ?? false
                   const hasUnread = conversation.unreadCount > 0
                   const rowClass = `group flex w-full cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition ${
                     isBlocked
@@ -1036,9 +1085,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                       <FiArrowLeft className="h-4 w-4" />
                     </button>
                   ) : null}
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
-                    AI
-                  </span>
+                  <ChatbotAvatar />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h2 className="truncate text-sm font-semibold text-slate-900">Chatbot</h2>
@@ -1068,8 +1115,8 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                         key={message.id}
                       >
                         {!isSelf ? (
-                          <span className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
-                            AI
+                          <span className="mr-2">
+                            <ChatbotAvatar size="sm" />
                           </span>
                         ) : null}
                         <div
@@ -1141,8 +1188,8 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                     : null}
                   {!chatbotLoading && chatbotSending ? (
                     <div className="mb-3 flex items-end justify-start">
-                      <span className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
-                        AI
+                      <span className="mr-2">
+                        <ChatbotAvatar size="sm" />
                       </span>
                       <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
                         <p className="text-sm text-slate-500">Thinking…</p>
@@ -1186,17 +1233,17 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                     >
                       <FiImage className="h-5 w-5" />
                     </button>
-                    <textarea
-                      className="min-h-[42px] flex-1 resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500"
+                    <input
+                      className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-teal-500"
                       onChange={(event) => setChatbotDraft(event.target.value)}
                       onKeyDown={(event) => {
-                        if (event.key === 'Enter' && !event.shiftKey) {
+                        if (event.key === 'Enter') {
                           event.preventDefault()
                           void handleChatbotSend()
                         }
                       }}
-                      placeholder={mode === 'vendor' ? 'Ask about orders, stock, or reviews…' : 'Describe symptoms or ask about a medicine…'}
-                      rows={1}
+                      placeholder={mode === 'vendor' ? 'Ask about orders or reviews…' : 'Ask symptoms or medicines…'}
+                      type="text"
                       value={chatbotDraft}
                     />
                     <button
@@ -1376,6 +1423,11 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                 </div>
 
                 <div className="border-t border-slate-200 bg-white p-3">
+                  {isConversationBlocked ? (
+                    <div className="mb-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                      You blocked this conversation. Unblock it from the menu to send messages again.
+                    </div>
+                  ) : null}
                   {replyTo ? (
                     <div className="mb-2 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                       <div className="min-w-0">
@@ -1430,14 +1482,15 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                     <button
                       aria-label="Attach image or PDF"
                       className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={uploading || selectedId == null}
+                      disabled={uploading || selectedId == null || isConversationBlocked}
                       onClick={() => fileInputRef.current?.click()}
                       type="button"
                     >
                       <FiImage className="h-5 w-5" />
                     </button>
                     <textarea
-                      className="min-h-[42px] flex-1 resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500"
+                      className="min-h-[42px] flex-1 resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500 disabled:cursor-not-allowed disabled:bg-slate-50"
+                      disabled={isConversationBlocked}
                       onChange={(event) => setDraft(event.target.value)}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' && !event.shiftKey) {
@@ -1452,7 +1505,12 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                     <button
                       aria-label="Send message"
                       className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-teal-700 text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={sending || uploading || (!draft.trim() && !pendingAttachment)}
+                      disabled={
+                        sending ||
+                        uploading ||
+                        isConversationBlocked ||
+                        (!draft.trim() && !pendingAttachment)
+                      }
                       onClick={() => void handleSend()}
                       type="button"
                     >
@@ -1559,7 +1617,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
             >
               <button
                 className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                onClick={() => handleMarkConversationUnread(conversationMenu.conversationId)}
+                onClick={() => void handleMarkConversationUnread(conversationMenu.conversationId)}
                 role="menuitem"
                 type="button"
               >
@@ -1568,14 +1626,12 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
               </button>
               <button
                 className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                onClick={() => handleTogglePinConversation(conversationMenu.conversationId)}
+                onClick={() => void handleTogglePinConversation(conversationMenu.conversationId)}
                 role="menuitem"
                 type="button"
               >
-                <span>
-                  {pinnedConversationIds.includes(conversationMenu.conversationId) ? 'Unpin' : 'Pin'}
-                </span>
-                {pinnedConversationIds.includes(conversationMenu.conversationId) ? (
+                <span>{conversationMenuTarget.pinned ? 'Unpin' : 'Pin'}</span>
+                {conversationMenuTarget.pinned ? (
                   <LuPinOff className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
                 ) : (
                   <LuPin className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
@@ -1583,14 +1639,12 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
               </button>
               <button
                 className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                onClick={() => handleToggleMuteConversation(conversationMenu.conversationId)}
+                onClick={() => void handleToggleMuteConversation(conversationMenu.conversationId)}
                 role="menuitem"
                 type="button"
               >
-                <span>
-                  {mutedConversationIds.includes(conversationMenu.conversationId) ? 'Unmute' : 'Mute'}
-                </span>
-                {mutedConversationIds.includes(conversationMenu.conversationId) ? (
+                <span>{conversationMenuTarget.muted ? 'Unmute' : 'Mute'}</span>
+                {conversationMenuTarget.muted ? (
                   <LuBell className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
                 ) : (
                   <LuBellOff className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
@@ -1598,7 +1652,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
               </button>
               <button
                 className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50"
-                onClick={() => handleDeleteConversation(conversationMenu.conversationId)}
+                onClick={() => void handleDeleteConversation(conversationMenu.conversationId)}
                 role="menuitem"
                 type="button"
               >
@@ -1607,13 +1661,11 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
               </button>
               <button
                 className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                onClick={() => handleBlockConversation(conversationMenu.conversationId)}
+                onClick={() => void handleBlockConversation(conversationMenu.conversationId)}
                 role="menuitem"
                 type="button"
               >
-                <span>
-                  {blockedConversationIds.includes(conversationMenu.conversationId) ? 'Unblock' : 'Block'}
-                </span>
+                <span>{conversationMenuTarget.blocked ? 'Unblock' : 'Block'}</span>
                 <LuBan className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
               </button>
             </div>,

@@ -7,5 +7,8 @@ public record ConversationResponse(
 		String peerProfileImage,
 		String lastMessagePreview,
 		String lastMessageAt,
-		long unreadCount) {
+		long unreadCount,
+		boolean pinned,
+		boolean muted,
+		boolean blocked) {
 }

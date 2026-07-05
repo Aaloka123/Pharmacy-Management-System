@@ -6,7 +6,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -21,6 +24,7 @@ import com.mednexus.mednexus.chat.dto.ChatMessageResponse;
 import com.mednexus.mednexus.chat.dto.ChatMessageResponse.MessageSenderTypeDto;
 import com.mednexus.mednexus.chat.dto.ConversationResponse;
 import com.mednexus.mednexus.chat.dto.SendMessageRequest;
+import com.mednexus.mednexus.chat.dto.UpdateConversationSettingsRequest;
 import com.mednexus.mednexus.security.PlatformUser;
 import com.mednexus.mednexus.user.Role;
 import com.mednexus.mednexus.user.User;
@@ -38,6 +42,7 @@ public class MessageService {
 	private final ConversationRepository conversationRepository;
 	private final ChatMessageRepository chatMessageRepository;
 	private final ChatMessageHiddenRepository chatMessageHiddenRepository;
+	private final ConversationSettingRepository conversationSettingRepository;
 	private final UserRepository userRepository;
 	private final VendorRepository vendorRepository;
 	private final MessageFileStorage messageFileStorage;
@@ -47,6 +52,7 @@ public class MessageService {
 			ConversationRepository conversationRepository,
 			ChatMessageRepository chatMessageRepository,
 			ChatMessageHiddenRepository chatMessageHiddenRepository,
+			ConversationSettingRepository conversationSettingRepository,
 			UserRepository userRepository,
 			VendorRepository vendorRepository,
 			MessageFileStorage messageFileStorage,
@@ -54,6 +60,7 @@ public class MessageService {
 		this.conversationRepository = conversationRepository;
 		this.chatMessageRepository = chatMessageRepository;
 		this.chatMessageHiddenRepository = chatMessageHiddenRepository;
+		this.conversationSettingRepository = conversationSettingRepository;
 		this.userRepository = userRepository;
 		this.vendorRepository = vendorRepository;
 		this.messageFileStorage = messageFileStorage;
@@ -63,16 +70,18 @@ public class MessageService {
 	@Transactional(readOnly = true)
 	public List<ConversationResponse> listConversations(PlatformUser principal) {
 		if (principal.getAppRole() == Role.USER && !principal.isVendorAccount()) {
-			return conversationRepository.findByUserIdWithDetails(principal.getSubjectId()).stream()
-					.sorted(conversationRecencyComparator())
-					.map(conversation -> toConversationResponse(conversation, true))
-					.toList();
+			return buildConversationResponses(
+					conversationRepository.findByUserIdWithDetails(principal.getSubjectId()),
+					true,
+					MessageSenderType.USER,
+					principal.getSubjectId());
 		}
 		if (principal.getAppRole() == Role.VENDOR && principal.isVendorAccount()) {
-			return conversationRepository.findByVendorIdWithDetails(principal.getSubjectId()).stream()
-					.sorted(conversationRecencyComparator())
-					.map(conversation -> toConversationResponse(conversation, false))
-					.toList();
+			return buildConversationResponses(
+					conversationRepository.findByVendorIdWithDetails(principal.getSubjectId()),
+					false,
+					MessageSenderType.VENDOR,
+					principal.getSubjectId());
 		}
 		throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 	}
@@ -96,7 +105,7 @@ public class MessageService {
 					created.setVendor(vendor);
 					return conversationRepository.save(created);
 				});
-		return toConversationResponse(conversation, true);
+		return toConversationResponse(conversation, true, null);
 	}
 
 	@Transactional(readOnly = true)
@@ -117,6 +126,7 @@ public class MessageService {
 		Conversation conversation = requireConversationAccess(principal, conversationId);
 		MessageSenderType senderType = resolveSenderType(principal);
 		long senderId = principal.getSubjectId();
+		assertNotBlocked(conversation, senderType, senderId);
 
 		String body = request.body() != null ? request.body().trim() : null;
 		if ((body == null || body.isBlank()) && (request.attachmentUrl() == null || request.attachmentUrl().isBlank())) {
@@ -138,6 +148,8 @@ public class MessageService {
 		conversation.setLastMessageSenderType(senderType);
 		conversation.setLastMessagePreview(buildPreview(saved));
 		conversationRepository.save(conversation);
+
+		unhideConversationForRecipient(conversation, senderType);
 
 		ChatMessageResponse response = toMessageResponse(saved);
 		messagingTemplate.convertAndSend("/topic/conversation." + conversationId, response);
@@ -168,17 +180,60 @@ public class MessageService {
 		conversationRepository.save(conversation);
 	}
 
+	@Transactional
+	public void markUnread(PlatformUser principal, Long conversationId) {
+		Conversation conversation = requireConversationAccess(principal, conversationId);
+		if (principal.getAppRole() == Role.USER && !principal.isVendorAccount()) {
+			conversation.setUserLastReadAt(Instant.EPOCH);
+		} else {
+			conversation.setVendorLastReadAt(Instant.EPOCH);
+		}
+		conversationRepository.save(conversation);
+	}
+
+	@Transactional
+	public ConversationResponse updateConversationSettings(
+			PlatformUser principal,
+			Long conversationId,
+			UpdateConversationSettingsRequest request) {
+		Conversation conversation = requireConversationAccess(principal, conversationId);
+		boolean userView = principal.getAppRole() == Role.USER && !principal.isVendorAccount();
+		MessageSenderType viewerType = resolveSenderType(principal);
+		Long viewerId = principal.getSubjectId();
+		ConversationSetting setting = getOrCreateSetting(conversation.getId(), viewerType, viewerId);
+
+		if (request.pinned() != null) {
+			setting.setPinned(request.pinned());
+			setting.setPinnedAt(request.pinned() ? Instant.now() : null);
+		}
+		if (request.muted() != null) {
+			setting.setMuted(request.muted());
+		}
+		if (request.blocked() != null) {
+			setting.setBlocked(request.blocked());
+		}
+		if (request.hidden() != null) {
+			setting.setHidden(request.hidden());
+		}
+		conversationSettingRepository.save(setting);
+		return toConversationResponse(conversation, userView, setting);
+	}
+
 	@Transactional(readOnly = true)
 	public long countUnread(PlatformUser principal) {
 		if (principal.getAppRole() == Role.USER && !principal.isVendorAccount()) {
-			return conversationRepository.findByUserIdWithDetails(principal.getSubjectId()).stream()
-					.mapToLong(conversation -> countUnreadForUser(conversation))
-					.sum();
+			return countUnreadForViewer(
+					conversationRepository.findByUserIdWithDetails(principal.getSubjectId()),
+					MessageSenderType.USER,
+					principal.getSubjectId(),
+					true);
 		}
 		if (principal.getAppRole() == Role.VENDOR && principal.isVendorAccount()) {
-			return conversationRepository.findByVendorIdWithDetails(principal.getSubjectId()).stream()
-					.mapToLong(conversation -> countUnreadForVendor(conversation))
-					.sum();
+			return countUnreadForViewer(
+					conversationRepository.findByVendorIdWithDetails(principal.getSubjectId()),
+					MessageSenderType.VENDOR,
+					principal.getSubjectId(),
+					false);
 		}
 		return 0;
 	}
@@ -256,8 +311,14 @@ public class MessageService {
 		throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 	}
 
-	private ConversationResponse toConversationResponse(Conversation conversation, boolean userView) {
+	private ConversationResponse toConversationResponse(
+			Conversation conversation,
+			boolean userView,
+			ConversationSetting setting) {
 		long unread = userView ? countUnreadForUser(conversation) : countUnreadForVendor(conversation);
+		boolean pinned = setting != null && setting.isPinned();
+		boolean muted = setting != null && setting.isMuted();
+		boolean blocked = setting != null && setting.isBlocked();
 		if (userView) {
 			Vendor vendor = conversation.getVendor();
 			return new ConversationResponse(
@@ -267,7 +328,10 @@ public class MessageService {
 					vendor.getProfileImage(),
 					conversation.getLastMessagePreview(),
 					formatInstant(conversation.getLastMessageAt()),
-					unread);
+					unread,
+					pinned,
+					muted,
+					blocked);
 		}
 		User user = conversation.getUser();
 		return new ConversationResponse(
@@ -277,7 +341,127 @@ public class MessageService {
 				user.getProfileImage(),
 				conversation.getLastMessagePreview(),
 				formatInstant(conversation.getLastMessageAt()),
-				unread);
+				unread,
+				pinned,
+				muted,
+				blocked);
+	}
+
+	private List<ConversationResponse> buildConversationResponses(
+			List<Conversation> conversations,
+			boolean userView,
+			MessageSenderType viewerType,
+			Long viewerId) {
+		Map<Long, ConversationSetting> settingsByConversationId = loadSettingsByConversationId(
+				conversations,
+				viewerType,
+				viewerId);
+		return conversations.stream()
+				.filter(conversation -> !isHidden(settingsByConversationId.get(conversation.getId())))
+				.sorted(conversationListComparator(settingsByConversationId))
+				.map(conversation -> toConversationResponse(
+						conversation,
+						userView,
+						settingsByConversationId.get(conversation.getId())))
+				.toList();
+	}
+
+	private Map<Long, ConversationSetting> loadSettingsByConversationId(
+			List<Conversation> conversations,
+			MessageSenderType viewerType,
+			Long viewerId) {
+		if (conversations.isEmpty()) {
+			return Map.of();
+		}
+		List<Long> conversationIds = conversations.stream().map(Conversation::getId).toList();
+		return conversationSettingRepository
+				.findByIdConversationIdInAndIdViewerTypeAndIdViewerId(conversationIds, viewerType, viewerId)
+				.stream()
+				.collect(Collectors.toMap(setting -> setting.getId().getConversationId(), Function.identity()));
+	}
+
+	private long countUnreadForViewer(
+			List<Conversation> conversations,
+			MessageSenderType viewerType,
+			Long viewerId,
+			boolean userView) {
+		Map<Long, ConversationSetting> settingsByConversationId = loadSettingsByConversationId(
+				conversations,
+				viewerType,
+				viewerId);
+		return conversations.stream()
+				.filter(conversation -> !isMuted(settingsByConversationId.get(conversation.getId())))
+				.mapToLong(conversation -> userView
+						? countUnreadForUser(conversation)
+						: countUnreadForVendor(conversation))
+				.sum();
+	}
+
+	private ConversationSetting getOrCreateSetting(
+			Long conversationId,
+			MessageSenderType viewerType,
+			Long viewerId) {
+		return conversationSettingRepository
+				.findByIdConversationIdAndIdViewerTypeAndIdViewerId(conversationId, viewerType, viewerId)
+				.orElseGet(() -> new ConversationSetting(new ConversationSettingId(conversationId, viewerType, viewerId)));
+	}
+
+	private void assertNotBlocked(Conversation conversation, MessageSenderType senderType, long senderId) {
+		ConversationSetting setting = conversationSettingRepository
+				.findByIdConversationIdAndIdViewerTypeAndIdViewerId(
+						conversation.getId(), senderType, senderId)
+				.orElse(null);
+		if (setting != null && setting.isBlocked()) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You blocked this conversation");
+		}
+	}
+
+	private void unhideConversationForRecipient(Conversation conversation, MessageSenderType senderType) {
+		MessageSenderType recipientType = senderType == MessageSenderType.USER
+				? MessageSenderType.VENDOR
+				: MessageSenderType.USER;
+		Long recipientId = senderType == MessageSenderType.USER
+				? conversation.getVendor().getId()
+				: conversation.getUser().getId();
+		conversationSettingRepository
+				.findByIdConversationIdAndIdViewerTypeAndIdViewerId(
+						conversation.getId(), recipientType, recipientId)
+				.filter(ConversationSetting::isHidden)
+				.ifPresent(setting -> {
+					setting.setHidden(false);
+					conversationSettingRepository.save(setting);
+				});
+	}
+
+	private boolean isHidden(ConversationSetting setting) {
+		return setting != null && setting.isHidden();
+	}
+
+	private boolean isMuted(ConversationSetting setting) {
+		return setting != null && setting.isMuted();
+	}
+
+	private Comparator<Conversation> conversationListComparator(Map<Long, ConversationSetting> settingsByConversationId) {
+		return (left, right) -> {
+			ConversationSetting leftSetting = settingsByConversationId.get(left.getId());
+			ConversationSetting rightSetting = settingsByConversationId.get(right.getId());
+			boolean leftPinned = leftSetting != null && leftSetting.isPinned();
+			boolean rightPinned = rightSetting != null && rightSetting.isPinned();
+			if (leftPinned != rightPinned) {
+				return leftPinned ? -1 : 1;
+			}
+			if (leftPinned && rightPinned) {
+				Instant leftPinnedAt = leftSetting.getPinnedAt();
+				Instant rightPinnedAt = rightSetting.getPinnedAt();
+				if (leftPinnedAt != null && rightPinnedAt != null) {
+					int pinnedCompare = rightPinnedAt.compareTo(leftPinnedAt);
+					if (pinnedCompare != 0) {
+						return pinnedCompare;
+					}
+				}
+			}
+			return conversationRecencyComparator().compare(left, right);
+		};
 	}
 
 	private long countUnreadForUser(Conversation conversation) {

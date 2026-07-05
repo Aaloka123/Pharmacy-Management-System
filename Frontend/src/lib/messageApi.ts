@@ -11,6 +11,16 @@ export type ConversationDto = {
   lastMessagePreview: string | null
   lastMessageAt: string | null
   unreadCount: number
+  pinned: boolean
+  muted: boolean
+  blocked: boolean
+}
+
+export type UpdateConversationSettingsPayload = {
+  pinned?: boolean
+  muted?: boolean
+  blocked?: boolean
+  hidden?: boolean
 }
 
 export type ChatMessageDto = {
@@ -86,6 +96,21 @@ export async function markConversationRead(conversationId: number): Promise<void
   await api.post(`/api/messages/conversations/${conversationId}/read`)
 }
 
+export async function markConversationUnread(conversationId: number): Promise<void> {
+  await api.post(`/api/messages/conversations/${conversationId}/unread`)
+}
+
+export async function updateConversationSettings(
+  conversationId: number,
+  payload: UpdateConversationSettingsPayload,
+): Promise<ConversationDto> {
+  const { data } = await api.patch<ConversationDto>(
+    `/api/messages/conversations/${conversationId}/settings`,
+    payload,
+  )
+  return data
+}
+
 export async function fetchUnreadMessageCount(): Promise<number> {
   const { data } = await api.get<{ count: number }>('/api/messages/unread-count')
   return data?.count ?? 0
@@ -129,5 +154,8 @@ export async function sendProductInquiry(product: ProductDto): Promise<Conversat
   return {
     ...conversation,
     lastMessagePreview: `Inquiry: ${product.productName}`,
+    pinned: conversation.pinned ?? false,
+    muted: conversation.muted ?? false,
+    blocked: conversation.blocked ?? false,
   }
 }

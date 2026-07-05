@@ -31,6 +31,9 @@ public class ChatTableInitializer implements ApplicationRunner {
 		if (!tableExists("chat_message_hidden")) {
 			createChatMessageHiddenTable();
 		}
+		if (!tableExists("conversation_setting")) {
+			createConversationSettingTable();
+		}
 		ensureChatMessageDeleteColumns();
 	}
 
@@ -90,6 +93,28 @@ public class ChatTableInitializer implements ApplicationRunner {
 				) ENGINE=InnoDB
 				""");
 		log.info("`chat_message` table created.");
+	}
+
+	private void createConversationSettingTable() {
+		log.info("Creating missing `conversation_setting` table...");
+		jdbc.execute("""
+				CREATE TABLE `conversation_setting` (
+				  `conversation_id` bigint NOT NULL,
+				  `viewer_type` varchar(20) NOT NULL,
+				  `viewer_id` bigint NOT NULL,
+				  `pinned` tinyint(1) NOT NULL DEFAULT 0,
+				  `muted` tinyint(1) NOT NULL DEFAULT 0,
+				  `blocked` tinyint(1) NOT NULL DEFAULT 0,
+				  `hidden` tinyint(1) NOT NULL DEFAULT 0,
+				  `pinned_at` datetime(6) DEFAULT NULL,
+				  `updated_at` datetime(6) NOT NULL,
+				  PRIMARY KEY (`conversation_id`, `viewer_type`, `viewer_id`),
+				  KEY `idx_conversation_setting_viewer` (`viewer_type`, `viewer_id`),
+				  CONSTRAINT `fk_conversation_setting_conversation`
+				    FOREIGN KEY (`conversation_id`) REFERENCES `conversation` (`id`) ON DELETE CASCADE
+				) ENGINE=InnoDB
+				""");
+		log.info("`conversation_setting` table created.");
 	}
 
 	private void createChatMessageHiddenTable() {
