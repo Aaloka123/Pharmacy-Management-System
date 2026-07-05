@@ -26,6 +26,8 @@ import {
 } from '../lib/messageApi'
 import { refreshVendorNavBadges } from '../lib/vendorNavBadges'
 import { notifyMessagesUnreadChanged } from '../lib/messagePanelEvents'
+import { sendChatbotMessage, fetchChatbotMessages } from '../lib/chatbotApi'
+import type { ChatbotProductCard } from '../lib/chatbotApi'
 import type { Client, StompSubscription } from '@stomp/stompjs'
 
 type MessagingPageProps = {
@@ -84,7 +86,10 @@ function MessageAvatar({
   )
 }
 
-const CHATBOT_PREVIEW = 'Hi! I am your AI assistant. How can I help you today?'
+const getChatbotWelcome = (mode: 'user' | 'vendor') =>
+  mode === 'vendor'
+    ? 'Hi! I can help with pending orders, expired products, low stock, and customer reviews.'
+    : 'Hi! Tell me how you feel or ask about medicines. I can suggest common options and show products available on MedNexus.'
 
 type ChatbotMessage = {
   id: number
@@ -92,13 +97,14 @@ type ChatbotMessage = {
   body: string
   createdAt: string
   imageUrl?: string
+  products?: ChatbotProductCard[]
 }
 
-function createWelcomeChatbotMessage(): ChatbotMessage {
+function createWelcomeChatbotMessage(mode: 'user' | 'vendor'): ChatbotMessage {
   return {
     id: 0,
     role: 'assistant',
-    body: CHATBOT_PREVIEW,
+    body: getChatbotWelcome(mode),
     createdAt: new Date().toISOString(),
   }
 }
@@ -106,9 +112,11 @@ function createWelcomeChatbotMessage(): ChatbotMessage {
 function ChatbotListItem({
   active,
   onClick,
+  preview,
 }: {
   active: boolean
   onClick: () => void
+  preview: string
 }) {
   return (
     <button
@@ -127,7 +135,7 @@ function ChatbotListItem({
           <span className="truncate text-sm font-semibold text-slate-900">Chatbot</span>
           <span className="shrink-0 text-[11px] font-medium text-violet-600">Assistant</span>
         </div>
-        <p className="truncate text-xs text-slate-500">{CHATBOT_PREVIEW}</p>
+        <p className="truncate text-xs text-slate-500">{preview}</p>
       </div>
     </button>
   )
@@ -139,8 +147,10 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   const [conversations, setConversations] = useState<ConversationDto[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [chatbotSelected, setChatbotSelected] = useState(false)
-  const [chatbotMessages, setChatbotMessages] = useState<ChatbotMessage[]>(() => [createWelcomeChatbotMessage()])
+  const [chatbotMessages, setChatbotMessages] = useState<ChatbotMessage[]>(() => [createWelcomeChatbotMessage(mode)])
   const [chatbotDraft, setChatbotDraft] = useState('')
+  const [chatbotSending, setChatbotSending] = useState(false)
+  const [chatbotLoading, setChatbotLoading] = useState(true)
   const [chatbotPendingImage, setChatbotPendingImage] = useState<{
     url: string
     fileName: string
@@ -229,6 +239,35 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     }
   }, [])
 
+  const loadChatbotHistory = useCallback(async () => {
+    setChatbotLoading(true)
+    try {
+      const stored = await fetchChatbotMessages()
+      if (stored.length === 0) {
+        setChatbotMessages([createWelcomeChatbotMessage(mode)])
+      } else {
+        setChatbotMessages(
+          stored.map((message) => ({
+            id: message.id,
+            role: message.role,
+            body: message.body,
+            createdAt: message.createdAt,
+            products: message.products,
+          })),
+        )
+      }
+    } catch {
+      setChatbotMessages([createWelcomeChatbotMessage(mode)])
+    } finally {
+      setChatbotLoading(false)
+    }
+  }, [mode])
+
+  const chatbotPreview = useMemo(() => {
+    const lastStored = [...chatbotMessages].reverse().find((message) => message.id !== 0)
+    return lastStored?.body ?? getChatbotWelcome(mode)
+  }, [chatbotMessages, mode])
+
   const loadConversations = useCallback(async () => {
     setLoadingList(true)
     try {
@@ -284,6 +323,10 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     window.setTimeout(scrollChatbotToBottom, 50)
   }, [scrollChatbotToBottom])
 
+  useEffect(() => {
+    void loadChatbotHistory()
+  }, [loadChatbotHistory])
+
   const handleChatbotFilePick = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -299,22 +342,62 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     event.target.value = ''
   }
 
-  const handleChatbotSend = () => {
+  const handleChatbotSend = async () => {
     const text = chatbotDraft.trim()
-    if (!text && !chatbotPendingImage) return
+    if ((!text && !chatbotPendingImage) || chatbotSending) return
+
+    if (chatbotPendingImage) {
+      toast.info('Image analysis is not available in chat yet. Please describe your question in text.')
+      return
+    }
 
     const userMessage: ChatbotMessage = {
       id: Date.now(),
       role: 'user',
       body: text,
       createdAt: new Date().toISOString(),
-      imageUrl: chatbotPendingImage?.url,
     }
 
     setChatbotMessages((prev) => [...prev, userMessage])
     setChatbotDraft('')
     setChatbotPendingImage(null)
+    setChatbotSending(true)
     window.setTimeout(scrollChatbotToBottom, 50)
+
+    try {
+      const response = await sendChatbotMessage(text)
+      setChatbotMessages((prev) => [
+        ...prev.filter((message) => message.id !== userMessage.id),
+        {
+          id: response.userMessageId,
+          role: 'user',
+          body: text,
+          createdAt: response.userCreatedAt,
+        },
+        {
+          id: response.assistantMessageId,
+          role: 'assistant',
+          body: response.reply,
+          createdAt: response.assistantCreatedAt,
+          products: mode === 'user' ? response.products : undefined,
+        },
+      ])
+      window.setTimeout(scrollChatbotToBottom, 50)
+    } catch {
+      toast.error('AI assistant is unavailable. Make sure Ollama is running with llama3.2:3b.')
+      setChatbotMessages((prev) => [
+        ...prev.filter((message) => message.id !== userMessage.id),
+        {
+          id: Date.now() + 1,
+          role: 'assistant',
+          body: 'Sorry, I could not reach the local AI service. Please make sure Ollama is running and try again.',
+          createdAt: new Date().toISOString(),
+        },
+      ])
+      window.setTimeout(scrollChatbotToBottom, 50)
+    } finally {
+      setChatbotSending(false)
+    }
   }
 
   useEffect(() => {
@@ -802,7 +885,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
               </div>
             </div>
 
-            <ChatbotListItem active={chatbotSelected} onClick={openChatbot} />
+            <ChatbotListItem active={chatbotSelected} onClick={openChatbot} preview={chatbotPreview} />
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain" ref={conversationListRef}>
               {loadingList ? (
@@ -956,11 +1039,16 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
                     AI
                   </span>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h2 className="truncate text-sm font-semibold text-slate-900">Chatbot</h2>
                       <span className="text-[11px] font-medium text-violet-600">Assistant</span>
                     </div>
+                    {mode === 'user' ? (
+                      <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
+                        AI suggestions are for information only, not medical advice.
+                      </p>
+                    ) : null}
                   </div>
                 </header>
 
@@ -968,7 +1056,11 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                   className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-slate-50 p-4"
                   ref={chatbotMessageListRef}
                 >
-                  {chatbotMessages.map((message) => {
+                  {chatbotLoading ? (
+                    <p className="text-sm text-slate-500">Loading chat history...</p>
+                  ) : null}
+                  {!chatbotLoading
+                    ? chatbotMessages.map((message) => {
                     const isSelf = message.role === 'user'
                     return (
                       <div
@@ -1001,6 +1093,37 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                           {message.body ? (
                             <p className="whitespace-pre-wrap break-words text-sm text-slate-800">{message.body}</p>
                           ) : null}
+                          {message.products && message.products.length > 0 ? (
+                            <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
+                              <p className="text-xs font-semibold text-slate-600">Available on MedNexus</p>
+                              {message.products.map((product) => (
+                                <Link
+                                  className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-2 transition hover:border-teal-200 hover:bg-teal-50/40"
+                                  key={product.id}
+                                  to={`/productsdetail?id=${product.id}`}
+                                >
+                                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-white">
+                                    {product.imageUrl ? (
+                                      <img
+                                        alt={product.productName}
+                                        className="h-full w-full object-contain p-1"
+                                        src={product.imageUrl}
+                                      />
+                                    ) : (
+                                      <span className="text-[10px] text-slate-400">No image</span>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold text-slate-900">{product.productName}</p>
+                                    <p className="truncate text-xs text-slate-500">{product.vendorBusinessName}</p>
+                                    <p className="mt-1 text-xs font-semibold text-teal-700">
+                                      NRP {product.price.toLocaleString()} · Stock {product.stock}
+                                    </p>
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          ) : null}
                           <p className="mt-1 text-[11px] text-slate-400">
                             {formatMessageTime(message.createdAt)}
                           </p>
@@ -1014,7 +1137,18 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                         ) : null}
                       </div>
                     )
-                  })}
+                  })
+                    : null}
+                  {!chatbotLoading && chatbotSending ? (
+                    <div className="mb-3 flex items-end justify-start">
+                      <span className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
+                        AI
+                      </span>
+                      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                        <p className="text-sm text-slate-500">Thinking…</p>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="border-t border-slate-200 bg-white p-3">
@@ -1058,18 +1192,18 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' && !event.shiftKey) {
                           event.preventDefault()
-                          handleChatbotSend()
+                          void handleChatbotSend()
                         }
                       }}
-                      placeholder="Type a message..."
+                      placeholder={mode === 'vendor' ? 'Ask about orders, stock, or reviews…' : 'Describe symptoms or ask about a medicine…'}
                       rows={1}
                       value={chatbotDraft}
                     />
                     <button
                       aria-label="Send message"
                       className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-teal-700 text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={!chatbotDraft.trim() && !chatbotPendingImage}
-                      onClick={handleChatbotSend}
+                      disabled={chatbotSending || (!chatbotDraft.trim() && !chatbotPendingImage)}
+                      onClick={() => void handleChatbotSend()}
                       type="button"
                     >
                       <FiSend className="h-4 w-4" />

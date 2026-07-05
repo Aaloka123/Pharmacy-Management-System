@@ -5,12 +5,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import com.mednexus.mednexus.chatbot.OllamaProperties;
 import com.mednexus.mednexus.payment.EsewaProperties;
 import com.mednexus.mednexus.payment.KhaltiProperties;
 import com.mednexus.mednexus.security.JwtProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties({ JwtProperties.class, EsewaProperties.class, KhaltiProperties.class })
+@EnableConfigurationProperties({ JwtProperties.class, EsewaProperties.class, KhaltiProperties.class, OllamaProperties.class })
 @EnableScheduling
 public class MednexusApplication {
 
