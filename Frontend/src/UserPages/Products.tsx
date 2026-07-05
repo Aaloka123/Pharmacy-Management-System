@@ -2,7 +2,7 @@ import Header from '../UserComponents/Header'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartStorage'
 import { listPublicProducts, getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
@@ -142,9 +142,12 @@ const Products = () => {
               <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-[30px]">Product</h1>
               <p className="mt-3 text-sm text-slate-600 md:text-base">Browse trusted medicines.</p>
             </div>
-            <button className="cursor-pointer inline-flex items-center justify-center rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white">
-            New Prescription
-            </button>
+            <Link
+              className="cursor-pointer inline-flex items-center justify-center rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
+              to="/prescription"
+            >
+              New Prescription
+            </Link>
           </div>
 
           <div className="mt-7">

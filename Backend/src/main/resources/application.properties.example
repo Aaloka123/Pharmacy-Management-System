@@ -60,7 +60,8 @@ mednexus.khalti.secret-key=${KHALTI_SECRET_KEY:}
 mednexus.khalti.api-base-url=https://dev.khalti.com/api/v2
 mednexus.khalti.frontend-base-url=http://localhost:5173
 
-# Ollama local AI (chatbot)
+# Ollama local AI (chatbot + prescription OCR)
 mednexus.ollama.base-url=http://localhost:11434
 mednexus.ollama.chat-model=llama3.2:3b
-mednexus.ollama.timeout-seconds=120
+mednexus.ollama.vision-model=moondream:latest
+mednexus.ollama.timeout-seconds=300

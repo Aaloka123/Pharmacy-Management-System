@@ -189,7 +189,14 @@ const ChatbotButton = () => {
       ) : null}
 
       {open ? (
-        <div className="fixed bottom-6 right-6 z-50 flex h-[min(100dvh-5rem,560px)] w-[min(calc(100vw-2rem),400px)] flex-col overflow-hidden overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <>
+          <button
+            aria-label="Close chatbot"
+            className="fixed inset-0 z-40 cursor-default bg-slate-900/20"
+            onClick={closePanel}
+            type="button"
+          />
+          <div className="fixed bottom-6 right-6 z-50 flex h-[min(100dvh-5rem,560px)] w-[min(calc(100vw-2rem),400px)] flex-col overflow-hidden overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-2xl">
           <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-teal-700 px-4 py-3 text-white">
             <div>
               <p className="text-sm font-semibold">Chatbot</p>
@@ -214,6 +221,7 @@ const ChatbotButton = () => {
             />
           </div>
         </div>
+        </>
       ) : null}
     </>
   )

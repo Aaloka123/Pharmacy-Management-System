@@ -125,7 +125,18 @@ async function request<T>(
   }
 
   if (!res.ok) {
-    throw new ApiRequestError(res.status)
+    let message = `Request failed with status ${res.status}`
+    try {
+      const errBody = (await res.json()) as { message?: string; error?: string }
+      if (typeof errBody.message === 'string' && errBody.message.trim()) {
+        message = errBody.message.trim()
+      } else if (typeof errBody.error === 'string' && errBody.error.trim()) {
+        message = errBody.error.trim()
+      }
+    } catch {
+      /* ignore non-JSON error bodies */
+    }
+    throw new ApiRequestError(res.status, message)
   }
 
   if (res.status === 204) {

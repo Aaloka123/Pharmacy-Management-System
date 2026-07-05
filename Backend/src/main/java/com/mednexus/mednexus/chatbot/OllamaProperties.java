@@ -7,7 +7,8 @@ public class OllamaProperties {
 
 	private String baseUrl = "http://localhost:11434";
 	private String chatModel = "llama3.2:3b";
-	private int timeoutSeconds = 120;
+	private String visionModel = "moondream:latest";
+	private int timeoutSeconds = 300;
 
 	public String getBaseUrl() {
 		return baseUrl == null ? "http://localhost:11434" : baseUrl.replaceAll("/$", "");
@@ -25,8 +26,16 @@ public class OllamaProperties {
 		this.chatModel = chatModel;
 	}
 
+	public String getVisionModel() {
+		return visionModel == null || visionModel.isBlank() ? "moondream:latest" : visionModel.trim();
+	}
+
+	public void setVisionModel(String visionModel) {
+		this.visionModel = visionModel;
+	}
+
 	public int getTimeoutSeconds() {
-		return timeoutSeconds <= 0 ? 120 : timeoutSeconds;
+		return timeoutSeconds <= 0 ? 300 : timeoutSeconds;
 	}
 
 	public void setTimeoutSeconds(int timeoutSeconds) {
