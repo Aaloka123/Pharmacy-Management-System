@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.mednexus.mednexus.cart.CartService;
 import com.mednexus.mednexus.product.dto.ProductResponse;
 import com.mednexus.mednexus.product.dto.ProductWriteRequest;
 import com.mednexus.mednexus.storage.MediaUrlUtils;
@@ -30,15 +31,18 @@ public class ProductService {
 	private final ProductRepository productRepository;
 	private final VendorRepository vendorRepository;
 	private final ProductFileStorage fileStorage;
+	private final CartService cartService;
 
 	@Autowired
 	public ProductService(
 			ProductRepository productRepository,
 			VendorRepository vendorRepository,
-			ProductFileStorage fileStorage) {
+			ProductFileStorage fileStorage,
+			CartService cartService) {
 		this.productRepository = productRepository;
 		this.vendorRepository = vendorRepository;
 		this.fileStorage = fileStorage;
+		this.cartService = cartService;
 	}
 
 	@Transactional(readOnly = true)
@@ -162,6 +166,7 @@ public class ProductService {
 	public void delete(Long vendorId, Long productId) {
 		Product product = productRepository.findByIdAndVendorId(productId, vendorId)
 				.orElseThrow(ProductNotFoundException::new);
+		cartService.removeByProductId(productId);
 		fileStorage.deleteByPublicUrls(product.getImages());
 		productRepository.delete(product);
 	}

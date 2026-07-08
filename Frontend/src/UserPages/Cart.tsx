@@ -7,11 +7,15 @@ import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { fetchCart, removeCartItem, removeCartItems, updateCartItemQuantity } from '../lib/cartApi'
 import {
+  cartLineUnavailableReason,
   closedVendorNames,
   hasClosedVendorItems,
+  hasUnavailableCartItems,
   isCartApiError,
+  isCartLineSelectable,
   isCartUserLoggedIn,
   notifyCartChanged,
+  saveCheckoutCartIds,
   type CartLine,
 } from '../lib/cartStorage'
 import FadeInOnScroll from '../components/FadeInOnScroll'
@@ -55,21 +59,26 @@ const Cart = () => {
   }, [loadCart])
 
   useEffect(() => {
-    const lineIds = new Set(lines.map((line) => line.id))
-    setSelectedIds((prev) => prev.filter((id) => lineIds.has(id)))
+    setSelectedIds((prev) =>
+      prev.filter((id) => {
+        const line = lines.find((item) => item.id === id)
+        return line != null && isCartLineSelectable(line)
+      }),
+    )
   }, [lines])
 
   const selectedLines = useMemo(() => lines.filter((line) => selectedIds.includes(line.id)), [lines, selectedIds])
   const selectedClosedVendors = useMemo(() => closedVendorNames(selectedLines), [selectedLines])
-  const cartHasClosedVendors = useMemo(() => lines.some((line) => !line.vendorStoreOpen), [lines])
+  const cartHasUnavailableItems = useMemo(() => hasUnavailableCartItems(lines), [lines])
+  const selectedHasUnavailableItems = useMemo(() => hasUnavailableCartItems(selectedLines), [selectedLines])
   const selectedProductNames = useMemo(() => selectedLines.map((line) => line.name), [selectedLines])
   const subtotal = useMemo(() => selectedLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0), [selectedLines])
   const tax = useMemo(() => subtotal * 0.13, [subtotal])
   const total = useMemo(() => subtotal + tax, [subtotal, tax])
   const itemCount = useMemo(() => selectedLines.length, [selectedLines])
   const allSelected = useMemo(() => {
-    const openLines = lines.filter((line) => line.vendorStoreOpen)
-    return openLines.length > 0 && openLines.every((line) => selectedIds.includes(line.id))
+    const selectableLines = lines.filter((line) => isCartLineSelectable(line))
+    return selectableLines.length > 0 && selectableLines.every((line) => selectedIds.includes(line.id))
   }, [lines, selectedIds])
   const loggedIn = isCartUserLoggedIn()
 
@@ -77,8 +86,9 @@ const Cart = () => {
     if (qty < 1) return
     const line = lines.find((item) => item.id === id)
     if (!line) return
-    if (!line.vendorStoreOpen) {
-      toast.warn(`${line.vendorName} is currently closed. Remove this item to continue.`)
+    if (!isCartLineSelectable(line)) {
+      const reason = cartLineUnavailableReason(line)
+      toast.warn(reason ?? 'This item cannot be selected.')
       return
     }
     if (qty > line.stock) {
@@ -135,8 +145,9 @@ const Cart = () => {
 
   const toggleSelect = (id: string) => {
     const line = lines.find((item) => item.id === id)
-    if (line && !line.vendorStoreOpen) {
-      toast.warn(`${line.vendorName} is currently closed. Remove this item to continue.`)
+    if (line && !isCartLineSelectable(line)) {
+      const reason = cartLineUnavailableReason(line)
+      toast.warn(reason ?? 'This item cannot be selected.')
       return
     }
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]))
@@ -147,19 +158,15 @@ const Cart = () => {
       setSelectedIds([])
       return
     }
-    setSelectedIds(lines.filter((line) => line.vendorStoreOpen).map((line) => line.id))
+    setSelectedIds(lines.filter((line) => isCartLineSelectable(line)).map((line) => line.id))
   }
 
   const handleProceedToCheckout = () => {
-    if (hasClosedVendorItems(selectedLines)) {
-      const vendors = closedVendorNames(selectedLines)
-      toast.error(
-        vendors.length === 1
-          ? `${vendors[0]} is currently closed. Remove those items to continue.`
-          : 'Some items are from closed vendors. Remove them to continue.',
-      )
+    if (selectedHasUnavailableItems || hasClosedVendorItems(selectedLines)) {
+      toast.error('Remove unavailable or out-of-stock items before checkout.')
       return
     }
+    saveCheckoutCartIds(selectedLines.map((line) => line.id))
     navigate('/checkout', { state: { lines: selectedLines } })
   }
 
@@ -237,9 +244,10 @@ const Cart = () => {
           <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
             <FadeInOnScroll>
             <section className="space-y-4">
-              {cartHasClosedVendors ? (
+              {cartHasUnavailableItems ? (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  Some items are from vendors that are currently closed. Remove them before checkout.
+                  Some items are unavailable, out of stock, or from closed vendors. Remove or deselect them before
+                  checkout.
                 </div>
               ) : null}
               <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -275,22 +283,25 @@ const Cart = () => {
                   Delete
                 </button>
               </div>
-              {lines.map((line) => (
+              {lines.map((line) => {
+                const selectable = isCartLineSelectable(line)
+                const unavailableReason = cartLineUnavailableReason(line)
+                return (
                 <article
                   className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 shadow-sm transition sm:flex-row sm:items-center sm:p-5 ${
-                    line.vendorStoreOpen
+                    selectable
                       ? 'border-slate-200 hover:border-slate-300 hover:shadow-md'
                       : 'border-rose-200 bg-rose-50/40'
                   }`}
                   key={line.id}
                 >
                   <label className={`inline-flex items-center gap-2 text-sm text-slate-600 sm:mr-1 ${
-                    line.vendorStoreOpen ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                    selectable ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
                   }`}>
                     <input
                       checked={selectedIds.includes(line.id)}
                       className="h-4 w-4 cursor-pointer rounded border-slate-300 text-teal-700 focus:ring-teal-700 disabled:cursor-not-allowed"
-                      disabled={!line.vendorStoreOpen}
+                      disabled={!selectable}
                       onChange={() => toggleSelect(line.id)}
                       type="checkbox"
                     />
@@ -322,10 +333,8 @@ const Cart = () => {
                         <span className="text-slate-400">Pack</span> <span className="font-medium">{line.pack}</span>
                       </span>
                     </div>
-                    {!line.vendorStoreOpen ? (
-                      <p className="mt-2 text-sm font-medium text-rose-700">
-                        {line.vendorName} is currently closed. Remove this item to continue.
-                      </p>
+                    {unavailableReason ? (
+                      <p className="mt-2 text-sm font-medium text-rose-700">{unavailableReason}</p>
                     ) : null}
                   </div>
                   <div className="flex items-center justify-center gap-6 border-t border-slate-100 pt-4 sm:min-w-[180px] sm:self-center sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
@@ -335,7 +344,7 @@ const Cart = () => {
                         <button
                           aria-label="Decrease quantity"
                           className="cursor-pointer rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
-                          disabled={line.qty <= 1 || actionId === line.id || !line.vendorStoreOpen}
+                          disabled={line.qty <= 1 || actionId === line.id || !selectable}
                           onClick={() => void updateQty(line.id, line.qty - 1)}
                           type="button"
                         >
@@ -345,7 +354,7 @@ const Cart = () => {
                         <button
                           aria-label="Increase quantity"
                           className="cursor-pointer rounded-md px-3 py-2 text-base leading-none text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
-                          disabled={actionId === line.id || line.qty >= line.stock || line.stock <= 0 || !line.vendorStoreOpen}
+                          disabled={actionId === line.id || line.qty >= line.stock || line.stock <= 0 || !selectable}
                           onClick={() => void updateQty(line.id, line.qty + 1)}
                           type="button"
                         >
@@ -372,7 +381,8 @@ const Cart = () => {
                     </button>
                   </div>
                 </article>
-              ))}
+                )
+              })}
             </section>
             </FadeInOnScroll>
 
@@ -410,16 +420,14 @@ const Cart = () => {
                   <dd className="text-base font-bold text-teal-700">NRP {total.toLocaleString()}</dd>
                 </div>
               </dl>
-              {selectedClosedVendors.length > 0 ? (
+              {selectedHasUnavailableItems || selectedClosedVendors.length > 0 ? (
                 <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
-                  {selectedClosedVendors.length === 1
-                    ? `${selectedClosedVendors[0]} is currently closed.`
-                    : 'Selected items include closed vendors.'}
+                  Selected items include unavailable or out-of-stock products.
                 </p>
               ) : null}
               <button
                 className="cursor-pointer mt-6 w-full rounded-lg bg-linear-to-br from-teal-600 to-teal-700 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-900/20 transition enabled:hover:from-teal-700 enabled:hover:to-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={selectedLines.length === 0 || hasClosedVendorItems(selectedLines)}
+                disabled={selectedLines.length === 0 || selectedHasUnavailableItems || hasClosedVendorItems(selectedLines)}
                 onClick={handleProceedToCheckout}
                 type="button"
               >

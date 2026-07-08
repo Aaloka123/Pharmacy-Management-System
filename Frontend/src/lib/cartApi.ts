@@ -15,6 +15,7 @@ export type CartItemDto = {
   stock: number
   vendorName: string
   vendorStoreOpen: boolean
+  productActive: boolean
 }
 
 export function mapCartItemToLine(item: CartItemDto): CartLine {
@@ -34,6 +35,7 @@ export function mapCartItemToLine(item: CartItemDto): CartLine {
     stock: item.stock,
     vendorName: item.vendorName ?? 'Vendor',
     vendorStoreOpen: item.vendorStoreOpen ?? true,
+    productActive: item.productActive ?? true,
   }
 }
 

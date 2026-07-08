@@ -15,5 +15,6 @@ public record CartItemResponse(
 		int qty,
 		int stock,
 		String vendorName,
-		boolean vendorStoreOpen) {
+		boolean vendorStoreOpen,
+		boolean productActive) {
 }

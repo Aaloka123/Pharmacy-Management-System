@@ -82,6 +82,7 @@ public class CartService {
 		Cart cart = cartRepository.findByIdAndUserId(cartItemId, userId)
 				.orElseThrow(CartItemNotFoundException::new);
 		Product product = cart.getProduct();
+		ensureProductAvailable(product);
 		ensureVendorStoreOpen(product);
 		ensureQuantityWithinStock(product, request.quantity());
 		cart.setQuantity(request.quantity());
@@ -103,10 +104,24 @@ public class CartService {
 		cartRepository.deleteByUserIdAndIdIn(userId, cartItemIds);
 	}
 
+	@Transactional
+	public void removeByProductId(Long productId) {
+		cartRepository.deleteByProductId(productId);
+	}
+
 	private void ensureVendorStoreOpen(Product product) {
 		Vendor vendor = product.getVendor();
 		if (vendor.getStatus() != VendorStatus.APPROVED || vendor.getStoreStatus() != StoreStatus.OPEN) {
 			throw new VendorStoreClosedException(vendor.getBusinessName());
+		}
+	}
+
+	private void ensureProductAvailable(Product product) {
+		if (product.getStatus() != ProductStatus.ACTIVE) {
+			throw new IllegalArgumentException("Product is no longer available: " + product.getProductName());
+		}
+		if (product.getStock() <= 0) {
+			throw new InsufficientStockException(0);
 		}
 	}
 
@@ -122,6 +137,7 @@ public class CartService {
 		String image = ProductImageUtils.preferredImageUrl(product);
 		boolean vendorStoreOpen = vendor.getStatus() == VendorStatus.APPROVED
 				&& vendor.getStoreStatus() == StoreStatus.OPEN;
+		boolean productActive = product.getStatus() == ProductStatus.ACTIVE;
 		return new CartItemResponse(
 				cart.getId(),
 				product.getId(),
@@ -135,6 +151,7 @@ public class CartService {
 				cart.getQuantity(),
 				product.getStock(),
 				vendor.getBusinessName(),
-				vendorStoreOpen);
+				vendorStoreOpen,
+				productActive);
 	}
 }

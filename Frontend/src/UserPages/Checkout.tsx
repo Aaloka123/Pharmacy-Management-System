@@ -10,10 +10,14 @@ import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
 import { fetchCart } from '../lib/cartApi'
 import {
-  closedVendorNames,
-  hasClosedVendorItems,
+  cartLineUnavailableReason,
+  clearCheckoutCartIds,
+  hasUnavailableCartItems,
+  isCartLineSelectable,
   isCartUserLoggedIn,
   notifyCartChanged,
+  readCheckoutCartIds,
+  saveCheckoutCartIds,
   type CartLine,
 } from '../lib/cartStorage'
 import { initiateEsewaPayment, initiateKhaltiPayment, redirectToPaymentUrl, submitEsewaPaymentForm } from '../lib/paymentApi'
@@ -115,10 +119,16 @@ const Checkout = () => {
       const state = location.state as CheckoutLocationState | null
       try {
         const cartLines = await fetchCart()
-        const selectedIds = state?.lines?.map((line) => line.id)
-        const checkoutLines = selectedIds
-          ? cartLines.filter((line) => selectedIds.includes(line.id))
-          : cartLines
+        const stateIds = state?.lines?.map((line) => line.id) ?? []
+        const persistedIds = readCheckoutCartIds()
+        const selectedIds = stateIds.length > 0 ? stateIds : persistedIds
+
+        if (stateIds.length > 0) {
+          saveCheckoutCartIds(stateIds)
+        }
+
+        const checkoutLines =
+          selectedIds.length > 0 ? cartLines.filter((line) => selectedIds.includes(line.id)) : []
         setLines(checkoutLines)
       } catch {
         setLines([])
@@ -134,8 +144,7 @@ const Checkout = () => {
   const tax = useMemo(() => subtotal * 0.13, [subtotal])
   const total = useMemo(() => subtotal + tax, [subtotal, tax])
   const itemCount = useMemo(() => lines.reduce((sum, line) => sum + line.qty, 0), [lines])
-  const closedVendors = useMemo(() => closedVendorNames(lines), [lines])
-  const checkoutBlocked = useMemo(() => hasClosedVendorItems(lines), [lines])
+  const checkoutBlocked = useMemo(() => hasUnavailableCartItems(lines), [lines])
   const missingLocation = !hasUserLocation(user)
   const orderBlocked = checkoutBlocked || missingLocation
   const loggedIn = isCartUserLoggedIn()
@@ -155,6 +164,7 @@ const Checkout = () => {
     }
 
     if (checkoutBlocked) {
+      toast.error('Some items are unavailable or out of stock. Please review your cart.')
       return
     }
 
@@ -164,8 +174,11 @@ const Checkout = () => {
 
     setPlacingOrder(true)
     try {
+      const checkoutCartIds = lines.map((line) => line.id)
+      saveCheckoutCartIds(checkoutCartIds)
+
       if (paymentMethod === 'esewa') {
-        const esewa = await initiateEsewaPayment(lines.map((line) => Number(line.id)))
+        const esewa = await initiateEsewaPayment(checkoutCartIds.map(Number))
         schedulePaymentRedirect('esewa', () => {
           submitEsewaPaymentForm(esewa.formUrl, esewa.fields)
         })
@@ -173,7 +186,7 @@ const Checkout = () => {
       }
 
       if (paymentMethod === 'khalti') {
-        const khalti = await initiateKhaltiPayment(lines.map((line) => Number(line.id)))
+        const khalti = await initiateKhaltiPayment(checkoutCartIds.map(Number))
         schedulePaymentRedirect('khalti', () => {
           redirectToPaymentUrl(khalti.paymentUrl)
         })
@@ -182,9 +195,10 @@ const Checkout = () => {
 
       await placeOrder({
         paymentMethod: toApiPaymentMethod(paymentMethod),
-        cartItemIds: lines.map((line) => Number(line.id)),
+        cartItemIds: checkoutCartIds.map(Number),
       })
       notifyCartChanged()
+      clearCheckoutCartIds()
       schedulePaymentRedirect('cod', () => {
         navigate('/payment/success?method=cod', { replace: true })
       })
@@ -288,22 +302,6 @@ const Checkout = () => {
                   )
                 })}
               </div>
-
-              {paymentMethod === 'cod' ? (
-                <p className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
-                  You will pay the total amount in cash when your medicines are delivered.
-                </p>
-              ) : paymentMethod === 'esewa' ? (
-                <p className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
-                  You will be redirected to eSewa to complete payment. For testing, use eSewa ID{' '}
-                  <strong>9711111111</strong> and password <strong>Nepal@123</strong>.
-                </p>
-              ) : (
-                <p className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
-                  You will be redirected to Khalti to complete payment. For testing, use Khalti ID{' '}
-                  <strong>9800000000</strong>, MPIN <strong>1111</strong>, and OTP <strong>987654</strong>.
-                </p>
-              )}
             </section>
             </FadeInOnScroll>
 
@@ -314,8 +312,15 @@ const Checkout = () => {
               </div>
 
               <div className="mt-5 max-h-64 space-y-3 overflow-y-auto pr-1">
-                {lines.map((line) => (
-                  <div className="flex gap-3 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0" key={line.id}>
+                {lines.map((line) => {
+                  const unavailableReason = cartLineUnavailableReason(line)
+                  return (
+                  <div
+                    className={`flex gap-3 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0 ${
+                      !isCartLineSelectable(line) ? 'rounded-lg bg-rose-50/50 px-2 py-1' : ''
+                    }`}
+                    key={line.id}
+                  >
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-white">
                       {line.image ? (
                         <img alt={line.name} className="h-full w-full object-contain p-1" src={line.image} />
@@ -326,24 +331,22 @@ const Checkout = () => {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-slate-900">{line.name}</p>
                       <p className="text-xs text-slate-500">Qty: {line.qty}</p>
-                      {!line.vendorStoreOpen ? (
-                        <p className="mt-1 text-xs font-medium text-rose-700">
-                          {line.vendorName} is currently closed.
-                        </p>
+                      {unavailableReason ? (
+                        <p className="mt-1 text-xs font-medium text-rose-700">{unavailableReason}</p>
                       ) : null}
                       <p className="mt-1 text-sm font-semibold text-teal-700">
                         NRP {(line.unitPrice * line.qty).toLocaleString()}
                       </p>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
 
               {checkoutBlocked ? (
                 <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-                  {closedVendors.length === 1
-                    ? `${closedVendors[0]} is currently closed. Remove those items from your cart to place an order.`
-                    : 'Some items are from vendors that are currently closed. Remove them from your cart to continue.'}
+                  Some items are unavailable, out of stock, or from closed vendors. Remove them from your cart to place
+                  an order.
                 </p>
               ) : null}
 

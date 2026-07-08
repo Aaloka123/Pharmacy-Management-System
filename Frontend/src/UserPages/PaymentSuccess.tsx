@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
-import { notifyCartChanged } from '../lib/cartStorage'
+import { clearCheckoutCartIds, notifyCartChanged } from '../lib/cartStorage'
 
 const PaymentSuccess = () => {
   const navigate = useNavigate()
@@ -13,6 +13,7 @@ const PaymentSuccess = () => {
 
   useEffect(() => {
     notifyCartChanged()
+    clearCheckoutCartIds()
     const timer = window.setTimeout(() => setPhase('ready'), 2500)
     return () => window.clearTimeout(timer)
   }, [])
