@@ -253,42 +253,42 @@ const VendorProfile = () => {
 
             <div className="grid grid-cols-1 gap-5 px-5 py-5 md:grid-cols-2 md:px-8">
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <h2 className="text-sm font-semibold text-slate-900">Contact Information</h2>
+                <h2 className="text-sm font-bold text-slate-900">Contact Information</h2>
                 <dl className="mt-3 space-y-2 text-sm">
                   {vendor.name ? (
                     <div className="flex justify-between gap-4">
-                      <dt className="font-medium text-slate-600">Owner</dt>
+                      <dt className="font-bold text-slate-600">Owner</dt>
                       <dd className="text-right text-slate-800">{vendor.name}</dd>
                     </div>
                   ) : null}
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Email</dt>
+                    <dt className="font-bold text-slate-600">Email</dt>
                     <dd className="text-right text-slate-800">{vendor.email || '—'}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Phone</dt>
+                    <dt className="font-bold text-slate-600">Phone</dt>
                     <dd className="text-right text-slate-800">{vendor.phoneNumber || '—'}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Location</dt>
+                    <dt className="font-bold text-slate-600">Location</dt>
                     <dd className="text-right text-slate-800">{vendor.location || '—'}</dd>
                   </div>
                 </dl>
               </div>
 
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <h2 className="text-sm font-semibold text-slate-900">Business Details</h2>
+                <h2 className="text-sm font-bold text-slate-900">Business Details</h2>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Business Name</dt>
+                    <dt className="font-bold text-slate-600">Business Name</dt>
                     <dd className="text-right text-slate-800">{vendor.businessName}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Business Location</dt>
+                    <dt className="font-bold text-slate-600">Business Location</dt>
                     <dd className="text-right text-slate-800">{vendor.businessLocation || '—'}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Pharmacy License</dt>
+                    <dt className="font-bold text-slate-600">Pharmacy License</dt>
                     <dd className="text-right text-slate-800">{vendor.pharmacyLicense || '—'}</dd>
                   </div>
                 </dl>

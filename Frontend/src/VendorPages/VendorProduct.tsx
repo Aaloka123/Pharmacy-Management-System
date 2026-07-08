@@ -139,6 +139,19 @@ const VendorProduct = () => {
 
   const isProductExpired = (expiryDate: string) => getExpiryStatus(expiryDate).label === 'Expired';
 
+  const getProductDisplayStatus = (product: ProductRow) => {
+    if (isProductExpired(product.expiryDate)) {
+      return { label: 'Expired · Deactivated', classes: 'bg-rose-100 text-rose-700' };
+    }
+    if (product.stock <= 0) {
+      return { label: 'Out of stock', classes: 'bg-rose-100 text-rose-700' };
+    }
+    if (product.status === 'Active') {
+      return { label: 'Live', classes: 'bg-emerald-100 text-emerald-700' };
+    }
+    return { label: 'Deactivated', classes: 'bg-rose-100 text-rose-700' };
+  };
+
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     event.target.value = '';
@@ -697,10 +710,12 @@ const VendorProduct = () => {
                   (() => {
                     const expiryStatus = getExpiryStatus(product.expiryDate);
                     const expired = expiryStatus.label === 'Expired';
+                    const displayStatus = getProductDisplayStatus(product);
+                    const outOfStock = product.stock <= 0;
                     return (
                   <tr
                     className={`border-t border-slate-200 ${
-                      product.status === 'Inactive' || expired ? 'bg-rose-50/70' : ''
+                      product.status === 'Inactive' || expired || outOfStock ? 'bg-rose-50/70' : ''
                     }`}
                     key={product.id}
                   >
@@ -766,19 +781,9 @@ const VendorProduct = () => {
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          expired
-                            ? 'bg-rose-100 text-rose-700'
-                            : product.status === 'Active'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-rose-100 text-rose-700'
-                        }`}
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${displayStatus.classes}`}
                       >
-                        {expired
-                          ? 'Expired · Deactivated'
-                          : product.status === 'Active'
-                            ? 'Live'
-                            : 'Deactivated'}
+                        {displayStatus.label}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm">
@@ -802,9 +807,15 @@ const VendorProduct = () => {
                         ) : (
                           <button
                             className="cursor-pointer rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-                            disabled={expired || togglingProductId === product.id}
+                            disabled={expired || outOfStock || togglingProductId === product.id}
                             onClick={() => handleSetProductLive(product, true)}
-                            title={expired ? 'Update the expiry date before activating' : undefined}
+                            title={
+                              expired
+                                ? 'Update the expiry date before activating'
+                                : outOfStock
+                                  ? 'Add stock before activating'
+                                  : undefined
+                            }
                             type="button"
                           >
                             {togglingProductId === product.id ? 'Saving…' : 'Activate'}

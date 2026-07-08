@@ -232,22 +232,22 @@ const AdminUserProfile = () => {
 
             <div className="px-6 py-6">
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
-                <h3 className="text-base font-semibold text-slate-900">Contact Information</h3>
+                <h3 className="text-base font-bold text-slate-900">Contact Information</h3>
                 <dl className="mt-4 space-y-3 text-base">
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Full Name</dt>
+                    <dt className="font-bold text-slate-600">Full Name</dt>
                     <dd className="text-slate-800">{user.fullName}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Email</dt>
+                    <dt className="font-bold text-slate-600">Email</dt>
                     <dd className="text-slate-800">{user.email}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Phone</dt>
+                    <dt className="font-bold text-slate-600">Phone</dt>
                     <dd className="text-slate-800">{formatPhone(user.phoneNumber)}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Location</dt>
+                    <dt className="font-bold text-slate-600">Location</dt>
                     <dd className="text-right text-slate-800">{formatLocation(user.location)}</dd>
                   </div>
                 </dl>
@@ -256,7 +256,7 @@ const AdminUserProfile = () => {
 
             <div className="border-t border-slate-200 px-6 py-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-base font-semibold text-slate-900">Product Purchase History</h3>
+                <h3 className="text-base font-bold text-slate-900">Product Purchase History</h3>
                 <div className="flex flex-wrap items-center gap-2">
                   <select
                     className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-teal-600"

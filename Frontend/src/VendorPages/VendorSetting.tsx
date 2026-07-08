@@ -432,7 +432,7 @@ const Setting = () => {
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
               <form className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" onSubmit={handleSaveStore}>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-slate-900">Store Information Setting</h2>
+                  <h2 className="text-lg font-bold text-slate-900">Store Information Setting</h2>
                   <button
                     aria-label="Edit store information"
                     className="cursor-pointer rounded-md border border-slate-300 p-2 text-slate-600"
@@ -517,7 +517,7 @@ const Setting = () => {
 
               <form className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" onSubmit={handleSaveProfile}>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-slate-900">Profile Details</h2>
+                  <h2 className="text-lg font-bold text-slate-900">Profile Details</h2>
                   <button
                     aria-label="Edit vendor profile"
                     className="cursor-pointer rounded-md border border-slate-300 p-2 text-slate-600"
@@ -602,7 +602,7 @@ const Setting = () => {
               </form>
 
               <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
-                <h2 className="text-lg font-semibold text-slate-900">Certificates</h2>
+                <h2 className="text-lg font-bold text-slate-900">Certificates</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   Upload or replace your Pharmacy Management Certificate and PAN / VAT Certificate.
                 </p>
@@ -682,14 +682,14 @@ const Setting = () => {
               </section>
 
               <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
-                <h2 className="mb-3 text-base font-semibold text-slate-900">Change Password</h2>
+                <h2 className="mb-3 text-base font-bold text-slate-900">Change Password</h2>
                 <button
                   aria-label="Toggle change password section"
                   className="cursor-pointer flex w-full items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-3 text-left"
                   onClick={() => setShowPasswordForm((prev) => !prev)}
                   type="button"
                 >
-                  <h3 className="text-[13px] font-semibold text-slate-900">Change Password</h3>
+                  <h3 className="text-[13px] font-bold text-slate-900">Change Password</h3>
                   <span className="inline-flex items-center justify-center text-slate-600">
                     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                       <path
@@ -788,7 +788,7 @@ const Setting = () => {
             </div>
 
             <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Store Status</h2>
+              <h2 className="text-base font-bold text-slate-900">Store Status</h2>
               {vendor.storeLockedByAdmin && storeStatus === 'Close' ? (
                 <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                   Your store was closed by an administrator. Contact admin to reopen your shop.

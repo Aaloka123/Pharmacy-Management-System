@@ -338,57 +338,57 @@ const AdminVendorProfile = () => {
 
             <div className="grid grid-cols-1 gap-5 px-5 py-5 md:grid-cols-2">
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-sm font-semibold text-slate-900">Contact Information</h3>
+                <h3 className="text-sm font-bold text-slate-900">Contact Information</h3>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Owner Name</dt>
+                    <dt className="font-bold text-slate-600">Owner Name</dt>
                     <dd className="text-slate-800">{vendor.name}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Email</dt>
+                    <dt className="font-bold text-slate-600">Email</dt>
                     <dd className="text-slate-800">{vendor.email}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Phone</dt>
+                    <dt className="font-bold text-slate-600">Phone</dt>
                     <dd className="text-slate-800">{vendor.phoneNumber}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Personal Location</dt>
+                    <dt className="font-bold text-slate-600">Personal Location</dt>
                     <dd className="text-slate-800">{vendor.location}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Business Address</dt>
+                    <dt className="font-bold text-slate-600">Business Address</dt>
                     <dd className="text-right text-slate-800">{vendor.businessLocation}</dd>
                   </div>
                 </dl>
               </div>
 
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-sm font-semibold text-slate-900">Business Details</h3>
+                <h3 className="text-sm font-bold text-slate-900">Business Details</h3>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Shop Name</dt>
+                    <dt className="font-bold text-slate-600">Shop Name</dt>
                     <dd className="text-slate-800">{vendor.businessName}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Pharmacy License</dt>
+                    <dt className="font-bold text-slate-600">Pharmacy License</dt>
                     <dd className="text-slate-800">{vendor.pharmacyLicense}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">PAN / VAT ID</dt>
+                    <dt className="font-bold text-slate-600">PAN / VAT ID</dt>
                     <dd className="text-slate-800">{vendor.businessPanVatId}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Registered</dt>
+                    <dt className="font-bold text-slate-600">Registered</dt>
                     <dd className="text-slate-800">{formatYear(vendor.createdAt)}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="font-medium text-slate-600">Submitted</dt>
+                    <dt className="font-bold text-slate-600">Submitted</dt>
                     <dd className="text-right text-slate-800">{formatDateTime(vendor.createdAt)}</dd>
                   </div>
                   {vendor.decidedAt && (
                     <div className="flex justify-between gap-4">
-                      <dt className="font-medium text-slate-600">Decision Date</dt>
+                      <dt className="font-bold text-slate-600">Decision Date</dt>
                       <dd className="text-right text-slate-800">{formatDateTime(vendor.decidedAt)}</dd>
                     </div>
                   )}
@@ -397,11 +397,11 @@ const AdminVendorProfile = () => {
             </div>
 
             <div className="border-t border-slate-200 px-5 py-5">
-              <h3 className="text-sm font-semibold text-slate-900">Certificates</h3>
+              <h3 className="text-sm font-bold text-slate-900">Certificates</h3>
               <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {certificateDocs.map((certificate) => (
                   <div key={certificate.title} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    <p className="mb-1 text-sm font-semibold text-slate-800">{certificate.title}</p>
+                    <p className="mb-1 text-sm font-bold text-slate-800">{certificate.title}</p>
                     <p className="mb-2 text-xs text-slate-500">Reference: {certificate.documentId}</p>
                     <button
                       className="cursor-pointer w-full"
@@ -441,7 +441,7 @@ const AdminVendorProfile = () => {
 
             <div className="border-t border-slate-200 px-5 py-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-slate-900">Vendor Products</h3>
+                <h3 className="text-sm font-bold text-slate-900">Vendor Products</h3>
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
                   <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-700">
                     Products: {totalProductCount}
