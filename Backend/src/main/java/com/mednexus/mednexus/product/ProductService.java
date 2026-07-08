@@ -14,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.mednexus.mednexus.cart.CartService;
+import com.mednexus.mednexus.config.VendorOrderSchemaMigrator;
+import com.mednexus.mednexus.review.ProductReviewRepository;
 import com.mednexus.mednexus.product.dto.ProductResponse;
 import com.mednexus.mednexus.product.dto.ProductWriteRequest;
 import com.mednexus.mednexus.storage.MediaUrlUtils;
@@ -32,17 +34,23 @@ public class ProductService {
 	private final VendorRepository vendorRepository;
 	private final ProductFileStorage fileStorage;
 	private final CartService cartService;
+	private final ProductReviewRepository productReviewRepository;
+	private final VendorOrderSchemaMigrator vendorOrderSchemaMigrator;
 
 	@Autowired
 	public ProductService(
 			ProductRepository productRepository,
 			VendorRepository vendorRepository,
 			ProductFileStorage fileStorage,
-			CartService cartService) {
+			CartService cartService,
+			ProductReviewRepository productReviewRepository,
+			VendorOrderSchemaMigrator vendorOrderSchemaMigrator) {
 		this.productRepository = productRepository;
 		this.vendorRepository = vendorRepository;
 		this.fileStorage = fileStorage;
 		this.cartService = cartService;
+		this.productReviewRepository = productReviewRepository;
+		this.vendorOrderSchemaMigrator = vendorOrderSchemaMigrator;
 	}
 
 	@Transactional(readOnly = true)
@@ -167,6 +175,8 @@ public class ProductService {
 		Product product = productRepository.findByIdAndVendorId(productId, vendorId)
 				.orElseThrow(ProductNotFoundException::new);
 		cartService.removeByProductId(productId);
+		productReviewRepository.deleteByProduct_Id(productId);
+		vendorOrderSchemaMigrator.dropProductForeignKeysIfPresent();
 		fileStorage.deleteByPublicUrls(product.getImages());
 		productRepository.delete(product);
 	}

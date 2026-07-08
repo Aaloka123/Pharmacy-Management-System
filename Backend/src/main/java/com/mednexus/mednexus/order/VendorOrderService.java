@@ -20,6 +20,7 @@ import com.mednexus.mednexus.order.dto.UpdateOrderStatusRequest;
 import com.mednexus.mednexus.order.dto.VendorOrderResponse;
 import com.mednexus.mednexus.product.Product;
 import com.mednexus.mednexus.product.ProductImageUtils;
+import com.mednexus.mednexus.product.ProductRepository;
 import com.mednexus.mednexus.product.ProductStatus;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.user.UserNotFoundException;
@@ -34,6 +35,7 @@ public class VendorOrderService {
 	private final VendorOrderRepository vendorOrderRepository;
 	private final CartRepository cartRepository;
 	private final UserRepository userRepository;
+	private final ProductRepository productRepository;
 	private final NotificationService notificationService;
 	private final OrderEmailService orderEmailService;
 
@@ -42,11 +44,13 @@ public class VendorOrderService {
 			VendorOrderRepository vendorOrderRepository,
 			CartRepository cartRepository,
 			UserRepository userRepository,
+			ProductRepository productRepository,
 			NotificationService notificationService,
 			OrderEmailService orderEmailService) {
 		this.vendorOrderRepository = vendorOrderRepository;
 		this.cartRepository = cartRepository;
 		this.userRepository = userRepository;
+		this.productRepository = productRepository;
 		this.notificationService = notificationService;
 		this.orderEmailService = orderEmailService;
 	}
@@ -89,7 +93,7 @@ public class VendorOrderService {
 			VendorOrder order = new VendorOrder();
 			order.setUser(user);
 			order.setVendor(product.getVendor());
-			order.setProduct(product);
+			order.setProductId(product.getId());
 			order.setProductName(product.getProductName());
 			order.setProductSku(product.getSku());
 			order.setProductImage(ProductImageUtils.preferredImageUrl(product));
@@ -146,8 +150,8 @@ public class VendorOrderService {
 		if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
 			throw new IllegalArgumentException("Only pending or confirmed orders can be canceled");
 		}
-		Product product = order.getProduct();
-		product.setStock(product.getStock() + order.getQuantity());
+		productRepository.findById(order.getProductId()).ifPresent(product ->
+				product.setStock(product.getStock() + order.getQuantity()));
 		order.setStatus(OrderStatus.CANCELED);
 		orderEmailService.sendStatusUpdateEmail(order, OrderStatus.CANCELED);
 		notificationService.notifyOrderCanceledByUser(order);
@@ -170,7 +174,7 @@ public class VendorOrderService {
 		}
 		return new VendorOrderResponse(
 				order.getId(),
-				order.getProduct().getId(),
+				order.getProductId(),
 				user.getFullName(),
 				user.getEmail(),
 				user.getPhoneNumber(),
@@ -178,7 +182,7 @@ public class VendorOrderService {
 				order.getVendor().getBusinessName(),
 				order.getProductName(),
 				order.getProductSku(),
-				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), order.getProduct()),
+				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), null),
 				order.getUnitPrice(),
 				order.getQuantity(),
 				order.getPaymentMethod(),

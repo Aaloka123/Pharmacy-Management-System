@@ -15,7 +15,6 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 	@Query("""
 			SELECT o FROM VendorOrder o
 			JOIN FETCH o.user
-			JOIN FETCH o.product
 			WHERE o.vendor.id = :vendorId
 			ORDER BY o.createdAt DESC
 			""")
@@ -24,7 +23,6 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 	@Query("""
 			SELECT o FROM VendorOrder o
 			JOIN FETCH o.vendor
-			JOIN FETCH o.product
 			WHERE o.user.id = :userId
 			ORDER BY o.createdAt DESC
 			""")
@@ -36,7 +34,6 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 			SELECT o FROM VendorOrder o
 			JOIN FETCH o.user
 			JOIN FETCH o.vendor
-			JOIN FETCH o.product
 			WHERE o.id = :orderId AND o.vendor.id = :vendorId
 			""")
 	Optional<VendorOrder> findByIdAndVendorIdWithDetails(
@@ -46,7 +43,6 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 	@Query("""
 			SELECT o FROM VendorOrder o
 			JOIN FETCH o.user
-			JOIN FETCH o.product
 			WHERE o.id = :orderId AND o.user.id = :userId
 			""")
 	Optional<VendorOrder> findByIdAndUserIdWithDetails(
@@ -201,7 +197,6 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 			SELECT o FROM VendorOrder o
 			JOIN FETCH o.user
 			JOIN FETCH o.vendor
-			JOIN FETCH o.product
 			WHERE o.vendor.id = :vendorId
 			ORDER BY o.createdAt DESC
 			""")

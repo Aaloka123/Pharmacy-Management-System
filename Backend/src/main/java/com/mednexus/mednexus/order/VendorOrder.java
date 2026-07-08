@@ -3,7 +3,6 @@ package com.mednexus.mednexus.order;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import com.mednexus.mednexus.product.Product;
 import com.mednexus.mednexus.user.User;
 import com.mednexus.mednexus.vendor.Vendor;
 
@@ -36,9 +35,8 @@ public class VendorOrder {
 	@JoinColumn(name = "vendor_id", nullable = false)
 	private Vendor vendor;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "product_id", nullable = false)
-	private Product product;
+	@Column(name = "product_id", nullable = false)
+	private Long productId;
 
 	@Column(name = "product_name", nullable = false, length = 200)
 	private String productName;
@@ -100,12 +98,12 @@ public class VendorOrder {
 		this.vendor = vendor;
 	}
 
-	public Product getProduct() {
-		return product;
+	public Long getProductId() {
+		return productId;
 	}
 
-	public void setProduct(Product product) {
-		this.product = product;
+	public void setProductId(Long productId) {
+		this.productId = productId;
 	}
 
 	public String getProductName() {

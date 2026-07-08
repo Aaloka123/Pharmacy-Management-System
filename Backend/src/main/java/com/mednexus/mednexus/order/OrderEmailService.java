@@ -116,7 +116,7 @@ public class OrderEmailService {
 	}
 
 	private String resolveEmailImageUrl(VendorOrder order) {
-		String stored = ProductImageUtils.resolveOrderProductImage(order.getProductImage(), order.getProduct());
+		String stored = ProductImageUtils.resolveOrderProductImage(order.getProductImage(), null);
 		return toPublicMediaUrl(stored);
 	}
 

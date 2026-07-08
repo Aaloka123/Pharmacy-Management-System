@@ -42,7 +42,7 @@ public class NotificationService {
 		notification.setOrderId(order.getId());
 		notification.setMessage("You canceled your order for %s.".formatted(productName));
 		notification.setProductImage(
-				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), order.getProduct()));
+				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), null));
 		notification.setRead(false);
 		notificationRepository.save(notification);
 	}
@@ -61,7 +61,7 @@ public class NotificationService {
 				"%s updated your order for %s to %s."
 						.formatted(vendorName, productName, statusLabel));
 		notification.setProductImage(
-				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), order.getProduct()));
+				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), null));
 		notification.setRead(false);
 		notificationRepository.save(notification);
 		orderEmailService.sendStatusUpdateEmail(order, newStatus);

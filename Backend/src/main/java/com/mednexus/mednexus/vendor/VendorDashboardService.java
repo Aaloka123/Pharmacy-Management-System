@@ -166,7 +166,7 @@ public class VendorDashboardService {
 		}
 		return new VendorOrderResponse(
 				order.getId(),
-				order.getProduct().getId(),
+				order.getProductId(),
 				user.getFullName(),
 				user.getEmail(),
 				user.getPhoneNumber(),
@@ -174,7 +174,7 @@ public class VendorDashboardService {
 				order.getVendor().getBusinessName(),
 				order.getProductName(),
 				order.getProductSku(),
-				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), order.getProduct()),
+				ProductImageUtils.resolveOrderProductImage(order.getProductImage(), null),
 				order.getUnitPrice(),
 				order.getQuantity(),
 				order.getPaymentMethod(),
