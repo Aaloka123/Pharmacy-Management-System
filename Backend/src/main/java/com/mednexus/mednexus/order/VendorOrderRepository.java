@@ -193,6 +193,40 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 			@Param("vendorId") Long vendorId,
 			@Param("limit") int limit);
 
+	@Query(value = """
+			SELECT o.product_id, o.product_name, MAX(o.product_sku),
+			       o.vendor_id, v.business_name, MAX(o.product_image),
+			       MAX(o.unit_price),
+			       COALESCE(SUM(o.quantity), 0),
+			       COALESCE(SUM(o.unit_price * o.quantity), 0),
+			       MIN(o.created_at)
+			FROM vendor_order o
+			INNER JOIN vendor v ON v.id = o.vendor_id
+			WHERE o.status <> 'CANCELED'
+			  AND o.created_at >= :start
+			  AND o.created_at < :end
+			GROUP BY o.product_id, o.product_name, o.vendor_id, v.business_name
+			ORDER BY MAX(o.created_at) DESC
+			""", nativeQuery = true)
+	List<Object[]> findProductProfitSummaryBetween(
+			@Param("start") Instant start,
+			@Param("end") Instant end);
+
+	@Query(value = """
+			SELECT o.product_id, o.product_name, MAX(o.product_sku),
+			       o.vendor_id, v.business_name, MAX(o.product_image),
+			       MAX(o.unit_price),
+			       COALESCE(SUM(o.quantity), 0),
+			       COALESCE(SUM(o.unit_price * o.quantity), 0),
+			       MIN(o.created_at)
+			FROM vendor_order o
+			INNER JOIN vendor v ON v.id = o.vendor_id
+			WHERE o.status <> 'CANCELED'
+			GROUP BY o.product_id, o.product_name, o.vendor_id, v.business_name
+			ORDER BY MAX(o.created_at) DESC
+			""", nativeQuery = true)
+	List<Object[]> findProductProfitSummaryAll();
+
 	@Query("""
 			SELECT o FROM VendorOrder o
 			JOIN FETCH o.user

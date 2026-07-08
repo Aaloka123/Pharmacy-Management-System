@@ -34,6 +34,7 @@ import AdminVendors from './AdminPages/AdminVendors'
 import AdminApproveVendor from './AdminPages/AdminApproveVendor'
 import AdminProducts from './AdminPages/AdminProducts'
 import AdminReviews from './AdminPages/AdminReviews'
+import AdminProfit from './AdminPages/AdminProfit'
 import AdminSettings from './AdminPages/AdminSettings'
 import AdminVendorProfile from './AdminPages/AdminVendorProfile'
 import VendorProfile from './UserPages/VendorProfile'
@@ -117,6 +118,7 @@ const AppContent = () => {
         <Route path="/adminapprovevendor" element={<RequireAuth roles={['ADMIN']}><AdminApproveVendor /></RequireAuth>} />
         <Route path="/adminproducts" element={<RequireAuth roles={['ADMIN']}><AdminProducts /></RequireAuth>} />
         <Route path="/adminreviews" element={<RequireAuth roles={['ADMIN']}><AdminReviews /></RequireAuth>} />
+        <Route path="/adminprofit" element={<RequireAuth roles={['ADMIN']}><AdminProfit /></RequireAuth>} />
         <Route path="/adminsettings" element={<RequireAuth roles={['ADMIN']}><AdminSettings /></RequireAuth>} />
         <Route path="/adminvendorprofile" element={<RequireAuth roles={['ADMIN']}><AdminVendorProfile /></RequireAuth>} />
         <Route path="/adminuserprofile" element={<RequireAuth roles={['ADMIN']}><AdminUserProfile /></RequireAuth>} />

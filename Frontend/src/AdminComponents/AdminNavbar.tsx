@@ -5,6 +5,7 @@ import {
   LuSettings,
   LuStar,
   LuStore,
+  LuTrendingUp,
   LuUsers,
 } from 'react-icons/lu'
 import { useEffect, useMemo, useState } from 'react'
@@ -21,6 +22,7 @@ const baseMenuItems: Omit<PortalMenuItem, 'badge'>[] = [
   { label: 'Vendor', Icon: LuStore, to: '/adminvendors' },
   { label: 'Approve Vendor', Icon: LuBadgeCheck, to: '/adminapprovevendor' },
   { label: 'Product', Icon: LuPackage, to: '/adminproducts' },
+  { label: 'Profit', Icon: LuTrendingUp, to: '/adminprofit' },
   { label: 'Review', Icon: LuStar, to: '/adminreviews' },
   { label: 'Setting', Icon: LuSettings, to: '/adminsettings' },
 ]
