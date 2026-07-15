@@ -45,10 +45,21 @@ public class OllamaClient {
 		message.put("role", "user");
 		message.put("content", prompt);
 		message.put("images", List.of(base64Image));
-		return chatWithModel(model, List.of(), List.of(message));
+		Map<String, Object> options = new LinkedHashMap<>();
+		options.put("num_predict", 1200);
+		options.put("temperature", 0.1);
+		return chatWithModel(model, List.of(), List.of(message), options);
 	}
 
 	private String chatWithModel(String model, List<OllamaChatMessage> messages, List<Map<String, Object>> imageMessages) {
+		return chatWithModel(model, messages, imageMessages, null);
+	}
+
+	private String chatWithModel(
+			String model,
+			List<OllamaChatMessage> messages,
+			List<Map<String, Object>> imageMessages,
+			Map<String, Object> options) {
 		Map<String, Object> body = new LinkedHashMap<>();
 		body.put("model", model);
 		if (imageMessages != null && !imageMessages.isEmpty()) {
@@ -57,6 +68,9 @@ public class OllamaClient {
 			body.put("messages", messages);
 		}
 		body.put("stream", false);
+		if (options != null && !options.isEmpty()) {
+			body.put("options", options);
+		}
 
 		try {
 			OllamaChatResponse response = restClient.post()
@@ -94,10 +108,15 @@ public class OllamaClient {
 		if (detail.contains("unknown model architecture: 'mllama'")) {
 			return "Vision model "
 					+ model
-					+ " is not supported by your Ollama install. Run: ollama pull moondream && set mednexus.ollama.vision-model=moondream:latest";
+					+ " is not supported by your Ollama install. Run: ollama pull llava:7b && set mednexus.ollama.vision-model=llava:7b";
 		}
 		if (detail.contains("model") && detail.contains("not found")) {
 			return "Ollama model " + model + " is not installed. Run: ollama pull " + model;
+		}
+		if (detail.contains("Read timed out") || detail.contains("timeout")) {
+			return "Ollama took too long reading the image with "
+					+ model
+					+ ". Try a smaller/clearer photo, keep Ollama open, and wait 2-5 minutes. If it keeps failing, run: ollama pull minicpm-v";
 		}
 		if (!detail.isBlank()) {
 			return "Ollama error for model " + model + ": " + detail;

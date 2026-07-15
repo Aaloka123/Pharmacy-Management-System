@@ -7,7 +7,7 @@ public class OllamaProperties {
 
 	private String baseUrl = "http://localhost:11434";
 	private String chatModel = "llama3.2:3b";
-	private String visionModel = "moondream:latest";
+	private String visionModel = "llava:7b";
 	private int timeoutSeconds = 300;
 
 	public String getBaseUrl() {
@@ -27,7 +27,7 @@ public class OllamaProperties {
 	}
 
 	public String getVisionModel() {
-		return visionModel == null || visionModel.isBlank() ? "moondream:latest" : visionModel.trim();
+		return visionModel == null || visionModel.isBlank() ? "llava:7b" : visionModel.trim();
 	}
 
 	public void setVisionModel(String visionModel) {

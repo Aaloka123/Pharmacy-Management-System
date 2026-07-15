@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +23,8 @@ import com.mednexus.mednexus.prescription.dto.PrescriptionOcrResponse;
 
 @Service
 public class PrescriptionOcrService {
+
+	private static final Logger log = LoggerFactory.getLogger(PrescriptionOcrService.class);
 
 	private static final long MAX_BYTES = 10L * 1024 * 1024;
 	private static final Pattern JSON_BLOCK = Pattern.compile("```(?:json)?\\s*([\\s\\S]*?)```", Pattern.CASE_INSENSITIVE);
@@ -64,17 +68,22 @@ public class PrescriptionOcrService {
 		validateImage(file);
 		String base64Image = encodeImage(file);
 		try {
+			log.info("Starting prescription OCR with vision model {}", ollamaProperties.getVisionModel());
+			long visionStart = System.currentTimeMillis();
 			String transcription = ollamaClient.chatWithImage(
 					ollamaProperties.getVisionModel(),
 					VERBATIM_OCR_PROMPT,
 					base64Image);
+			log.info("Prescription vision OCR finished in {} ms", System.currentTimeMillis() - visionStart);
 			if (transcription == null || transcription.isBlank()) {
 				return new PrescriptionOcrResponse("", List.of(), "");
 			}
 
+			long structureStart = System.currentTimeMillis();
 			String structured = ollamaClient.chat(List.of(
 					new OllamaChatMessage("system", STRUCTURE_SYSTEM_PROMPT),
 					new OllamaChatMessage("user", "Prescription transcription:\n" + transcription.trim())));
+			log.info("Prescription structuring finished in {} ms", System.currentTimeMillis() - structureStart);
 
 			PrescriptionOcrResponse parsed = parseResponse(structured);
 			return mergeTranscription(transcription.trim(), parsed);
@@ -137,7 +146,9 @@ public class PrescriptionOcrService {
 
 	private String encodeImage(MultipartFile file) {
 		try {
-			return Base64.getEncoder().encodeToString(file.getBytes());
+			byte[] prepared = PrescriptionImageUtils.prepareForOcr(file.getInputStream());
+			log.info("Prepared prescription image for OCR: {} KB", prepared.length / 1024);
+			return Base64.getEncoder().encodeToString(prepared);
 		} catch (Exception ex) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read uploaded image");
 		}

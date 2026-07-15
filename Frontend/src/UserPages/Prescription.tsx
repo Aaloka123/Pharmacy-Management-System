@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { FiImage, FiUploadCloud } from 'react-icons/fi'
+import { FiImage, FiLoader, FiUploadCloud } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import Copyright from '../UserComponents/Copyright'
@@ -9,6 +9,24 @@ import FadeInOnScroll from '../components/FadeInOnScroll'
 import { scanPrescriptionImage, type PrescriptionOcrResult } from '../lib/prescriptionApi'
 
 const ACCEPTED_IMAGES = 'image/jpeg,image/png,image/webp,image/gif'
+
+type ScanButtonProps = {
+  scanning: boolean
+  label: string
+  onClick: () => void
+}
+
+const ScanButton = ({ scanning, label, onClick }: ScanButtonProps) => (
+  <button
+    className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+    disabled={scanning}
+    onClick={onClick}
+    type="button"
+  >
+    {scanning ? <FiLoader aria-hidden className="h-4 w-4 animate-spin" /> : null}
+    <span>{scanning ? 'Scanning…' : label}</span>
+  </button>
+)
 
 const Prescription = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -64,7 +82,7 @@ const Prescription = () => {
       const message =
         error instanceof Error && error.message
           ? error.message
-          : 'Could not read the prescription. Make sure Ollama is running with moondream:latest.'
+          : 'Could not read the prescription. Make sure Ollama is running with llava:7b.'
       toast.error(message)
     } finally {
       setScanning(false)
@@ -82,7 +100,7 @@ const Prescription = () => {
                 New Prescription
               </h1>
               <p className="mt-3 text-sm text-slate-600 md:text-base">
-                Upload a photo of your handwritten prescription. AI will read it and extract the medicines for you.
+                Upload a photo first. Nothing is read until you click <span className="font-semibold">Scan with AI</span>.
               </p>
             </div>
 
@@ -118,15 +136,18 @@ const Prescription = () => {
                     />
                   </div>
 
+                  <p className="text-xs text-slate-500">
+                    {scanning
+                      ? 'Scanning in progress. Keep this tab open and make sure Ollama is running. This may take 1–5 minutes.'
+                      : 'Review your photo, then click Scan with AI when you are ready.'}
+                  </p>
+
                   <div className="flex flex-wrap gap-3">
-                    <button
-                      className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
-                      disabled={scanning}
+                    <ScanButton
+                      label="Scan with AI"
                       onClick={() => void handleScan()}
-                      type="button"
-                    >
-                      {scanning ? 'Reading prescription…' : 'Scan with AI'}
-                    </button>
+                      scanning={scanning}
+                    />
                     <button
                       className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                       onClick={() => fileInputRef.current?.click()}
@@ -161,14 +182,11 @@ const Prescription = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={scanning}
+                  <ScanButton
+                    label="Scan again"
                     onClick={() => void handleScan()}
-                    type="button"
-                  >
-                    {scanning ? 'Reading prescription…' : 'Scan again'}
-                  </button>
+                    scanning={scanning}
+                  />
                   <button
                     className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                     onClick={() => fileInputRef.current?.click()}

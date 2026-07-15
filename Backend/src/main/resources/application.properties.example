@@ -63,5 +63,5 @@ mednexus.khalti.frontend-base-url=http://localhost:5173
 # Ollama local AI (chatbot + prescription OCR)
 mednexus.ollama.base-url=http://localhost:11434
 mednexus.ollama.chat-model=llama3.2:3b
-mednexus.ollama.vision-model=moondream:latest
-mednexus.ollama.timeout-seconds=300
+mednexus.ollama.vision-model=llava:7b
+mednexus.ollama.timeout-seconds=600
