@@ -1,5 +1,5 @@
 
-import { resolveBackendUrl } from './api'
+import { api, resolveBackendUrl, resolveMediaUrl } from './api'
 import { getAccessToken } from './auth'
 
 export type PrescriptionMedicineItem = {
@@ -9,14 +9,52 @@ export type PrescriptionMedicineItem = {
   duration: string
 }
 
-export type PrescriptionOcrResult = {
+export type PrescriptionRecord = {
+  id: number
+  imageUrl: string
   fullText: string
   medicines: PrescriptionMedicineItem[]
   doctorNotes: string
+  createdAt: string
 }
+
+export type PrescriptionSummary = {
+  id: number
+  imageUrl: string
+  previewText: string
+  medicineCount: number
+  createdAt: string
+}
+
+/** @deprecated Use PrescriptionRecord */
+export type PrescriptionOcrResult = Pick<
+  PrescriptionRecord,
+  'fullText' | 'medicines' | 'doctorNotes'
+>
 
 const MAX_DIMENSION = 1280
 const SCAN_TIMEOUT_MS = 7 * 60 * 1000
+
+function normalizeRecord(data: PrescriptionRecord): PrescriptionRecord {
+  return {
+    id: data.id,
+    imageUrl: resolveMediaUrl(data.imageUrl) ?? data.imageUrl,
+    fullText: data.fullText ?? '',
+    medicines: data.medicines ?? [],
+    doctorNotes: data.doctorNotes ?? '',
+    createdAt: data.createdAt,
+  }
+}
+
+function normalizeSummary(data: PrescriptionSummary): PrescriptionSummary {
+  return {
+    id: data.id,
+    imageUrl: resolveMediaUrl(data.imageUrl) ?? data.imageUrl,
+    previewText: data.previewText ?? '',
+    medicineCount: data.medicineCount ?? 0,
+    createdAt: data.createdAt,
+  }
+}
 
 async function compressPrescriptionImage(file: File): Promise<File> {
   if (!file.type.startsWith('image/')) {
@@ -52,7 +90,21 @@ async function compressPrescriptionImage(file: File): Promise<File> {
   return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' })
 }
 
-export async function scanPrescriptionImage(file: File): Promise<PrescriptionOcrResult> {
+export async function fetchMyPrescriptions(): Promise<PrescriptionSummary[]> {
+  const { data } = await api.get<PrescriptionSummary[]>('/api/prescription')
+  return (data ?? []).map(normalizeSummary)
+}
+
+export async function fetchPrescription(id: number): Promise<PrescriptionRecord> {
+  const { data } = await api.get<PrescriptionRecord>(`/api/prescription/${id}`)
+  return normalizeRecord(data)
+}
+
+export async function deletePrescription(id: number): Promise<void> {
+  await api.delete(`/api/prescription/${id}`)
+}
+
+export async function scanPrescriptionImage(file: File): Promise<PrescriptionRecord> {
   const prepared = await compressPrescriptionImage(file)
   const form = new FormData()
   form.append('file', prepared)
@@ -80,12 +132,8 @@ export async function scanPrescriptionImage(file: File): Promise<PrescriptionOcr
       throw new Error(message)
     }
 
-    const data = (await response.json()) as PrescriptionOcrResult
-    return {
-      fullText: data.fullText ?? '',
-      medicines: data.medicines ?? [],
-      doctorNotes: data.doctorNotes ?? '',
-    }
+    const data = (await response.json()) as PrescriptionRecord
+    return normalizeRecord(data)
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw new Error(
