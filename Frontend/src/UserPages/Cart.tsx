@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
+import { formatStrength } from '../lib/productsApi'
 import { fetchCart, removeCartItem, removeCartItems, updateCartItemQuantity } from '../lib/cartApi'
 import {
   cartLineUnavailableReason,
@@ -324,7 +325,8 @@ const Cart = () => {
                         <span className="font-medium">{line.vendorName}</span>
                       </span>
                       <span>
-                        <span className="text-slate-400">Strength</span> <span className="font-medium">{line.strength}</span>
+                        <span className="text-slate-400">Strength</span>{' '}
+                        <span className="font-medium">{formatStrength(line.strength)}</span>
                       </span>
                       <span>
                         <span className="text-slate-400">Form</span> <span className="font-medium">{line.form}</span>

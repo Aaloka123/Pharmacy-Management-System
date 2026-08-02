@@ -9,7 +9,7 @@ import Header from '../UserComponents/Header'
 import { resolveProfileImageUrl } from '../lib/api'
 import { getAccessToken, getStoredUser } from '../lib/auth'
 import { openMessagePanel } from '../lib/messagePanelEvents'
-import { getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
+import { formatStrength, getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
 import { getPublicVendor, listPublicVendorProducts, type PublicVendorDto } from '../lib/vendorsApi'
 
 const shopInitial = (name: string) => {
@@ -339,7 +339,7 @@ const VendorProfile = () => {
                           <div className="mt-2 grid grid-cols-3 gap-3 text-[11px]">
                             <div>
                               <p className="uppercase tracking-wide text-slate-400">Strength</p>
-                              <p className="mt-1 text-xs font-semibold text-slate-700">{product.strength}</p>
+                              <p className="mt-1 text-xs font-semibold text-slate-700">{formatStrength(product.strength)}</p>
                             </div>
                             <div>
                               <p className="uppercase tracking-wide text-slate-400">Form</p>

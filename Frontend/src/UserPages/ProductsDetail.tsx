@@ -5,7 +5,7 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartStorage'
-import { getPublicProduct, getProductImageUrls, type ProductDto } from '../lib/productsApi'
+import { formatStrength, getPublicProduct, getProductImageUrls, type ProductDto } from '../lib/productsApi'
 import { sendProductInquiry } from '../lib/messageApi'
 import { openMessagePanel } from '../lib/messagePanelEvents'
 import {
@@ -424,7 +424,7 @@ const ProductsDetail = () => {
               <div className="mt-6 grid max-w-xl grid-cols-3 gap-6 text-sm">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-500">Strength</p>
-                  <p className="mt-1 font-semibold text-slate-800">{product.strength}</p>
+                  <p className="mt-1 font-semibold text-slate-800">{formatStrength(product.strength)}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-500">Form</p>

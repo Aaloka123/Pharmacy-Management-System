@@ -125,6 +125,12 @@ export default function PortalSidebar({ subtitle, menuItems, onLogout, menuId, s
         : user?.fullName?.trim().charAt(0) || user?.email?.trim().charAt(0) || 'U'
   ).toUpperCase()
 
+  const displaySubtitle = isVendor
+    ? vendorShopName
+      ? `MedNexus, ${vendorShopName}`
+      : 'MedNexus'
+    : subtitle
+
   useEffect(() => {
     setMenuOpen(false)
   }, [location.pathname])
@@ -244,7 +250,7 @@ export default function PortalSidebar({ subtitle, menuItems, onLogout, menuId, s
       <aside className="sticky top-0 hidden h-screen w-[280px] min-w-[280px] shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 shadow-sm lg:flex">
         <div className="mb-8 flex flex-col items-center justify-center">
           <img alt="MedNexus logo" className="h-12 w-auto object-contain" src={mednexuxLogo} />
-          <p className="mt-6 text-center text-xs font-medium text-slate-600">{subtitle}</p>
+          <p className="mt-6 text-center text-xs font-medium text-slate-600">{displaySubtitle}</p>
         </div>
 
         <nav className="flex flex-col gap-2">

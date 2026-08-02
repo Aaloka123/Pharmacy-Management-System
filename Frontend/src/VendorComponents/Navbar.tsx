@@ -43,7 +43,7 @@ const Navbar = () => {
       menuItems={menuItems}
       onLogout={handleLogout}
       settingsPath="/vendorsetting"
-      subtitle="MedNexus Vendor"
+      subtitle="MedNexus"
     />
   )
 }

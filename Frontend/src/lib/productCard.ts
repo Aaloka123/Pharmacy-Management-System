@@ -1,5 +1,5 @@
 import type { ProductDto } from './productsApi'
-import { getFirstProductImageUrl } from './productsApi'
+import { formatStrength, getFirstProductImageUrl } from './productsApi'
 
 export type ProductCard = {
   id: number
@@ -22,7 +22,7 @@ export function mapDtoToCard(dto: ProductDto, options?: { includeVendor?: boolea
     id: dto.id,
     name: dto.productName,
     price: `NRP ${Number(dto.price).toLocaleString()}`,
-    strength: dto.strength,
+    strength: formatStrength(dto.strength),
     form: dto.form,
     quantity: dto.quantity,
     image: getFirstProductImageUrl(dto.images),

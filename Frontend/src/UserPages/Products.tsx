@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { addToCart, CartAuthRequiredError, isCartApiError } from '../lib/cartStorage'
-import { listPublicProducts, getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
+import { formatStrength, listPublicProducts, getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
 import FadeInOnScroll from '../components/FadeInOnScroll'
 
 const ALL_CATEGORY = 'All Medications'
@@ -253,7 +253,7 @@ const Products = () => {
                   <div className="mt-2 grid grid-cols-3 gap-3 text-[11px]">
                     <div>
                       <p className="uppercase tracking-wide text-slate-400">Strength</p>
-                      <p className="mt-1 text-xs font-semibold text-slate-700">{product.strength}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-700">{formatStrength(product.strength)}</p>
                     </div>
                     <div>
                       <p className="uppercase tracking-wide text-slate-400">Form</p>

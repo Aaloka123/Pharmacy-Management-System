@@ -26,6 +26,15 @@ export type ProductDto = {
   updatedAt: string
 }
 
+/** Display strength with mg when stored as a plain number (e.g. "500" → "500mg"). */
+export function formatStrength(strength: string | null | undefined): string {
+  const trimmed = (strength ?? '').trim()
+  if (!trimmed) return trimmed
+  if (/[a-zA-Z%]/.test(trimmed)) return trimmed
+  if (/^\d+(\.\d+)?$/.test(trimmed)) return `${trimmed}mg`
+  return trimmed
+}
+
 export type ProductWritePayload = {
   productName: string
   sku: string
