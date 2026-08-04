@@ -121,8 +121,6 @@ const Signup = () => {
                 <input
                   className="w-full bg-transparent px-0 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
                   id="phoneNumber"
-                  placeholder="Phone number"
-                  type="tel"
                   value={phoneNumber}
                   onChange={(ev) => setPhoneNumber(sanitizePhoneInput(ev.target.value))}
                   required
