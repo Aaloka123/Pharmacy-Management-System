@@ -59,7 +59,7 @@ const AdminNavbar = () => {
     () =>
       baseMenuItems.map((item) => {
         if (item.to !== '/adminapprovevendor' || pendingVendors <= 0) return item
-        return { ...item, badge: pendingVendors, badgeStyle: 'inline' as const }
+        return { ...item, badge: pendingVendors }
       }),
     [pendingVendors],
   )
