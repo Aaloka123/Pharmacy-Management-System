@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { FiClock, FiImage, FiLoader, FiPlus, FiTrash2, FiUploadCloud } from 'react-icons/fi'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { FiClock, FiExternalLink, FiImage, FiLoader, FiPlus, FiTrash2, FiUploadCloud } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import Copyright from '../UserComponents/Copyright'
 import Footer from '../UserComponents/Footer'
 import Header from '../UserComponents/Header'
 import FadeInOnScroll from '../components/FadeInOnScroll'
+import { usePublicProducts } from '../hooks/usePublicProducts'
 import {
   fetchMyPrescriptions,
   fetchPrescription,
@@ -14,6 +15,29 @@ import {
   type PrescriptionRecord,
   type PrescriptionSummary,
 } from '../lib/prescriptionApi'
+import type { ProductDto } from '../lib/productsApi'
+
+function normalizeMedicineName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+function findShopProduct(medicineName: string, products: ProductDto[]): ProductDto | null {
+  const needle = normalizeMedicineName(medicineName)
+  if (needle.length < 3) return null
+
+  const exact = products.find((product) => normalizeMedicineName(product.productName) === needle)
+  if (exact) return exact
+
+  const matches = products.filter((product) => {
+    const name = normalizeMedicineName(product.productName)
+    if (!name) return false
+    return name.includes(needle) || needle.includes(name)
+  })
+
+  if (matches.length === 0) return null
+  matches.sort((a, b) => a.productName.length - b.productName.length)
+  return matches[0]
+}
 
 const ACCEPTED_IMAGES = 'image/jpeg,image/png,image/webp,image/gif'
 
@@ -49,6 +73,7 @@ function formatScanDate(iso: string): string {
 
 const Prescription = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { products: shopProducts } = usePublicProducts()
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [scanning, setScanning] = useState(false)
@@ -59,6 +84,16 @@ const Prescription = () => {
   const [loadingHistoryItem, setLoadingHistoryItem] = useState(false)
   const [deletingHistoryId, setDeletingHistoryId] = useState<number | null>(null)
   const [viewingFromHistory, setViewingFromHistory] = useState(false)
+
+  const medicineShopMatches = useMemo(() => {
+    const map = new Map<number, ProductDto>()
+    if (!result?.medicines.length) return map
+    result.medicines.forEach((medicine, index) => {
+      const match = findShopProduct(medicine.name, shopProducts)
+      if (match) map.set(index, match)
+    })
+    return map
+  }, [result, shopProducts])
 
   const revokeBlobPreview = (url: string | null) => {
     if (url?.startsWith('blob:')) {
@@ -411,17 +446,45 @@ const Prescription = () => {
                                 <th className="px-3 py-2 font-medium">Dosage</th>
                                 <th className="px-3 py-2 font-medium">Frequency</th>
                                 <th className="px-3 py-2 font-medium">Duration</th>
+                                <th className="px-3 py-2 font-medium">Shop</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {result.medicines.map((medicine, index) => (
-                                <tr className="border-b border-slate-100" key={`${medicine.name}-${index}`}>
-                                  <td className="px-3 py-3 font-medium text-slate-900">{medicine.name}</td>
-                                  <td className="px-3 py-3 text-slate-700">{medicine.dosage || '—'}</td>
-                                  <td className="px-3 py-3 text-slate-700">{medicine.frequency || '—'}</td>
-                                  <td className="px-3 py-3 text-slate-700">{medicine.duration || '—'}</td>
-                                </tr>
-                              ))}
+                              {result.medicines.map((medicine, index) => {
+                                const shopProduct = medicineShopMatches.get(index)
+                                return (
+                                  <tr className="border-b border-slate-100" key={`${medicine.name}-${index}`}>
+                                    <td className="px-3 py-3 font-medium text-slate-900">
+                                      {shopProduct ? (
+                                        <Link
+                                          className="text-teal-700 underline decoration-teal-300 underline-offset-2 transition hover:text-teal-800"
+                                          to={`/productsdetail?id=${shopProduct.id}`}
+                                        >
+                                          {medicine.name}
+                                        </Link>
+                                      ) : (
+                                        medicine.name
+                                      )}
+                                    </td>
+                                    <td className="px-3 py-3 text-slate-700">{medicine.dosage || '—'}</td>
+                                    <td className="px-3 py-3 text-slate-700">{medicine.frequency || '—'}</td>
+                                    <td className="px-3 py-3 text-slate-700">{medicine.duration || '—'}</td>
+                                    <td className="px-3 py-3">
+                                      {shopProduct ? (
+                                        <Link
+                                          className="inline-flex items-center gap-1.5 font-semibold text-teal-700 transition hover:text-teal-800"
+                                          to={`/productsdetail?id=${shopProduct.id}`}
+                                        >
+                                          View product
+                                          <FiExternalLink aria-hidden className="h-3.5 w-3.5" />
+                                        </Link>
+                                      ) : (
+                                        <span className="text-slate-400">Not in shop</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
                             </tbody>
                           </table>
                         </div>
