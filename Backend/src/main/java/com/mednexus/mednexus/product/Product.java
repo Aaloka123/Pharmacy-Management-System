@@ -89,6 +89,9 @@ public class Product {
 	@Column(name = "status", nullable = false, length = 20)
 	private ProductStatus status = ProductStatus.ACTIVE;
 
+	@Column(name = "prescription_required", nullable = false)
+	private boolean prescriptionRequired = false;
+
 	@JdbcTypeCode(SqlTypes.LONG32VARCHAR)
 	@Convert(converter = StringListJsonConverter.class)
 	@Column(name = "images", nullable = false)
@@ -243,6 +246,14 @@ public class Product {
 
 	public void setStatus(ProductStatus status) {
 		this.status = status;
+	}
+
+	public boolean isPrescriptionRequired() {
+		return prescriptionRequired;
+	}
+
+	public void setPrescriptionRequired(boolean prescriptionRequired) {
+		this.prescriptionRequired = prescriptionRequired;
 	}
 
 	public List<String> getImages() {

@@ -261,7 +261,8 @@ public class ProductService {
 				sideEffects.stream().map(String::trim).filter(s -> !s.isBlank()).toList(),
 				request.price(),
 				request.stock(),
-				status);
+				status,
+				Boolean.TRUE.equals(request.prescriptionRequired()));
 	}
 
 	private void applyFields(Product product, ValidatedProductFields fields) {
@@ -279,6 +280,7 @@ public class ProductService {
 		product.setPrice(fields.price());
 		product.setStock(fields.stock());
 		product.setStatus(fields.status());
+		product.setPrescriptionRequired(fields.prescriptionRequired());
 	}
 
 	private List<String> resolveImages(
@@ -415,6 +417,7 @@ public class ProductService {
 				product.getPrice(),
 				product.getStock(),
 				product.getStatus(),
+				product.isPrescriptionRequired(),
 				product.getImages(),
 				product.getCreatedAt(),
 				product.getUpdatedAt());
@@ -434,6 +437,7 @@ public class ProductService {
 			List<String> sideEffects,
 			BigDecimal price,
 			int stock,
-			ProductStatus status) {
+			ProductStatus status,
+			boolean prescriptionRequired) {
 	}
 }

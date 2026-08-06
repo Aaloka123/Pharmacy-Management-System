@@ -40,6 +40,7 @@ public class ProductTableInitializer implements ApplicationRunner {
 			return;
 		}
 		widenLongTextColumns();
+		ensurePrescriptionRequiredColumn();
 	}
 
 	private void createProductTable() {
@@ -62,6 +63,7 @@ public class ProductTableInitializer implements ApplicationRunner {
 				  `price` decimal(12,2) NOT NULL,
 				  `stock` int NOT NULL,
 				  `status` varchar(20) NOT NULL,
+				  `prescription_required` tinyint(1) NOT NULL DEFAULT 0,
 				  `images` longtext NOT NULL,
 				  `created_at` datetime(6) NOT NULL,
 				  `updated_at` datetime(6) NOT NULL,
@@ -71,6 +73,24 @@ public class ProductTableInitializer implements ApplicationRunner {
 				) ENGINE=InnoDB
 				""");
 		log.info("`product` table created.");
+	}
+
+	private void ensurePrescriptionRequiredColumn() {
+		if (columnExists("prescription_required")) {
+			return;
+		}
+		log.info("Adding `product`.`prescription_required` column...");
+		jdbc.execute(
+				"ALTER TABLE `product` ADD COLUMN `prescription_required` tinyint(1) NOT NULL DEFAULT 0");
+	}
+
+	private boolean columnExists(String column) {
+		Integer count = jdbc.queryForObject(
+				"SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+						+ "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'product' AND COLUMN_NAME = ?",
+				Integer.class,
+				column);
+		return count != null && count > 0;
 	}
 
 	private void widenLongTextColumns() {

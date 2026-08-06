@@ -393,7 +393,19 @@ const ProductsDetail = () => {
             </div>
 
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">{product.productName}</h1>
+              <div className="flex flex-wrap items-start gap-3">
+                <h1 className="text-2xl font-bold text-slate-900">{product.productName}</h1>
+                {product.prescriptionRequired ? (
+                  <span className="mt-1 inline-flex rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                    Rx required
+                  </span>
+                ) : null}
+              </div>
+              {product.prescriptionRequired ? (
+                <div className="mt-3 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                  Doctor prescription is required for this medicine.
+                </div>
+              ) : null}
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <ProductStarRating rating={Math.round(displayedRating)} />
                 <span className="text-sm font-semibold text-slate-800">

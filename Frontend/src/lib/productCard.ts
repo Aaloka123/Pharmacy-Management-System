@@ -10,6 +10,7 @@ export type ProductCard = {
   quantity: string
   image: string | null
   vendorName?: string
+  prescriptionRequired: boolean
 }
 
 export type ShowcaseSort = 'newest' | 'topStock' | 'suggested'
@@ -27,6 +28,7 @@ export function mapDtoToCard(dto: ProductDto, options?: { includeVendor?: boolea
     quantity: dto.quantity,
     image: getFirstProductImageUrl(dto.images),
     vendorName: options?.includeVendor ? dto.vendorBusinessName : undefined,
+    prescriptionRequired: Boolean(dto.prescriptionRequired),
   }
 }
 

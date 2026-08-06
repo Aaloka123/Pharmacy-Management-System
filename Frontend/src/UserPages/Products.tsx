@@ -23,6 +23,7 @@ type CatalogProduct = {
   stockLabel: string
   stockTone: string
   image: string | null
+  prescriptionRequired: boolean
 }
 
 const stockDisplay = (stock: number) => {
@@ -50,6 +51,7 @@ const mapProduct = (dto: ProductDto): CatalogProduct => {
     stockLabel: stock.stockLabel,
     stockTone: stock.stockTone,
     image: getFirstProductImageUrl(dto.images),
+    prescriptionRequired: Boolean(dto.prescriptionRequired),
   }
 }
 

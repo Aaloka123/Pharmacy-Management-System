@@ -26,6 +26,7 @@ public record ProductResponse(
 		BigDecimal price,
 		int stock,
 		ProductStatus status,
+		boolean prescriptionRequired,
 		List<String> images,
 		Instant createdAt,
 		Instant updatedAt) {

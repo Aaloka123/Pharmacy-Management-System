@@ -35,6 +35,7 @@ type ProductRow = {
   price: number;
   stock: number;
   status: 'Active' | 'Inactive';
+  prescriptionRequired: boolean;
   images: string[];
 };
 
@@ -54,6 +55,7 @@ const mapDtoToRow = (dto: ProductDto): ProductRow => ({
   price: Number(dto.price),
   stock: dto.stock,
   status: dto.status === 'ACTIVE' ? 'Active' : 'Inactive',
+  prescriptionRequired: Boolean(dto.prescriptionRequired),
   images: getProductImageUrls(dto.images),
 });
 
@@ -81,6 +83,7 @@ const VendorProduct = () => {
     sideEffects: '',
     price: '',
     stock: '',
+    prescriptionType: 'normal' as 'normal' | 'prescription',
   });
 
   const loadProducts = async (silent = false) => {
@@ -213,6 +216,7 @@ const VendorProduct = () => {
       sideEffects: '',
       price: '',
       stock: '',
+      prescriptionType: 'normal',
     });
     productImages.forEach((url) => {
       if (url.startsWith('blob:')) URL.revokeObjectURL(url);
@@ -280,6 +284,7 @@ const VendorProduct = () => {
       price: Number(formData.price),
       stock: parsedStock,
       status,
+      prescriptionRequired: formData.prescriptionType === 'prescription',
       existingImages: getStoredImageReferences(productImages),
     };
 
@@ -326,6 +331,7 @@ const VendorProduct = () => {
       sideEffects: product.sideEffects.map((item) => `- ${item}`).join('\n'),
       price: String(product.price),
       stock: String(product.stock),
+      prescriptionType: product.prescriptionRequired ? 'prescription' : 'normal',
     });
     setProductImages(product.images);
     setUploadFiles([]);
@@ -503,6 +509,38 @@ const VendorProduct = () => {
                   <option value="Injection">Injection</option>
                   <option value="Ointment">Ointment</option>
                   <option value="Drops">Drops</option>
+                </select>
+                <svg
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </div>
+            </label>
+
+            <label className="block text-sm text-slate-700">
+              Prescription type <span className="text-rose-600">*</span>
+              <div className="relative mt-1">
+                <select
+                  className="w-full appearance-none rounded-lg border border-slate-300 px-3 py-2 pr-10 text-sm outline-none focus:border-teal-600"
+                  onChange={(event) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      prescriptionType: event.target.value as 'normal' | 'prescription',
+                    }))
+                  }
+                  required
+                  value={formData.prescriptionType}
+                >
+                  <option value="normal">Normal</option>
+                  <option value="prescription">Doctor Prescription</option>
                 </select>
                 <svg
                   aria-hidden="true"
@@ -762,7 +800,16 @@ const VendorProduct = () => {
                       )}
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.sku}</td>
-                    <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-800">{product.productName}</td>
+                    <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-800">
+                      <div className="flex items-center gap-2">
+                        <span>{product.productName}</span>
+                        {product.prescriptionRequired ? (
+                          <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-semibold uppercase text-white">
+                            Rx
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.category}</td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.strength}</td>
                     <td className="whitespace-nowrap px-5 py-3 align-top text-sm text-slate-700">{product.form}</td>

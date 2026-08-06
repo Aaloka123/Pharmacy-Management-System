@@ -47,6 +47,7 @@ export type ProductDto = {
   price: number
   stock: number
   status: ProductStatus
+  prescriptionRequired: boolean
   images: string[]
   createdAt: string
   updatedAt: string
@@ -76,6 +77,7 @@ export type ProductWritePayload = {
   price: number
   stock: number
   status: ProductStatus
+  prescriptionRequired: boolean
   existingImages?: string[]
 }
 

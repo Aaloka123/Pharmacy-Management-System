@@ -150,7 +150,14 @@ const AdminProducts = () => {
                                   </div>
                                 )}
                                 <div>
-                                  <p className="text-sm font-semibold text-slate-900">{product.productName}</p>
+                                  <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
+                                    <span>{product.productName}</span>
+                                    {product.prescriptionRequired ? (
+                                      <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-semibold uppercase text-white">
+                                        Rx
+                                      </span>
+                                    ) : null}
+                                  </p>
                                   <p className="text-xs text-slate-500">{product.sku}</p>
                                 </div>
                               </div>

@@ -21,5 +21,6 @@ public record ProductWriteRequest(
 		BigDecimal price,
 		Integer stock,
 		ProductStatus status,
+		Boolean prescriptionRequired,
 		List<String> existingImages) {
 }
