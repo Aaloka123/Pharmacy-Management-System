@@ -2,6 +2,32 @@ import { api, resolveMediaUrl } from './api'
 
 export type ProductStatus = 'ACTIVE' | 'INACTIVE'
 
+/** Standard medicine categories for vendor product forms and catalog filters. */
+export const MEDICINE_CATEGORIES = [
+  'Analgesics & Antipyretics',
+  'Antibiotics',
+  'Antacids & Gastrointestinal',
+  'Antihistamines & Allergy',
+  'Antidiabetics',
+  'Cardiovascular',
+  'Respiratory & Asthma',
+  'Cold & Flu',
+  'Vitamins & Supplements',
+  'Dermatological',
+  'Ophthalmic (Eye Care)',
+  'ENT (Ear, Nose & Throat)',
+  'Antifungal',
+  'Antiviral',
+  'Neurological & CNS',
+  'Hormones & Steroids',
+  "Women's Health",
+  'Pediatric Care',
+  'First Aid & Wound Care',
+  'Antiseptics & Disinfectants',
+  'Oral Care',
+  'OTC / General Medicine',
+] as const
+
 export type ProductDto = {
   id: number
   vendorId: number

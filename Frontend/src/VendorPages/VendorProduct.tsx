@@ -5,6 +5,7 @@ import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMa
 import { invalidatePublicProductsCache } from '../hooks/usePublicProducts';
 import { markVendorProductAlertsViewed } from '../lib/vendorNavBadges';
 import {
+  MEDICINE_CATEGORIES,
   buildProductFormData,
   createVendorProduct,
   deleteVendorProduct,
@@ -117,6 +118,14 @@ const VendorProduct = () => {
       ].some((value) => value.toLowerCase().includes(query)),
     );
   }, [products, searchTerm]);
+
+  const categoryOptions = useMemo(() => {
+    const current = formData.category.trim();
+    if (current && !(MEDICINE_CATEGORIES as readonly string[]).includes(current)) {
+      return [current, ...MEDICINE_CATEGORIES];
+    }
+    return [...MEDICINE_CATEGORIES];
+  }, [formData.category]);
 
   const getExpiryStatus = (expiryDate: string) => {
     const today = new Date();
@@ -435,14 +444,33 @@ const VendorProduct = () => {
 
             <label className="block text-sm text-slate-700">
               Category <span className="text-rose-600">*</span>
-              <input
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-600"
-                onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
-                placeholder="Enter category"
-                required
-                type="text"
-                value={formData.category}
-              />
+              <div className="relative mt-1">
+                <select
+                  className="w-full appearance-none rounded-lg border border-slate-300 px-3 py-2 pr-10 text-sm outline-none focus:border-teal-600"
+                  onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
+                  required
+                  value={formData.category}
+                >
+                  <option value="">Select category</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+                <svg
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </div>
             </label>
 
             <label className="block text-sm text-slate-700">
