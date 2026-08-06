@@ -297,67 +297,6 @@ const AdminSettings = () => {
 
         </div>
 
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Create New Admin</h2>
-          <p className="mt-1 text-sm text-slate-600">Add another admin who can access the admin dashboard.</p>
-
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="newAdminName">
-                Full Name
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-teal-600"
-                id="newAdminName"
-                placeholder="Enter full name"
-                type="text"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="newAdminEmail">
-                Email
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-teal-600"
-                id="newAdminEmail"
-                placeholder="Enter admin email"
-                type="email"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="newAdminRole">
-                Role
-              </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-teal-600"
-                defaultValue="Admin"
-                id="newAdminRole"
-              >
-                <option>Admin</option>
-                <option>Super Admin</option>
-                <option>Moderator Admin</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="newAdminPassword">
-                Temporary Password
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-teal-600"
-                id="newAdminPassword"
-                placeholder="Set temporary password"
-                type="password"
-              />
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <button className="cursor-pointer rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white" type="button">
-              Create Admin
-            </button>
-          </div>
-        </section>
-
       </FadeInOnScroll>
       </AdminMain>
     </AdminLayout>

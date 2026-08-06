@@ -16,6 +16,7 @@ import {
 import type { IconType } from 'react-icons'
 import { toast } from 'react-toastify'
 import mednexuxLogo from '../assets/Mednexux.png'
+import HeaderSearch from './HeaderSearch'
 import UserNotificationBell from './UserNotificationBell'
 import { resolveProfileImageUrl } from '../lib/api'
 import { clearAuthSession, getAccessToken, getStoredUser, onAuthChange, type AuthUser } from '../lib/auth'
@@ -127,26 +128,10 @@ const Header = () => {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-              <div className="relative mb-6">
-                <svg
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="m21 21-4.35-4.35m1.85-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-                <input
-                  className="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-[14px] text-slate-700 outline-none transition focus:border-teal-500"
-                  placeholder="Search..."
-                  type="text"
+              <div className="mb-6">
+                <HeaderSearch
+                  inputClassName="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-[14px] text-slate-700 outline-none transition focus:border-teal-500"
+                  onNavigate={closeMenu}
                 />
               </div>
 
@@ -271,26 +256,10 @@ const Header = () => {
         </div>
 
         <div className="flex items-center justify-end gap-2">
-          <div className="relative hidden md:block">
-            <svg
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="m21 21-4.35-4.35m1.85-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <input
-              className="w-40 rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-[14px] text-slate-700 outline-none transition duration-200 hover:border-slate-300 focus:border-teal-500 focus:bg-white lg:w-52"
-              placeholder="Search..."
-              type="text"
+          <div className="hidden md:block">
+            <HeaderSearch
+              dropdownClassName="min-w-[18rem]"
+              inputClassName="w-40 rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-[14px] text-slate-700 outline-none transition duration-200 hover:border-slate-300 focus:border-teal-500 focus:bg-white lg:w-52"
             />
           </div>
 
