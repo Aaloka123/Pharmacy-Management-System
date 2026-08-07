@@ -107,9 +107,8 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 			WHERE o.status <> 'CANCELED'
 			GROUP BY o.vendor_id, v.business_name, v.profile_image
 			ORDER BY SUM(o.unit_price * o.quantity) DESC
-			LIMIT :limit
 			""", nativeQuery = true)
-	List<Object[]> findTopVendorsByRevenue(@Param("limit") int limit);
+	List<Object[]> findTopVendorsByRevenue(Pageable pageable);
 
 	List<VendorOrder> findTop10ByOrderByCreatedAtDesc();
 
@@ -187,11 +186,10 @@ public interface VendorOrderRepository extends JpaRepository<VendorOrder, Long> 
 			WHERE o.vendor_id = :vendorId AND o.status <> 'CANCELED'
 			GROUP BY o.product_id, o.product_name
 			ORDER BY SUM(o.quantity) DESC
-			LIMIT :limit
 			""", nativeQuery = true)
 	List<Object[]> findTopProductsByVendor(
 			@Param("vendorId") Long vendorId,
-			@Param("limit") int limit);
+			Pageable pageable);
 
 	@Query(value = """
 			SELECT o.product_id, o.product_name, MAX(o.product_sku),

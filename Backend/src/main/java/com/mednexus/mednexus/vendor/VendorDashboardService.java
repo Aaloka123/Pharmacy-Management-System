@@ -136,7 +136,7 @@ public class VendorDashboardService {
 				.toList();
 
 		List<VendorTopProductItem> topProducts = vendorOrderRepository
-				.findTopProductsByVendor(vendorId, 4)
+				.findTopProductsByVendor(vendorId, PageRequest.of(0, 4))
 				.stream()
 				.map(row -> toTopProductItem(row, vendorId))
 				.toList();
