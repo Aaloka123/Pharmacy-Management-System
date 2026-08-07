@@ -27,6 +27,7 @@ import Message from './VendorPages/VendorMessage'
 import Product from './VendorPages/VendorProduct'
 import Order from './VendorPages/VendorOrder'
 import Bills from './VendorPages/VendorBills'
+import Transaction from './VendorPages/VendorTransaction'
 import Setting from './VendorPages/VendorSetting'
 import Review from './VendorPages/VendorReview'
 import AdminDashboard from './AdminPages/AdminDashboard'
@@ -70,6 +71,7 @@ const AppContent = () => {
     '/vendororder',
     '/vendorreview',
     '/vendorbills',
+    '/vendortransaction',
     '/vendorsetting',
     '/vendoruserprofile',
     '/vendorlogin',
@@ -118,6 +120,7 @@ const AppContent = () => {
         <Route path="/vendororder" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Order /></RequireAuth>} />
         <Route path="/vendorreview" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Review /></RequireAuth>} />
         <Route path="/vendorbills" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Bills /></RequireAuth>} />
+        <Route path="/vendortransaction" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Transaction /></RequireAuth>} />
         <Route path="/vendorsetting" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Setting /></RequireAuth>} />
         <Route path="/vendoruserprofile" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><VendorUserProfile /></RequireAuth>} />
 

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import {
+  LuCreditCard,
   LuLayoutDashboard,
   LuMessageSquareText,
   LuPackage,
@@ -26,6 +27,7 @@ const Navbar = () => {
       { label: 'Order', Icon: LuShoppingBag, to: '/vendororder', badge: badges.order },
       { label: 'Review', Icon: LuStar, to: '/vendorreview', badge: badges.review },
       { label: 'Bills', Icon: LuReceiptText, to: '/vendorbills' },
+      { label: 'Transaction', Icon: LuCreditCard, to: '/vendortransaction' },
       { label: 'Setting', Icon: LuSettings, to: '/vendorsetting' },
     ],
     [badges.message, badges.product, badges.order, badges.review],
