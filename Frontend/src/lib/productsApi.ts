@@ -1,8 +1,13 @@
+/**
+ * Product API helpers.
+ * Pages call these functions; they talk to the Spring Boot backend via `api`.
+ */
 import { api, resolveMediaUrl } from './api'
 
+/** Matches backend ProductStatus enum. */
 export type ProductStatus = 'ACTIVE' | 'INACTIVE'
 
-/** Standard medicine categories for vendor product forms and catalog filters. */
+/** Medicine categories shown in the vendor add-product dropdown. */
 export const MEDICINE_CATEGORIES = [
   'Analgesics & Antipyretics',
   'Antibiotics',
@@ -28,6 +33,10 @@ export const MEDICINE_CATEGORIES = [
   'OTC / General Medicine',
 ] as const
 
+/**
+ * Product data returned by the backend (same shape as ProductResponse).
+ * Used when listing or loading a product.
+ */
 export type ProductDto = {
   id: number
   vendorId: number
@@ -53,7 +62,7 @@ export type ProductDto = {
   updatedAt: string
 }
 
-/** Display strength with mg when stored as a plain number (e.g. "500" → "500mg"). */
+/** Shows strength with mg when the value is only a number (e.g. "500" → "500mg"). */
 export function formatStrength(strength: string | null | undefined): string {
   const trimmed = (strength ?? '').trim()
   if (!trimmed) return trimmed
@@ -62,6 +71,10 @@ export function formatStrength(strength: string | null | undefined): string {
   return trimmed
 }
 
+/**
+ * Data sent when creating or updating a product (same idea as ProductWriteRequest).
+ * Does not include id — backend creates or updates that.
+ */
 export type ProductWritePayload = {
   productName: string
   sku: string
@@ -81,6 +94,11 @@ export type ProductWritePayload = {
   existingImages?: string[]
 }
 
+/**
+ * Builds multipart form data for create/update with images.
+ * - "product" = JSON fields
+ * - "images"  = uploaded files
+ */
 export function buildProductFormData(payload: ProductWritePayload, imageFiles: File[]): FormData {
   const formData = new FormData()
   formData.append(
@@ -97,6 +115,7 @@ export function buildProductFormData(payload: ProductWritePayload, imageFiles: F
   return formData
 }
 
+/** Keeps only real stored image URLs (skips temporary blob/data preview URLs). */
 export function toStoredImageReference(url: string): string | null {
   const trimmed = url.trim()
   if (!trimmed || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) return null
@@ -107,11 +126,12 @@ export function toStoredImageReference(url: string): string | null {
   return null
 }
 
+/** Filters a list of image URLs down to ones safe to send back to the backend. */
 export function getStoredImageReferences(images: string[]): string[] {
   return images.map(toStoredImageReference).filter((url): url is string => url != null)
 }
 
-/** Returns a display URL for the best stored product image (prefers latest Cloudinary URL). */
+/** Best image URL for display (prefers Cloudinary if present). */
 export function getFirstProductImageUrl(images: string[] | null | undefined): string | null {
   if (!images?.length) return null
   for (let i = images.length - 1; i >= 0; i -= 1) {
@@ -128,6 +148,7 @@ export function getFirstProductImageUrl(images: string[] | null | undefined): st
   return null
 }
 
+/** All displayable image URLs for a product. */
 export function getProductImageUrls(images: string[] | null | undefined): string[] {
   if (!images?.length) return []
   return images
@@ -135,6 +156,9 @@ export function getProductImageUrls(images: string[] | null | undefined): string
     .filter((url): url is string => url != null)
 }
 
+// --- Backend API calls (HTTP) ---
+
+/** Public shop catalog. Optional category filter. */
 export function listPublicProducts(category?: string) {
   const query =
     category && category !== 'All Medications'
@@ -143,43 +167,52 @@ export function listPublicProducts(category?: string) {
   return api.get<ProductDto[]>(`/api/products${query}`)
 }
 
-/** Latest active catalog products from approved vendors (newest first). */
+/** Newest active products for home/new-arrivals sections. */
 export function listNewArrivalsProducts(limit = 4) {
   return api.get<ProductDto[]>(`/api/products/new-arrivals?limit=${limit}`)
 }
 
+/** Single public product by id (product detail page). */
 export function getPublicProduct(id: number) {
   return api.get<ProductDto>(`/api/products/${id}`)
 }
 
+/** Logged-in vendor's own products. */
 export function listVendorProducts() {
   return api.get<ProductDto[]>('/api/vendors/me/products')
 }
 
+/** Products for one vendor (admin or public vendor profile). */
 export function listVendorProductsByVendorId(vendorId: number) {
   return api.get<ProductDto[]>(`/api/vendors/${vendorId}/products`)
 }
 
+/** All products for admin product list. */
 export function listAdminProducts() {
   return api.get<ProductDto[]>('/api/admin/products')
 }
 
+/** Create product with images (multipart). */
 export function createVendorProduct(formData: FormData) {
   return api.post<ProductDto>('/api/vendors/me/products', formData)
 }
 
+/** Update product with possible new images (multipart). */
 export function updateVendorProduct(id: number, formData: FormData) {
   return api.put<ProductDto>(`/api/vendors/me/products/${id}`, formData)
 }
 
+/** Update product fields only (JSON, no new image files). */
 export function updateVendorProductJson(id: number, payload: ProductWritePayload) {
   return api.put<ProductDto>(`/api/vendors/me/products/${id}`, payload)
 }
 
+/** Toggle Active/Inactive only (matches UpdateProductStatusRequest). */
 export function updateVendorProductStatus(id: number, status: ProductStatus) {
   return api.patch<ProductDto>(`/api/vendors/me/products/${id}/status`, { status })
 }
 
+/** Delete a vendor product. */
 export function deleteVendorProduct(id: number) {
   return api.delete(`/api/vendors/me/products/${id}`)
 }

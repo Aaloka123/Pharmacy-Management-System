@@ -18,8 +18,8 @@ import { PENDING_VENDORS_EVENT, PENDING_VENDORS_URL } from '../lib/adminNotifica
 
 const baseMenuItems: Omit<PortalMenuItem, 'badge'>[] = [
   { label: 'Dashboard', Icon: LuLayoutDashboard, to: '/admindashboard' },
-  { label: 'User', Icon: LuUsers, to: '/adminusers' },
-  { label: 'Vendor', Icon: LuStore, to: '/adminvendors' },
+  { label: 'User', Icon: LuUsers, to: '/adminusers', activePaths: ['/adminuserprofile'] },
+  { label: 'Vendor', Icon: LuStore, to: '/adminvendors', activePaths: ['/adminvendorprofile'] },
   { label: 'Approve Vendor', Icon: LuBadgeCheck, to: '/adminapprovevendor' },
   { label: 'Product', Icon: LuPackage, to: '/adminproducts' },
   { label: 'Profit', Icon: LuTrendingUp, to: '/adminprofit' },

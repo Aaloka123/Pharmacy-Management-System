@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -11,6 +11,7 @@ import {
   LuPackageSearch,
   LuPhone,
   LuShoppingCart,
+  LuUser,
   LuX,
 } from 'react-icons/lu'
 import type { IconType } from 'react-icons'
@@ -42,9 +43,12 @@ const Header = () => {
   const [user, setUser] = useState<AuthUser | null>(() => getStoredUser())
   const [cartCount, setCartCount] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)
   const isLoggedIn = Boolean(user && getAccessToken())
   const avatarUrl = user ? resolveProfileImageUrl(user.profileImage) : null
   const userInitial = (user?.fullName?.trim().charAt(0) || user?.email?.trim().charAt(0) || 'U').toUpperCase()
+  const isProfileActive = location.pathname.startsWith('/profile')
 
   const refreshCartCount = useCallback(async () => {
     if (!isCartUserLoggedIn()) {
@@ -77,6 +81,7 @@ const Header = () => {
 
   useEffect(() => {
     setMenuOpen(false)
+    setProfileMenuOpen(false)
   }, [location.pathname])
 
   useEffect(() => {
@@ -93,14 +98,96 @@ const Header = () => {
     }
   }, [menuOpen])
 
+  useEffect(() => {
+    if (!profileMenuOpen) return undefined
+    const onPointerDown = (event: MouseEvent) => {
+      if (!profileMenuRef.current?.contains(event.target as Node)) {
+        setProfileMenuOpen(false)
+      }
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setProfileMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [profileMenuOpen])
+
   const closeMenu = () => setMenuOpen(false)
 
   const handleLogout = () => {
     closeMenu()
+    setProfileMenuOpen(false)
     clearAuthSession()
     toast.info('You have been logged out.')
     navigate('/login')
   }
+
+  const openProfile = () => {
+    setProfileMenuOpen(false)
+    closeMenu()
+    navigate('/profile')
+  }
+
+  const profileAvatarButton = (
+    <div className="relative hidden lg:block" ref={profileMenuRef}>
+      <button
+        aria-expanded={profileMenuOpen}
+        aria-haspopup="menu"
+        aria-label="Open profile menu"
+        className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border text-xs font-bold transition duration-200 ${
+          isProfileActive || profileMenuOpen
+            ? 'border-teal-700 ring-2 ring-teal-600/30'
+            : 'border-slate-200 hover:border-teal-400'
+        }`}
+        onClick={() => setProfileMenuOpen((open) => !open)}
+        title={user?.email}
+        type="button"
+      >
+        {avatarUrl ? (
+          <img
+            alt="Profile"
+            className="h-full w-full object-cover"
+            referrerPolicy="no-referrer"
+            src={avatarUrl}
+          />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center bg-linear-to-br from-teal-600 to-teal-700 text-white">
+            {userInitial}
+          </span>
+        )}
+      </button>
+
+      {profileMenuOpen ? (
+        <div
+          className="absolute right-0 top-[calc(100%+0.4rem)] z-[70] min-w-[10.5rem] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+          role="menu"
+        >
+          <button
+            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-teal-50 hover:text-teal-700"
+            onClick={openProfile}
+            role="menuitem"
+            type="button"
+          >
+            <LuUser className="h-4 w-4 shrink-0" strokeWidth={2} />
+            Profile
+          </button>
+          <button
+            className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+            onClick={handleLogout}
+            role="menuitem"
+            type="button"
+          >
+            <LuLogOut className="h-4 w-4 shrink-0" strokeWidth={2} />
+            Logout
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
 
   const mobileMenu = menuOpen
     ? createPortal(
@@ -285,58 +372,10 @@ const Header = () => {
                     </span>
                   ) : null}
                 </NavLink>
-                <NavLink
-                  aria-label="Profile"
-                  className={({ isActive }) =>
-                    `hidden h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold transition duration-200 lg:flex ${
-                      isActive ? 'border-teal-700 ring-2 ring-teal-600/30' : 'border-slate-200 hover:border-teal-400'
-                    }`
-                  }
-                  onClick={closeMenu}
-                  title={user?.email}
-                  to="/profile"
-                >
-                  {avatarUrl ? (
-                    <img
-                      alt="Profile"
-                      className="h-full w-full object-cover"
-                      referrerPolicy="no-referrer"
-                      src={avatarUrl}
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center bg-linear-to-br from-teal-600 to-teal-700 text-white">
-                      {userInitial}
-                    </span>
-                  )}
-                </NavLink>
+                {profileAvatarButton}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <NavLink
-                aria-label="Profile"
-                className={({ isActive }) =>
-                  `hidden h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold transition duration-200 lg:flex ${
-                    isActive ? 'border-teal-700 ring-2 ring-teal-600/30' : 'border-slate-200 hover:border-teal-400'
-                  }`
-                }
-                onClick={closeMenu}
-                title={user?.email}
-                to="/profile"
-              >
-                {avatarUrl ? (
-                  <img
-                    alt="Profile"
-                    className="h-full w-full object-cover"
-                    referrerPolicy="no-referrer"
-                    src={avatarUrl}
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center bg-linear-to-br from-teal-600 to-teal-700 text-white">
-                    {userInitial}
-                  </span>
-                )}
-              </NavLink>
-              </div>
+              <div className="flex items-center gap-2">{profileAvatarButton}</div>
             )
           ) : (
             <NavLink

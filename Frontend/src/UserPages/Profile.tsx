@@ -5,7 +5,7 @@ import Footer from '../UserComponents/Footer'
 import Copyright from '../UserComponents/Copyright'
 import Header from '../UserComponents/Header'
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
-import { clearAuthSession, getAccessToken, getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
+import { getAccessToken, getStoredUser, onAuthChange, setStoredUser, type AuthUser } from '../lib/auth'
 import { api, resolveProfileImageUrl } from '../lib/api'
 import { isValidPhoneNumber, phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils'
 
@@ -172,12 +172,6 @@ const Profile = () => {
     const confirmed = window.confirm('Are you sure you want to delete your account? This action cannot be undone.')
     if (!confirmed) return
     window.alert('Your account has been deleted.')
-  }
-
-  const handleLogout = () => {
-    clearAuthSession()
-    toast.error('You have been logged out.')
-    navigate('/login')
   }
 
   return (
@@ -417,14 +411,6 @@ const Profile = () => {
                     type="button"
                   >
                     <h3 className="text-[13px] text-rose-700" style={{ fontWeight: 600 }}>Delete Account</h3>
-                  </button>
-
-                  <button
-                    className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-left transition hover:bg-rose-100"
-                    onClick={handleLogout}
-                    type="button"
-                  >
-                    <h3 className="text-[13px] text-rose-700" style={{ fontWeight: 600 }}>Logout</h3>
                   </button>
                 </div>
               </section>

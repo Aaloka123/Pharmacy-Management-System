@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.mednexus.mednexus.product.ProductStatus;
-
+ //Backend to frontend data transfer object
 public record ProductResponse(
 		Long id,
 		Long vendorId,

@@ -10,6 +10,8 @@ export type PortalMenuItem = {
   label: string
   Icon: ComponentType<{ className?: string }>
   to: string
+  /** Extra routes that should keep this menu item highlighted (e.g. profile detail pages). */
+  activePaths?: string[]
   badge?: number
   badgeStyle?: 'pill' | 'inline'
 }
@@ -46,13 +48,25 @@ function MenuLinks({
   onNavigate?: () => void
   variant?: 'desktop' | 'mobile'
 }) {
+  const location = useLocation()
   const iconClass =
     variant === 'mobile' ? 'h-5 w-5 shrink-0 text-black' : 'h-[18px] w-[18px] shrink-0 text-teal-700'
 
   return (
     <>
-      {items.map(({ label, Icon, to, badge, badgeStyle = 'pill' }) => (
-        <NavLink className={linkClassName} key={label} onClick={onNavigate} to={to}>
+      {items.map(({ label, Icon, to, activePaths, badge, badgeStyle = 'pill' }) => (
+        <NavLink
+          className={({ isActive }) =>
+            linkClassName({
+              isActive:
+                isActive ||
+                Boolean(activePaths?.some((path) => location.pathname.startsWith(path))),
+            })
+          }
+          key={label}
+          onClick={onNavigate}
+          to={to}
+        >
           <Icon className={iconClass} />
           <span className="truncate">
             {label}

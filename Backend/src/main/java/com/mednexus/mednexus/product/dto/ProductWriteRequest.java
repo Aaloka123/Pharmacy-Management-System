@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.mednexus.mednexus.product.ProductStatus;
-
+ //Frontendend to backend data transfer object
 public record ProductWriteRequest(
 		String productName,
 		String sku,
