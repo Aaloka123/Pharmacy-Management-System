@@ -185,10 +185,6 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   const [chatbotDraft, setChatbotDraft] = useState('')
   const [chatbotSending, setChatbotSending] = useState(false)
   const [chatbotLoading, setChatbotLoading] = useState(true)
-  const [chatbotPendingImage, setChatbotPendingImage] = useState<{
-    url: string
-    fileName: string
-  } | null>(null)
   const [messages, setMessages] = useState<ChatMessageDto[]>([])
   const [search, setSearch] = useState('')
   const [draft, setDraft] = useState('')
@@ -219,7 +215,6 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
   const chatbotMessageListRef = useRef<HTMLDivElement>(null)
   const conversationListRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const chatbotFileInputRef = useRef<HTMLInputElement>(null)
   const stompClientRef = useRef<Client | null>(null)
   const subscriptionRef = useRef<StompSubscription | null>(null)
   const initialVendorHandled = useRef(false)
@@ -349,29 +344,9 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
     void loadChatbotHistory()
   }, [loadChatbotHistory])
 
-  const handleChatbotFilePick = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      toast.info('Only images can be attached in the assistant chat for now.')
-      event.target.value = ''
-      return
-    }
-    setChatbotPendingImage({
-      url: URL.createObjectURL(file),
-      fileName: file.name,
-    })
-    event.target.value = ''
-  }
-
   const handleChatbotSend = async () => {
     const text = chatbotDraft.trim()
-    if ((!text && !chatbotPendingImage) || chatbotSending) return
-
-    if (chatbotPendingImage) {
-      toast.info('Image analysis is not available in chat yet. Please describe your question in text.')
-      return
-    }
+    if (!text || chatbotSending) return
 
     const userMessage: ChatbotMessage = {
       id: Date.now(),
@@ -382,7 +357,6 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
 
     setChatbotMessages((prev) => [...prev, userMessage])
     setChatbotDraft('')
-    setChatbotPendingImage(null)
     setChatbotSending(true)
     window.setTimeout(scrollChatbotToBottom, 50)
 
@@ -1199,40 +1173,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                 </div>
 
                 <div className="border-t border-slate-200 bg-white p-3">
-                  {chatbotPendingImage ? (
-                    <div className="mb-2 flex items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
-                      <img
-                        alt={chatbotPendingImage.fileName}
-                        className="h-12 w-12 shrink-0 rounded-md border border-teal-200 object-cover"
-                        src={chatbotPendingImage.url}
-                      />
-                      <span className="min-w-0 flex-1 truncate">Image ready: {chatbotPendingImage.fileName}</span>
-                      <button
-                        aria-label="Remove attachment"
-                        className="shrink-0 cursor-pointer rounded-md p-1 hover:bg-teal-100"
-                        onClick={() => setChatbotPendingImage(null)}
-                        type="button"
-                      >
-                        <FiX className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : null}
                   <div className="flex items-end gap-2">
-                    <input
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      className="hidden"
-                      onChange={handleChatbotFilePick}
-                      ref={chatbotFileInputRef}
-                      type="file"
-                    />
-                    <button
-                      aria-label="Attach image"
-                      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
-                      onClick={() => chatbotFileInputRef.current?.click()}
-                      type="button"
-                    >
-                      <FiImage className="h-5 w-5" />
-                    </button>
                     <input
                       className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-teal-500"
                       onChange={(event) => setChatbotDraft(event.target.value)}
@@ -1249,7 +1190,7 @@ const MessagingPage = ({ mode, initialVendorId, initialConversationId, layout = 
                     <button
                       aria-label="Send message"
                       className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-teal-700 text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={chatbotSending || (!chatbotDraft.trim() && !chatbotPendingImage)}
+                      disabled={chatbotSending || !chatbotDraft.trim()}
                       onClick={() => void handleChatbotSend()}
                       type="button"
                     >
