@@ -794,20 +794,35 @@ const Setting = () => {
                   Your store was closed by an administrator. Contact admin to reopen your shop.
                 </p>
               ) : null}
-              <div className="mt-3">
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {isUpdatingStoreStatus ? 'Updating…' : storeStatus === 'Open' ? 'Open' : 'Closed'}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {storeStatus === 'Open' ? 'Customers can place orders' : 'Store is temporarily closed'}
+                  </p>
+                </div>
                 <button
-                  className={`cursor-pointer w-full rounded-lg px-4 py-1.5 text-center text-sm font-semibold text-white disabled:opacity-60 ${
-                    storeStatus === 'Open' ? 'bg-emerald-600' : 'bg-rose-600'
-                  }`}
+                  type="button"
+                  role="switch"
+                  aria-checked={storeStatus === 'Open'}
+                  aria-label={storeStatus === 'Open' ? 'Turn store off' : 'Turn store on'}
                   disabled={
                     isUpdatingStoreStatus
                     || vendor.status !== 'APPROVED'
                     || (storeStatus === 'Close' && vendor.storeLockedByAdmin)
                   }
                   onClick={() => void handleStoreStatusChange(storeStatus === 'Open' ? 'Close' : 'Open')}
-                  type="button"
+                  className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    storeStatus === 'Open' ? 'bg-emerald-600' : 'bg-rose-600'
+                  }`}
                 >
-                  {isUpdatingStoreStatus ? 'Updating…' : storeStatus}
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition ${
+                      storeStatus === 'Open' ? 'translate-x-7' : 'translate-x-1'
+                    }`}
+                  />
                 </button>
               </div>
             </section>

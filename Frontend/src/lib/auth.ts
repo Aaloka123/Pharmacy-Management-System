@@ -31,9 +31,82 @@ const ACCESS_TOKEN_KEY = 'mednexus.accessToken'
 const REFRESH_TOKEN_KEY = 'mednexus.refreshToken'
 const AUTH_EVENT = 'mednexus:auth-changed'
 
-// Tab-scoped session: stored in `sessionStorage` so each new tab is its own
-// session. Opening the app in a new tab logs you out for that tab.
-const store: Storage | null = typeof window !== 'undefined' ? window.sessionStorage : null
+/** Admin stays tab-scoped; user/vendor persist until logout. */
+function storageForRole(role: Role): Storage | null {
+  if (typeof window === 'undefined') return null
+  return role === 'ADMIN' ? window.sessionStorage : window.localStorage
+}
+
+function sessionStore(): Storage | null {
+  return typeof window !== 'undefined' ? window.sessionStorage : null
+}
+
+function localStore(): Storage | null {
+  return typeof window !== 'undefined' ? window.localStorage : null
+}
+
+function parseUser(raw: string | null): AuthUser | null {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as AuthUser
+  } catch {
+    return null
+  }
+}
+
+function clearKeys(target: Storage | null) {
+  target?.removeItem(STORAGE_KEY)
+  target?.removeItem(ACCESS_TOKEN_KEY)
+  target?.removeItem(REFRESH_TOKEN_KEY)
+}
+
+function writeSession(target: Storage, user: AuthUser, accessToken: string, refreshToken: string) {
+  target.setItem(ACCESS_TOKEN_KEY, accessToken)
+  target.setItem(REFRESH_TOKEN_KEY, refreshToken)
+  target.setItem(STORAGE_KEY, JSON.stringify(user))
+}
+
+function readFrom(target: Storage | null): { user: AuthUser; accessToken: string; refreshToken: string | null } | null {
+  if (!target) return null
+  const user = parseUser(target.getItem(STORAGE_KEY))
+  const accessToken = target.getItem(ACCESS_TOKEN_KEY)
+  if (!user || !accessToken) return null
+  return {
+    user,
+    accessToken,
+    refreshToken: target.getItem(REFRESH_TOKEN_KEY),
+  }
+}
+
+/**
+ * Active session lookup:
+ * 1. Admin in sessionStorage (tab-only)
+ * 2. User/vendor in localStorage (persistent)
+ * 3. Migrate legacy user/vendor still sitting in sessionStorage → localStorage
+ */
+function activeSession(): { store: Storage; user: AuthUser; accessToken: string; refreshToken: string | null } | null {
+  const session = readFrom(sessionStore())
+  if (session?.user.role === 'ADMIN') {
+    return { store: sessionStore()!, ...session }
+  }
+
+  const local = readFrom(localStore())
+  if (local && local.user.role !== 'ADMIN') {
+    return { store: localStore()!, ...local }
+  }
+
+  // Legacy: user/vendor previously saved in sessionStorage
+  if (session && session.user.role !== 'ADMIN') {
+    const localTarget = localStore()
+    if (localTarget && session.refreshToken) {
+      writeSession(localTarget, session.user, session.accessToken, session.refreshToken)
+      clearKeys(sessionStore())
+      return { store: localTarget, ...session }
+    }
+  }
+
+  return null
+}
 
 function logoutRequestUrl(): string {
   const path = '/api/auth/logout'
@@ -50,51 +123,53 @@ function logoutRequestUrl(): string {
   return path
 }
 
-export const getStoredUser = (): AuthUser | null => {
-  try {
-    const raw = store?.getItem(STORAGE_KEY) ?? null
-    return raw ? (JSON.parse(raw) as AuthUser) : null
-  } catch {
-    return null
-  }
-}
+export const getStoredUser = (): AuthUser | null => activeSession()?.user ?? null
 
 export const setStoredUser = (user: AuthUser) => {
-  store?.setItem(STORAGE_KEY, JSON.stringify(user))
+  const target = storageForRole(user.role)
+  if (!target) return
+  const existing = readFrom(target)
+  target.setItem(STORAGE_KEY, JSON.stringify(user))
+  // Keep tokens if already present in this store
+  if (!existing?.accessToken) {
+    // Profile update without tokens shouldn't leave orphan user records
+  }
   window.dispatchEvent(new Event(AUTH_EVENT))
 }
 
-export const getAccessToken = (): string | null => store?.getItem(ACCESS_TOKEN_KEY) ?? null
+export const getAccessToken = (): string | null => activeSession()?.accessToken ?? null
 
-export const getRefreshToken = (): string | null => store?.getItem(REFRESH_TOKEN_KEY) ?? null
+export const getRefreshToken = (): string | null => activeSession()?.refreshToken ?? null
 
 export const setAccessToken = (token: string | null) => {
+  const session = activeSession()
+  if (!session) return
   if (token) {
-    store?.setItem(ACCESS_TOKEN_KEY, token)
+    session.store.setItem(ACCESS_TOKEN_KEY, token)
   } else {
-    store?.removeItem(ACCESS_TOKEN_KEY)
-  }
-}
-
-const setRefreshToken = (token: string | null) => {
-  if (token) {
-    store?.setItem(REFRESH_TOKEN_KEY, token)
-  } else {
-    store?.removeItem(REFRESH_TOKEN_KEY)
+    session.store.removeItem(ACCESS_TOKEN_KEY)
   }
 }
 
 /** Persist user, access JWT, and refresh token (e.g. after {@code /api/auth/login}). */
 export const setAuthSession = (user: AuthUser, accessToken: string, refreshToken: string) => {
-  setAccessToken(accessToken)
-  setRefreshToken(refreshToken)
-  setStoredUser(user)
+  const target = storageForRole(user.role)
+  if (!target) return
+
+  // Avoid mixing admin (tab) with user/vendor (persistent) sessions.
+  if (user.role === 'ADMIN') {
+    clearKeys(localStore())
+  } else {
+    clearKeys(sessionStore())
+  }
+
+  writeSession(target, user, accessToken, refreshToken)
+  window.dispatchEvent(new Event(AUTH_EVENT))
 }
 
 export const clearStoredUser = () => {
-  store?.removeItem(STORAGE_KEY)
-  store?.removeItem(ACCESS_TOKEN_KEY)
-  store?.removeItem(REFRESH_TOKEN_KEY)
+  clearKeys(sessionStore())
+  clearKeys(localStore())
   window.dispatchEvent(new Event(AUTH_EVENT))
 }
 
@@ -115,7 +190,19 @@ export const clearAuthSession = () => {
 
 export const onAuthChange = (handler: () => void) => {
   window.addEventListener(AUTH_EVENT, handler)
+  const onStorage = (event: StorageEvent) => {
+    if (
+      event.key === STORAGE_KEY ||
+      event.key === ACCESS_TOKEN_KEY ||
+      event.key === REFRESH_TOKEN_KEY ||
+      event.key === null
+    ) {
+      handler()
+    }
+  }
+  window.addEventListener('storage', onStorage)
   return () => {
     window.removeEventListener(AUTH_EVENT, handler)
+    window.removeEventListener('storage', onStorage)
   }
 }

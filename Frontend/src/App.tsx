@@ -1,7 +1,8 @@
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { useEffect } from 'react'
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { useEffect, type ReactNode } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { getGoogleClientId } from './lib/googleAuth'
+import { getStoredUser, homePathForRole } from './lib/auth'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Home from './UserPages/Home'
@@ -44,6 +45,15 @@ import RequireAuth from './lib/RequireAuth'
 import AdminUserProfile from './AdminPages/AdminUserProfile'
 import PageTransition from './components/PageTransition'
 
+/** Sync redirect so vendor/admin never flash the public user pages. */
+const PortalHomeRedirect = ({ children }: { children: ReactNode }) => {
+  const user = getStoredUser()
+  if (user && user.role !== 'USER') {
+    return <Navigate to={homePathForRole(user.role)} replace />
+  }
+  return <>{children}</>
+}
+
 const AppContent = () => {
   const { pathname } = useLocation()
 
@@ -52,6 +62,7 @@ const AppContent = () => {
   }, [pathname])
 
   const normalizedPath = pathname.replace(/\/+$/, '') || '/'
+
   const vendorPortalPaths = [
     '/vendordashboard',
     '/vendormessage',
@@ -74,7 +85,7 @@ const AppContent = () => {
       <PageTransition>
       <Routes>
         {/* Public browseable pages */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<PortalHomeRedirect><Home /></PortalHomeRedirect>} />
         <Route path="/products" element={<Products />} />
         <Route path="/productsdetail" element={<ProductsDetail />} />
         <Route path="/about" element={<About />} />
@@ -92,13 +103,13 @@ const AppContent = () => {
         
 
         {/* Signup-Login */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgetpassword" element={<ForgetPassword />} />
+        <Route path="/login" element={<PortalHomeRedirect><Login /></PortalHomeRedirect>} />
+        <Route path="/signup" element={<PortalHomeRedirect><Signup /></PortalHomeRedirect>} />
+        <Route path="/forgetpassword" element={<PortalHomeRedirect><ForgetPassword /></PortalHomeRedirect>} />
 
         {/* Vendor Login-Signup */}
-        <Route path="/vendorlogin" element={<Vendorlogin />} />
-        <Route path="/vendorsignup" element={<VendorSignup />} />
+        <Route path="/vendorlogin" element={<PortalHomeRedirect><Vendorlogin /></PortalHomeRedirect>} />
+        <Route path="/vendorsignup" element={<PortalHomeRedirect><VendorSignup /></PortalHomeRedirect>} />
 
         {/* Vendor Pages (VENDOR only — unauthenticated visits go to /vendorlogin) */}
         <Route path="/vendordashboard" element={<RequireAuth roles={['VENDOR']} loginPath="/vendorlogin"><Dashboard /></RequireAuth>} />
