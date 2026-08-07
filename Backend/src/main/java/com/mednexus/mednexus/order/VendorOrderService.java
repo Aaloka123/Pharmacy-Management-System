@@ -135,12 +135,37 @@ public class VendorOrderService {
 		if (order.getStatus() == OrderStatus.CANCELED) {
 			throw new InvalidVendorStateException("Canceled orders cannot be updated");
 		}
+		OrderStatus currentStatus = order.getStatus();
 		OrderStatus newStatus = request.status();
-		if (order.getStatus() != newStatus) {
+		validateStatusTransition(currentStatus, newStatus);
+		if (currentStatus != newStatus) {
 			order.setStatus(newStatus);
 			notificationService.notifyOrderStatusUpdated(order, newStatus);
 		}
 		return toResponse(order);
+	}
+
+	/**
+	 * Vendor may only advance one step at a time:
+	 * PENDING → CONFIRMED → SHIPPED → DELIVERED.
+	 */
+	private void validateStatusTransition(OrderStatus current, OrderStatus next) {
+		if (current == next) {
+			return;
+		}
+		if (next == OrderStatus.CANCELED) {
+			throw new IllegalArgumentException("Vendors cannot cancel orders from status update");
+		}
+		boolean allowed = switch (current) {
+			case PENDING -> next == OrderStatus.CONFIRMED;
+			case CONFIRMED -> next == OrderStatus.SHIPPED;
+			case SHIPPED -> next == OrderStatus.DELIVERED;
+			case DELIVERED, CANCELED -> false;
+		};
+		if (!allowed) {
+			throw new IllegalArgumentException(
+					"Order status must advance step by step: Pending → Confirmed → Shipped → Delivered");
+		}
 	}
 
 	@Transactional

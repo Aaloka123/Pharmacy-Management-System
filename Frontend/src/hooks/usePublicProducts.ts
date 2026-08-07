@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { listNewArrivalsProducts, listPublicProducts, type ProductDto } from '../lib/productsApi'
 
 let cachedProducts: ProductDto[] | null = null
@@ -13,13 +13,24 @@ export function invalidatePublicProductsCache() {
   newArrivalsPromise = null
 }
 
-async function fetchPublicProducts(): Promise<ProductDto[]> {
-  if (cachedProducts) return cachedProducts
+async function fetchPublicProducts(force = false): Promise<ProductDto[]> {
+  if (!force && cachedProducts) return cachedProducts
+  if (force) {
+    loadPromise = null
+    cachedProducts = null
+  }
   if (!loadPromise) {
-    loadPromise = listPublicProducts().then((response) => {
-      cachedProducts = response.data
-      return response.data
-    })
+    loadPromise = listPublicProducts()
+      .then((response) => {
+        const data = Array.isArray(response.data) ? response.data : []
+        cachedProducts = data
+        return data
+      })
+      .catch((err) => {
+        // Allow a later retry instead of keeping a permanently rejected promise.
+        loadPromise = null
+        throw err
+      })
   }
   return loadPromise
 }
@@ -28,6 +39,22 @@ export function usePublicProducts() {
   const [products, setProducts] = useState<ProductDto[]>(cachedProducts ?? [])
   const [loading, setLoading] = useState(cachedProducts == null)
   const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(async (force = false) => {
+    setLoading(true)
+    try {
+      const data = await fetchPublicProducts(force)
+      setProducts(data)
+      setError(null)
+      return data
+    } catch (err) {
+      setError('Could not load products.')
+      console.error(err)
+      return [] as ProductDto[]
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -52,7 +79,7 @@ export function usePublicProducts() {
     }
   }, [])
 
-  return { products, loading, error }
+  return { products, loading, error, reload: () => load(true) }
 }
 
 const byNewest = (a: ProductDto, b: ProductDto) =>
@@ -69,15 +96,19 @@ async function fetchNewArrivals(limit: number): Promise<ProductDto[]> {
     newArrivalsPromise = (async () => {
       try {
         const response = await listNewArrivalsProducts(limit)
-        cachedNewArrivals = response.data
-        return response.data
+        const data = Array.isArray(response.data) ? response.data : []
+        cachedNewArrivals = data
+        return data
       } catch (err) {
         console.warn('New arrivals endpoint unavailable, using catalog fallback.', err)
         const fallback = await fetchNewArrivalsFromCatalog(limit)
         cachedNewArrivals = fallback
         return fallback
       }
-    })()
+    })().catch((err) => {
+      newArrivalsPromise = null
+      throw err
+    })
   }
   return newArrivalsPromise
 }

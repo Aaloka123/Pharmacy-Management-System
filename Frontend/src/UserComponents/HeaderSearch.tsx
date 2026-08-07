@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePublicProducts } from '../hooks/usePublicProducts'
-import { getFirstProductImageUrl } from '../lib/productsApi'
+import { getFirstProductImageUrl, type ProductDto } from '../lib/productsApi'
 
 type HeaderSearchProps = {
   inputClassName: string
@@ -9,20 +9,44 @@ type HeaderSearchProps = {
   onNavigate?: () => void
 }
 
+function normalizeSearchText(value: string | null | undefined): string {
+  return (value ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function productMatchesQuery(product: ProductDto, query: string): boolean {
+  const haystack = normalizeSearchText(
+    [
+      product.productName,
+      product.category,
+      product.form,
+      product.strength,
+      product.sku,
+      product.vendorBusinessName,
+    ].join(' '),
+  )
+  if (!haystack) return false
+  const tokens = query.split(/\s+/).filter(Boolean)
+  return tokens.every((token) => haystack.includes(token))
+}
+
 const HeaderSearch = ({ inputClassName, dropdownClassName = '', onNavigate }: HeaderSearchProps) => {
   const navigate = useNavigate()
-  const { products, loading } = usePublicProducts()
+  const { products, loading, error, reload } = usePublicProducts()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  const normalizedQuery = normalizeSearchText(query)
+
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return []
-    return products
-      .filter((product) => product.productName.toLowerCase().includes(q))
-      .slice(0, 8)
-  }, [products, query])
+    if (!normalizedQuery) return []
+    return products.filter((product) => productMatchesQuery(product, normalizedQuery)).slice(0, 8)
+  }, [products, normalizedQuery])
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent) => {
@@ -42,6 +66,12 @@ const HeaderSearch = ({ inputClassName, dropdownClassName = '', onNavigate }: He
   }, [])
 
   const showDropdown = open && query.trim().length > 0
+
+  const ensureProductsLoaded = () => {
+    if (!loading && products.length === 0) {
+      void reload()
+    }
+  }
 
   const goToProduct = (productId: number) => {
     setQuery('')
@@ -75,8 +105,12 @@ const HeaderSearch = ({ inputClassName, dropdownClassName = '', onNavigate }: He
         onChange={(event) => {
           setQuery(event.target.value)
           setOpen(true)
+          ensureProductsLoaded()
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setOpen(true)
+          ensureProductsLoaded()
+        }}
         placeholder="Search..."
         type="search"
         value={query}
@@ -84,11 +118,22 @@ const HeaderSearch = ({ inputClassName, dropdownClassName = '', onNavigate }: He
 
       {showDropdown ? (
         <div
-          className={`absolute left-0 right-0 top-[calc(100%+0.4rem)] z-[60] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg ${dropdownClassName}`}
+          className={`absolute left-0 right-0 top-[calc(100%+0.4rem)] z-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg ${dropdownClassName}`}
           role="listbox"
         >
           {loading && products.length === 0 ? (
             <p className="px-3 py-3 text-sm text-slate-500">Loading products…</p>
+          ) : error && products.length === 0 ? (
+            <div className="px-3 py-3">
+              <p className="text-sm text-rose-600">Could not load products.</p>
+              <button
+                className="mt-2 cursor-pointer text-sm font-semibold text-teal-700 hover:text-teal-800"
+                onClick={() => void reload()}
+                type="button"
+              >
+                Try again
+              </button>
+            </div>
           ) : results.length === 0 ? (
             <p className="px-3 py-3 text-sm text-slate-500">No products found.</p>
           ) : (

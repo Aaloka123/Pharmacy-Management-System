@@ -108,14 +108,43 @@ const Order = () => {
     void loadOrders();
   }, []);
 
+  /** Only current status + next step (Pending → Confirmed → Shipped → Delivered). */
+  const getUpdatableStatuses = (currentStatus: OrderStatus) => {
+    if (currentStatus === 'Canceled') {
+      return ['Canceled'] as OrderStatus[];
+    }
+    if (currentStatus === 'Delivered') {
+      return ['Delivered'] as OrderStatus[];
+    }
+    const currentStatusIndex = updatableOrderStatuses.indexOf(currentStatus);
+    if (currentStatusIndex === -1) {
+      return [currentStatus];
+    }
+    const nextStatus = updatableOrderStatuses[currentStatusIndex + 1];
+    return nextStatus ? [currentStatus, nextStatus] : [currentStatus];
+  };
+
   const updateOrderStatus = async (orderId: number, status: OrderStatus) => {
+    const current = orders.find((order) => order.id === orderId);
+    if (!current) return;
+    const allowed = getUpdatableStatuses(current.status);
+    if (!allowed.includes(status)) {
+      toast.warn('Update status step by step: Pending → Confirmed → Shipped → Delivered.');
+      return;
+    }
+    if (status === current.status) return;
+
     setUpdatingOrderId(orderId);
     try {
       const updated = await updateVendorOrderStatus(orderId, toApiStatus(status));
       setOrders((prev) => prev.map((order) => (order.id === orderId ? dtoToVendorOrder(updated) : order)));
       toast.success('Order status updated.');
-    } catch {
-      toast.error('Could not update order status.');
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message.trim()
+          ? err.message
+          : 'Could not update order status.';
+      toast.error(message);
     } finally {
       setUpdatingOrderId(null);
     }
@@ -150,17 +179,6 @@ const Order = () => {
       };
       return getOrderRank(a.status) - getOrderRank(b.status);
     });
-
-  const getUpdatableStatuses = (currentStatus: OrderStatus) => {
-    if (currentStatus === 'Canceled') {
-      return ['Canceled'] as OrderStatus[];
-    }
-    const currentStatusIndex = updatableOrderStatuses.indexOf(currentStatus);
-    if (currentStatusIndex === -1) {
-      return updatableOrderStatuses;
-    }
-    return updatableOrderStatuses.slice(currentStatusIndex);
-  };
 
   const canViewInvoice = (status: OrderStatus) =>
     status === 'Confirmed' || status === 'Shipped' || status === 'Delivered';
