@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import Navbar from '../VendorComponents/Navbar';
 import { VendorLayout, VendorMain, FadeInOnScroll } from '../components/PortalMain';
 import mednexuxLogo from '../assets/Mednexux.png';
-import { phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils';
+import { isValidPhoneNumber, phoneInputProps, sanitizePhoneInput } from '../lib/phoneUtils';
 import {
   createVendorBill,
   deleteVendorBill,
   fetchVendorBills,
+  updateVendorBill,
   fromApiBillStatus,
   fromApiPaymentMethod,
   toApiBillStatus,
@@ -14,6 +15,8 @@ import {
   type BillDto,
 } from '../lib/billApi';
 import { toast } from 'react-toastify';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type InvoiceStatus = 'Unpaid' | 'Paid' | 'Partially Paid';
 type InvoiceLine = {
@@ -46,7 +49,34 @@ type InvoiceForm = {
 };
 
 type SavedInvoice = InvoiceForm & { id: number };
+
+type LineFieldErrors = {
+  productName?: string;
+  description?: string;
+  quantity?: string;
+  unitPrice?: string;
+};
+
+type InvoiceFieldErrors = {
+  billToName?: string;
+  billToEmail?: string;
+  billToPhone?: string;
+  billToAddress?: string;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  paymentTerms?: string;
+  paymentMethod?: string;
+  lines?: string;
+  lineErrors?: Record<number, LineFieldErrors>;
+};
+
 const FIXED_TAX_PERCENT = 13;
+const fieldInputClass = (hasError: boolean, extra = '') =>
+  `w-full rounded-lg border px-3 py-2 text-sm outline-none transition ${
+    hasError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-300 focus:border-teal-600'
+  } ${extra}`;
+const fieldErrorText = (message?: string) =>
+  message ? <p className="mt-1 text-xs font-medium text-rose-600">{message}</p> : null;
 
 const billToInvoiceForm = (bill: BillDto): SavedInvoice => ({
   id: bill.id,
@@ -108,6 +138,7 @@ const Bills = () => {
   const [invoiceSearchTerm, setInvoiceSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<InvoiceFieldErrors>({});
 
   useEffect(() => {
     let active = true;
@@ -167,8 +198,24 @@ const Bills = () => {
 
   const handleDraftChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
-    const nextValue = name === 'billToPhone' ? sanitizePhoneInput(value) : value;
+    let nextValue = name === 'billToPhone' ? sanitizePhoneInput(value) : value;
+    if (name === 'discount') {
+      if (nextValue.trim() !== '') {
+        const numeric = Number(nextValue);
+        if (!Number.isFinite(numeric)) {
+          return;
+        }
+        if (numeric > 100) nextValue = '100';
+        else if (numeric < 0) nextValue = '0';
+      }
+    }
     setDraftInvoice((prev) => ({ ...prev, [name]: nextValue }));
+    setFieldErrors((prev) => {
+      if (!(name in prev)) return prev;
+      const next = { ...prev };
+      delete next[name as keyof InvoiceFieldErrors];
+      return next;
+    });
   };
 
   const handleLineChange = (lineId: number, field: keyof InvoiceLine, value: string) => {
@@ -176,6 +223,22 @@ const Bills = () => {
       ...prev,
       lines: prev.lines.map((line) => (line.id === lineId ? { ...line, [field]: value } : line)),
     }));
+    setFieldErrors((prev) => {
+      if (!prev.lineErrors?.[lineId]?.[field as keyof LineFieldErrors] && !prev.lines) return prev;
+      const lineErrors = { ...(prev.lineErrors ?? {}) };
+      const currentLine = { ...(lineErrors[lineId] ?? {}) };
+      delete currentLine[field as keyof LineFieldErrors];
+      if (Object.keys(currentLine).length === 0) {
+        delete lineErrors[lineId];
+      } else {
+        lineErrors[lineId] = currentLine;
+      }
+      return {
+        ...prev,
+        lines: undefined,
+        lineErrors: Object.keys(lineErrors).length > 0 ? lineErrors : undefined,
+      };
+    });
   };
 
   const addLine = () => {
@@ -207,51 +270,177 @@ const Bills = () => {
   const startNewInvoice = () => {
     setSelectedInvoiceId(null);
     setDraftInvoice(createEmptyInvoice(invoices.length + 1));
+    setFieldErrors({});
     setShowEditor(true);
   };
 
-  const saveInvoice = async () => {
-    if (selectedInvoiceId || saving) return;
+  const validateInvoice = (): { errors: InvoiceFieldErrors; toastMessage: string | null } => {
+    const errors: InvoiceFieldErrors = {};
+    const messages: string[] = [];
+
     if (!draftInvoice.billToName.trim()) {
-      toast.error('Customer name is required.');
-      return;
+      errors.billToName = 'Customer name is required.';
+      messages.push(errors.billToName);
     }
-    if (draftInvoice.lines.every((line) => !line.productName.trim())) {
-      toast.error('Add at least one product line.');
+    if (!draftInvoice.billToEmail.trim()) {
+      errors.billToEmail = 'Customer email is required.';
+      messages.push(errors.billToEmail);
+    } else if (!EMAIL_PATTERN.test(draftInvoice.billToEmail.trim())) {
+      errors.billToEmail = 'Enter a valid customer email.';
+      messages.push(errors.billToEmail);
+    }
+    if (!draftInvoice.billToPhone.trim()) {
+      errors.billToPhone = 'Customer phone is required.';
+      messages.push(errors.billToPhone);
+    } else if (!isValidPhoneNumber(draftInvoice.billToPhone)) {
+      errors.billToPhone = 'Phone number must be exactly 10 digits.';
+      messages.push(errors.billToPhone);
+    }
+    if (!draftInvoice.billToAddress.trim()) {
+      errors.billToAddress = 'Customer address is required.';
+      messages.push(errors.billToAddress);
+    }
+    if (!draftInvoice.invoiceNumber.trim()) {
+      errors.invoiceNumber = 'Invoice number is required.';
+      messages.push(errors.invoiceNumber);
+    }
+    if (!draftInvoice.invoiceDate) {
+      errors.invoiceDate = 'Issue date is required.';
+      messages.push(errors.invoiceDate);
+    }
+    if (!draftInvoice.paymentTerms.trim()) {
+      errors.paymentTerms = 'Payment terms are required.';
+      messages.push(errors.paymentTerms);
+    }
+    if (!draftInvoice.paymentMethod) {
+      errors.paymentMethod = 'Payment method is required.';
+      messages.push(errors.paymentMethod);
+    }
+
+    const filledLines = draftInvoice.lines.filter(
+      (line) =>
+        line.productName.trim() ||
+        line.description.trim() ||
+        (Number(line.quantity) || 0) > 0 ||
+        (Number(line.unitPrice) || 0) > 0,
+    );
+    if (filledLines.length === 0) {
+      errors.lines = 'Add at least one product line.';
+      messages.push(errors.lines);
+    }
+
+    const lineErrors: Record<number, LineFieldErrors> = {};
+    let lineNo = 0;
+    for (const line of draftInvoice.lines) {
+      const isTouched =
+        line.productName.trim() ||
+        line.description.trim() ||
+        (Number(line.quantity) || 0) > 0 ||
+        (Number(line.unitPrice) || 0) > 0 ||
+        draftInvoice.lines.length === 1;
+      if (!isTouched) continue;
+      lineNo += 1;
+
+      const current: LineFieldErrors = {};
+      if (!line.productName.trim()) {
+        current.productName = 'Product name is required.';
+        messages.push(`Product name is required on line ${lineNo}.`);
+      }
+      if (!line.description.trim()) {
+        current.description = 'Description is required.';
+        messages.push(`Description is required on line ${lineNo}.`);
+      }
+      const quantity = Number(line.quantity);
+      if (!Number.isFinite(quantity) || quantity < 1) {
+        current.quantity = 'Quantity must be at least 1.';
+        messages.push(`Quantity must be at least 1 on line ${lineNo}.`);
+      }
+      const unitPrice = Number(line.unitPrice);
+      if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+        current.unitPrice = 'Rate must be greater than 0.';
+        messages.push(`Rate must be greater than 0 on line ${lineNo}.`);
+      }
+      if (Object.keys(current).length > 0) {
+        lineErrors[line.id] = current;
+      }
+    }
+    if (Object.keys(lineErrors).length > 0) {
+      errors.lineErrors = lineErrors;
+    }
+
+    return { errors, toastMessage: messages[0] ?? null };
+  };
+
+  const saveInvoice = async () => {
+    if (saving) return;
+
+    const { errors, toastMessage } = validateInvoice();
+    setFieldErrors(errors);
+    if (toastMessage) {
+      toast.error(toastMessage);
       return;
     }
 
+    const discountRaw = draftInvoice.discount.trim();
+    const discountNumeric = discountRaw === '' ? 0 : Number(discountRaw);
+    if (discountRaw !== '' && !Number.isFinite(discountNumeric)) {
+      toast.error('Discount must be a number between 0 and 100.');
+      return;
+    }
+    if (discountNumeric < 0 || discountNumeric > 100) {
+      toast.error('Discount cannot be more than 100%.');
+      return;
+    }
+    const discountPercent = Math.min(100, Math.max(0, discountNumeric));
+
+    const filledLines = draftInvoice.lines.filter(
+      (line) =>
+        line.productName.trim() ||
+        line.description.trim() ||
+        (Number(line.quantity) || 0) > 0 ||
+        (Number(line.unitPrice) || 0) > 0,
+    );
+
+    const payload = {
+      invoiceNumber: draftInvoice.invoiceNumber.trim(),
+      invoiceDate: draftInvoice.invoiceDate,
+      dueDate: draftInvoice.dueDate || undefined,
+      paymentTerms: draftInvoice.paymentTerms.trim(),
+      paymentMethod: toApiPaymentMethod(draftInvoice.paymentMethod),
+      status: toApiBillStatus(draftInvoice.status),
+      billToName: draftInvoice.billToName.trim(),
+      billToEmail: draftInvoice.billToEmail.trim(),
+      billToPhone: draftInvoice.billToPhone.trim(),
+      billToAddress: draftInvoice.billToAddress.trim(),
+      discountPercent,
+      lines: filledLines.map((line) => ({
+        productName: line.productName.trim(),
+        description: line.description.trim(),
+        quantity: Math.max(1, Number(line.quantity) || 1),
+        unitPrice: Math.max(0.01, Number(line.unitPrice) || 0.01),
+      })),
+    };
+
     setSaving(true);
     try {
-      const created = await createVendorBill({
-        invoiceNumber: draftInvoice.invoiceNumber.trim() || undefined,
-        invoiceDate: draftInvoice.invoiceDate,
-        dueDate: draftInvoice.dueDate || undefined,
-        paymentTerms: draftInvoice.paymentTerms,
-        paymentMethod: toApiPaymentMethod(draftInvoice.paymentMethod),
-        status: toApiBillStatus(draftInvoice.status),
-        billToName: draftInvoice.billToName.trim(),
-        billToEmail: draftInvoice.billToEmail.trim() || undefined,
-        billToPhone: draftInvoice.billToPhone.trim() || undefined,
-        billToAddress: draftInvoice.billToAddress.trim() || undefined,
-        discountPercent: Math.min(100, Math.max(0, Number(draftInvoice.discount) || 0)),
-        lines: draftInvoice.lines
-          .filter((line) => line.productName.trim())
-          .map((line) => ({
-            productName: line.productName.trim(),
-            description: line.description.trim() || undefined,
-            quantity: Math.max(1, Number(line.quantity) || 1),
-            unitPrice: Math.max(0, Number(line.unitPrice) || 0),
-          })),
-      });
-      const saved = billToInvoiceForm(created);
-      setInvoices((prev) => [saved, ...prev]);
+      const result = selectedInvoiceId
+        ? await updateVendorBill(selectedInvoiceId, payload)
+        : await createVendorBill(payload);
+      const saved = billToInvoiceForm(result);
+      setInvoices((prev) =>
+        selectedInvoiceId
+          ? prev.map((invoice) => (invoice.id === saved.id ? saved : invoice))
+          : [saved, ...prev],
+      );
       setSelectedInvoiceId(saved.id);
       setDraftInvoice(saved);
+      setFieldErrors({});
       setShowEditor(true);
-      toast.success('Invoice saved.');
-    } catch {
-      toast.error('Could not save invoice.');
+      toast.success(selectedInvoiceId ? 'Invoice updated.' : 'Invoice saved.');
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message.trim() ? err.message : 'Could not save invoice.';
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -398,6 +587,7 @@ const Bills = () => {
                     onClick={() => {
                       setSelectedInvoiceId(invoice.id);
                       setDraftInvoice(invoice);
+                      setFieldErrors({});
                       setShowEditor(true);
                     }}
                     className={`cursor-pointer w-full rounded-xl border px-4 py-3 text-left transition ${
@@ -502,34 +692,58 @@ const Bills = () => {
                   <div>
                     <p className="text-sm font-bold uppercase tracking-wide text-slate-700">Bill To</p>
                     <div className="mt-3 space-y-2">
-                      <input name="billToName" value={draftInvoice.billToName} onChange={handleDraftChange} placeholder="Customer name" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-teal-600" />
-                      <input name="billToEmail" value={draftInvoice.billToEmail} onChange={handleDraftChange} placeholder="Email" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
-                      <input name="billToPhone" value={draftInvoice.billToPhone} onChange={handleDraftChange} placeholder="10 digit number" {...phoneInputProps} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
-                      <textarea name="billToAddress" value={draftInvoice.billToAddress} onChange={handleDraftChange} rows={3} placeholder="Address" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
+                      <div>
+                        <input name="billToName" value={draftInvoice.billToName} onChange={handleDraftChange} placeholder="Customer name *" required className={fieldInputClass(Boolean(fieldErrors.billToName), 'font-semibold text-slate-900')} />
+                        {fieldErrorText(fieldErrors.billToName)}
+                      </div>
+                      <div>
+                        <input name="billToEmail" type="email" value={draftInvoice.billToEmail} onChange={handleDraftChange} placeholder="Email *" required className={fieldInputClass(Boolean(fieldErrors.billToEmail))} />
+                        {fieldErrorText(fieldErrors.billToEmail)}
+                      </div>
+                      <div>
+                        <input name="billToPhone" value={draftInvoice.billToPhone} onChange={handleDraftChange} placeholder="Phone (10 digits) *" required {...phoneInputProps} className={fieldInputClass(Boolean(fieldErrors.billToPhone))} />
+                        {fieldErrorText(fieldErrors.billToPhone)}
+                      </div>
+                      <div>
+                        <textarea name="billToAddress" value={draftInvoice.billToAddress} onChange={handleDraftChange} rows={3} placeholder="Address *" required className={fieldInputClass(Boolean(fieldErrors.billToAddress))} />
+                        {fieldErrorText(fieldErrors.billToAddress)}
+                      </div>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm font-bold uppercase tracking-wide text-slate-700">Invoice Details</p>
                     <div className="mt-3 space-y-3">
-                      <div className="grid grid-cols-[120px_1fr] items-center gap-2">
-                        <label className="text-sm text-slate-600">Invoice no.</label>
-                        <input name="invoiceNumber" value={draftInvoice.invoiceNumber} onChange={handleDraftChange} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
+                      <div className="grid grid-cols-[120px_1fr] items-start gap-2">
+                        <label className="pt-2 text-sm text-slate-600">Invoice no. *</label>
+                        <div>
+                          <input name="invoiceNumber" value={draftInvoice.invoiceNumber} onChange={handleDraftChange} required className={fieldInputClass(Boolean(fieldErrors.invoiceNumber))} />
+                          {fieldErrorText(fieldErrors.invoiceNumber)}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-[120px_1fr] items-center gap-2">
-                        <label className="text-sm text-slate-600">Issue date</label>
-                        <input name="invoiceDate" type="date" value={draftInvoice.invoiceDate} onChange={handleDraftChange} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
+                      <div className="grid grid-cols-[120px_1fr] items-start gap-2">
+                        <label className="pt-2 text-sm text-slate-600">Issue date *</label>
+                        <div>
+                          <input name="invoiceDate" type="date" value={draftInvoice.invoiceDate} onChange={handleDraftChange} required className={fieldInputClass(Boolean(fieldErrors.invoiceDate))} />
+                          {fieldErrorText(fieldErrors.invoiceDate)}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-[120px_1fr] items-center gap-2">
-                        <label className="text-sm text-slate-600">Payment terms</label>
-                        <input name="paymentTerms" value={draftInvoice.paymentTerms} onChange={handleDraftChange} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
+                      <div className="grid grid-cols-[120px_1fr] items-start gap-2">
+                        <label className="pt-2 text-sm text-slate-600">Payment terms *</label>
+                        <div>
+                          <input name="paymentTerms" value={draftInvoice.paymentTerms} onChange={handleDraftChange} required className={fieldInputClass(Boolean(fieldErrors.paymentTerms))} />
+                          {fieldErrorText(fieldErrors.paymentTerms)}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-[120px_1fr] items-center gap-2">
-                        <label className="text-sm text-slate-600">Payment</label>
-                        <select name="paymentMethod" value={draftInvoice.paymentMethod} onChange={handleDraftChange} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600">
-                          <option value="e-sewa">e-sewa</option>
-                          <option value="khalti">khalti</option>
-                          <option value="COD">COD</option>
-                        </select>
+                      <div className="grid grid-cols-[120px_1fr] items-start gap-2">
+                        <label className="pt-2 text-sm text-slate-600">Payment</label>
+                        <div>
+                          <select name="paymentMethod" value={draftInvoice.paymentMethod} onChange={handleDraftChange} className={fieldInputClass(Boolean(fieldErrors.paymentMethod))}>
+                            <option value="e-sewa">e-sewa</option>
+                            <option value="khalti">khalti</option>
+                            <option value="COD">COD</option>
+                          </select>
+                          {fieldErrorText(fieldErrors.paymentMethod)}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -539,33 +753,36 @@ const Bills = () => {
                   <table className="min-w-full text-left">
                     <thead className="bg-slate-100">
                       <tr>
-                        <th className="px-3 py-2 text-sm font-semibold text-slate-700">Product</th>
-                        <th className="px-3 py-2 text-sm font-semibold text-slate-700">Description</th>
-                        <th className="w-24 px-3 py-2 text-sm font-semibold text-slate-700">Qty</th>
-                        <th className="w-28 px-3 py-2 text-sm font-semibold text-slate-700">Rate</th>
+                        <th className="px-3 py-2 text-sm font-semibold text-slate-700">Product *</th>
+                        <th className="px-3 py-2 text-sm font-semibold text-slate-700">Description *</th>
+                        <th className="w-24 px-3 py-2 text-sm font-semibold text-slate-700">Qty *</th>
+                        <th className="w-28 px-3 py-2 text-sm font-semibold text-slate-700">Rate *</th>
                         <th className="w-28 px-3 py-2 text-sm font-semibold text-slate-700">Amount</th>
                       </tr>
                     </thead>
                     <tbody>
                       {draftInvoice.lines.map((line) => {
                         const lineAmount = (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
+                        const lineErr = fieldErrors.lineErrors?.[line.id];
                         return (
-                          <tr className="border-t border-slate-200" key={line.id}>
+                          <tr className="border-t border-slate-200 align-top" key={line.id}>
                             <td className="px-3 py-3">
                               <input
                                 value={line.productName}
                                 onChange={(event) => handleLineChange(line.id, 'productName', event.target.value)}
                                 placeholder="Product name"
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600"
+                                className={fieldInputClass(Boolean(lineErr?.productName))}
                               />
+                              {fieldErrorText(lineErr?.productName)}
                             </td>
                             <td className="px-3 py-3">
                               <input
                                 value={line.description}
                                 onChange={(event) => handleLineChange(line.id, 'description', event.target.value)}
                                 placeholder="Line description"
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600"
+                                className={fieldInputClass(Boolean(lineErr?.description))}
                               />
+                              {fieldErrorText(lineErr?.description)}
                             </td>
                             <td className="px-3 py-3">
                               <input
@@ -573,8 +790,9 @@ const Bills = () => {
                                 min="1"
                                 value={line.quantity}
                                 onChange={(event) => handleLineChange(line.id, 'quantity', event.target.value)}
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600"
+                                className={fieldInputClass(Boolean(lineErr?.quantity))}
                               />
+                              {fieldErrorText(lineErr?.quantity)}
                             </td>
                             <td className="px-3 py-3">
                               <input
@@ -582,8 +800,9 @@ const Bills = () => {
                                 min="0"
                                 value={line.unitPrice}
                                 onChange={(event) => handleLineChange(line.id, 'unitPrice', event.target.value)}
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600"
+                                className={fieldInputClass(Boolean(lineErr?.unitPrice))}
                               />
+                              {fieldErrorText(lineErr?.unitPrice)}
                             </td>
                             <td className="px-3 py-3 text-sm font-semibold text-slate-800">
                               <div className="flex items-center justify-between gap-2">
@@ -612,6 +831,7 @@ const Bills = () => {
                       })}
                     </tbody>
                   </table>
+                  {fieldErrorText(fieldErrors.lines)}
                 </div>
                 <button
                   type="button"
@@ -624,8 +844,8 @@ const Bills = () => {
 
                 <div className="mt-5 ml-auto w-full max-w-xs space-y-3">
                   <div className="print-hide">
-                    <label className="text-sm font-semibold text-slate-600">Discount (%)</label>
-                    <input name="discount" type="number" min="0" max="100" value={draftInvoice.discount} onChange={handleDraftChange} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
+                    <label className="text-sm font-semibold text-slate-600">Discount (%) <span className="font-normal text-slate-400">(optional)</span></label>
+                    <input name="discount" type="number" min="0" max="100" value={draftInvoice.discount} onChange={handleDraftChange} placeholder="0" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-teal-600" />
                   </div>
                   <div className="flex items-center justify-between text-sm text-slate-600"><span>VAT ({FIXED_TAX_PERCENT}%)</span><span>Rs. {calculations.taxAmount.toLocaleString()}</span></div>
                   <div className="flex items-center justify-between text-sm text-slate-600"><span>Subtotal</span><span>Rs. {calculations.subtotal.toLocaleString()}</span></div>
@@ -637,16 +857,14 @@ const Bills = () => {
                 </div>
 
               </div>
-              {selectedInvoiceId === null ? (
-                <button
-                  type="button"
-                  onClick={() => void saveInvoice()}
-                  disabled={saving}
-                  className="cursor-pointer hide-on-print mt-4 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? 'Saving...' : 'Save Invoice'}
-                </button>
-              ) : null}
+              <button
+                type="button"
+                onClick={() => void saveInvoice()}
+                disabled={saving}
+                className="cursor-pointer hide-on-print mt-4 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {saving ? 'Saving...' : selectedInvoiceId ? 'Save Changes' : 'Save Invoice'}
+              </button>
               <p className="hidden border-t border-slate-300 pt-3 text-center text-xs text-slate-600 print:block">
                 Thank you for your business. If you have any questions about this invoice, please contact us.
               </p>

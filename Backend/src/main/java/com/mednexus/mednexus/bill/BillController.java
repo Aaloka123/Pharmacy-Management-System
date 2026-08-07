@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,6 +52,14 @@ public class BillController {
 			@Valid @RequestBody CreateBillRequest request) {
 		BillResponse created = billService.create(principal.getSubjectId(), request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(created);
+	}
+
+	@PutMapping("/{id}")
+	public ResponseEntity<BillResponse> update(
+			@AuthenticationPrincipal PlatformUser principal,
+			@PathVariable Long id,
+			@Valid @RequestBody CreateBillRequest request) {
+		return ResponseEntity.ok(billService.update(principal.getSubjectId(), id, request));
 	}
 
 	@DeleteMapping("/{id}")

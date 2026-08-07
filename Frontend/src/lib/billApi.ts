@@ -42,23 +42,24 @@ export type BillDto = {
 
 export type CreateBillLinePayload = {
   productName: string
-  description?: string
+  description: string
   quantity: number
   unitPrice: number
 }
 
 export type CreateBillPayload = {
-  invoiceNumber?: string
+  invoiceNumber: string
   invoiceDate: string
   dueDate?: string
-  paymentTerms?: string
+  paymentTerms: string
   paymentMethod: ApiPaymentMethod
   status: ApiBillStatus
   billToName: string
-  billToEmail?: string
-  billToPhone?: string
-  billToAddress?: string
-  discountPercent: number
+  billToEmail: string
+  billToPhone: string
+  billToAddress: string
+  /** Optional; send 0 when unused. */
+  discountPercent?: number
   lines: CreateBillLinePayload[]
 }
 
@@ -74,6 +75,11 @@ export async function fetchVendorBill(billId: number): Promise<BillDto> {
 
 export async function createVendorBill(payload: CreateBillPayload): Promise<BillDto> {
   const { data } = await api.post<BillDto>('/api/vendor/bills', payload)
+  return data
+}
+
+export async function updateVendorBill(billId: number, payload: CreateBillPayload): Promise<BillDto> {
+  const { data } = await api.put<BillDto>(`/api/vendor/bills/${billId}`, payload)
   return data
 }
 

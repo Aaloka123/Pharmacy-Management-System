@@ -99,6 +99,52 @@ public class BillService {
 	}
 
 	@Transactional
+	public BillResponse update(Long vendorId, Long billId, CreateBillRequest request) {
+		Bill bill = billRepository.findByIdAndVendorIdWithLines(billId, vendorId)
+				.orElseThrow(BillNotFoundException::new);
+		if (request.lines().isEmpty()) {
+			throw new IllegalArgumentException("At least one line item is required");
+		}
+
+		String invoiceNumber = resolveInvoiceNumber(vendorId, request.invoiceNumber(), billId);
+		BillTotals totals = calculateTotals(request.lines(), request.discountPercent());
+
+		bill.setInvoiceNumber(invoiceNumber);
+		bill.setInvoiceDate(request.invoiceDate());
+		bill.setDueDate(request.dueDate());
+		bill.setPaymentTerms(blankToDefault(request.paymentTerms(), "Net 15"));
+		bill.setPaymentMethod(toPaymentMethod(request.paymentMethod()));
+		bill.setStatus(request.status());
+		bill.setBillToName(request.billToName().trim());
+		bill.setBillToEmail(trimToNull(request.billToEmail()));
+		bill.setBillToPhone(trimToNull(request.billToPhone()));
+		bill.setBillToAddress(trimToNull(request.billToAddress()));
+		bill.setSubtotal(totals.subtotal());
+		bill.setTaxPercent(DEFAULT_TAX_PERCENT);
+		bill.setTaxAmount(totals.taxAmount());
+		bill.setDiscountPercent(totals.discountPercent());
+		bill.setDiscountAmount(totals.discountAmount());
+		bill.setTotalAmount(totals.totalAmount());
+
+		bill.getLines().clear();
+		int sortOrder = 0;
+		for (BillLineRequest lineRequest : request.lines()) {
+			BillLine line = new BillLine();
+			line.setProductName(lineRequest.productName().trim());
+			line.setDescription(trimToNull(lineRequest.description()));
+			line.setQuantity(lineRequest.quantity());
+			line.setUnitPrice(lineRequest.unitPrice().setScale(2, RoundingMode.HALF_UP));
+			line.setLineAmount(line.getUnitPrice()
+					.multiply(BigDecimal.valueOf(line.getQuantity()))
+					.setScale(2, RoundingMode.HALF_UP));
+			line.setSortOrder(sortOrder++);
+			bill.addLine(line);
+		}
+
+		return toResponse(billRepository.save(bill));
+	}
+
+	@Transactional
 	public void delete(Long vendorId, Long billId) {
 		Bill bill = billRepository.findByIdAndVendorIdWithLines(billId, vendorId)
 				.orElseThrow(BillNotFoundException::new);
@@ -106,9 +152,16 @@ public class BillService {
 	}
 
 	private String resolveInvoiceNumber(Long vendorId, String requestedNumber) {
+		return resolveInvoiceNumber(vendorId, requestedNumber, null);
+	}
+
+	private String resolveInvoiceNumber(Long vendorId, String requestedNumber, Long excludeBillId) {
 		if (requestedNumber != null && !requestedNumber.isBlank()) {
 			String trimmed = requestedNumber.trim();
-			if (billRepository.existsByVendorIdAndInvoiceNumber(vendorId, trimmed)) {
+			boolean taken = excludeBillId == null
+					? billRepository.existsByVendorIdAndInvoiceNumber(vendorId, trimmed)
+					: billRepository.existsByVendorIdAndInvoiceNumberAndIdNot(vendorId, trimmed, excludeBillId);
+			if (taken) {
 				throw new IllegalArgumentException("Invoice number already exists");
 			}
 			return trimmed;
@@ -120,7 +173,9 @@ public class BillService {
 		do {
 			generated = "INV-" + year + "-" + String.format("%03d", sequence);
 			sequence++;
-		} while (billRepository.existsByVendorIdAndInvoiceNumber(vendorId, generated));
+		} while (excludeBillId == null
+				? billRepository.existsByVendorIdAndInvoiceNumber(vendorId, generated)
+				: billRepository.existsByVendorIdAndInvoiceNumberAndIdNot(vendorId, generated, excludeBillId));
 		return generated;
 	}
 

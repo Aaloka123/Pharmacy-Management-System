@@ -29,4 +29,6 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
 	long countByVendorId(Long vendorId);
 
 	boolean existsByVendorIdAndInvoiceNumber(Long vendorId, String invoiceNumber);
+
+	boolean existsByVendorIdAndInvoiceNumberAndIdNot(Long vendorId, String invoiceNumber, Long id);
 }
