@@ -168,12 +168,6 @@ const Profile = () => {
     }
   }
 
-  const handleDeleteAccount = () => {
-    const confirmed = window.confirm('Are you sure you want to delete your account? This action cannot be undone.')
-    if (!confirmed) return
-    window.alert('Your account has been deleted.')
-  }
-
   return (
     <div className="bg-white">
       <Header />
@@ -404,14 +398,6 @@ const Profile = () => {
                       </form>
                     ) : null}
                   </section>
-
-                  <button
-                    className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-left transition hover:bg-rose-100"
-                    onClick={handleDeleteAccount}
-                    type="button"
-                  >
-                    <h3 className="text-[13px] text-rose-700" style={{ fontWeight: 600 }}>Delete Account</h3>
-                  </button>
                 </div>
               </section>
             </div>

@@ -145,9 +145,10 @@ const Products = () => {
               <p className="mt-3 text-sm text-slate-600 md:text-base">Browse trusted medicines.</p>
             </div>
             <Link
-              className="cursor-pointer inline-flex items-center justify-center rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
+              className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-full bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
               to="/prescription"
             >
+              <span aria-hidden="true">+</span>
               New Prescription
             </Link>
           </div>

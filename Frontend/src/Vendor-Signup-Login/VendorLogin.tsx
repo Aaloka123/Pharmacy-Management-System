@@ -172,8 +172,8 @@ const Vendorlogin = () => {
     <div className="bg-slate-50">
       <Header />
       <main className="flex min-h-[calc(100vh-80px)] items-center justify-center bg-white px-4 py-10 md:px-8">
-        <section className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl lg:grid-cols-2">
-          <div className="bg-white p-6 md:p-8">
+        <section className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl lg:grid-cols-2 lg:items-stretch">
+          <div className="flex h-full flex-col bg-white p-6 md:p-8">
             <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               Vendor Access
@@ -186,52 +186,54 @@ const Vendorlogin = () => {
                   Manage your products, track orders, and access payouts from one dashboard.
                 </p>
 
-                <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-semibold text-slate-700">Email</span>
-                    <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
-                      <input
-                        type="email"
-                        required
-                        autoComplete="email"
-                        placeholder="Enter your email address"
-                        value={email}
-                        onChange={(ev) => setEmail(ev.target.value)}
-                        className="w-full bg-transparent px-0 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
-                      />
-                    </div>
-                  </label>
+                <form className="mt-6 flex flex-1 flex-col" onSubmit={handleSubmit}>
+                  <div className="space-y-5">
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-slate-700">Email</span>
+                      <div className="border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
+                        <input
+                          type="email"
+                          required
+                          autoComplete="email"
+                          placeholder="Enter your email address"
+                          value={email}
+                          onChange={(ev) => setEmail(ev.target.value)}
+                          className="w-full bg-transparent px-0 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                        />
+                      </div>
+                    </label>
 
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-semibold text-slate-700">Password</span>
-                    <div className="relative border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        autoComplete="current-password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(ev) => setPassword(ev.target.value)}
-                        className="w-full bg-transparent pl-0 pr-9 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
-                      />
-                      <button
-                        type="button"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 transition hover:text-slate-700"
-                      >
-                        {showPassword ? <IoEyeOffOutline className="size-5" /> : <IoEyeOutline className="size-5" />}
-                      </button>
-                    </div>
-                  </label>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-slate-700">Password</span>
+                      <div className="relative border-b border-slate-300 transition-colors duration-200 focus-within:border-teal-600">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          autoComplete="current-password"
+                          placeholder="Enter your password"
+                          value={password}
+                          onChange={(ev) => setPassword(ev.target.value)}
+                          className="w-full bg-transparent pl-0 pr-9 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                        />
+                        <button
+                          type="button"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 transition hover:text-slate-700"
+                        >
+                          {showPassword ? <IoEyeOffOutline className="size-5" /> : <IoEyeOutline className="size-5" />}
+                        </button>
+                      </div>
+                    </label>
 
-                  <p className="text-right text-sm">
-                    <Link className="text-slate-600 hover:text-teal-700 hover:underline" to="/forgetpassword?account=vendor">
-                      Forgot Password?
-                    </Link>
-                  </p>
+                    <p className="text-right text-sm">
+                      <Link className="text-slate-600 hover:text-teal-700 hover:underline" to="/forgetpassword?account=vendor">
+                        Forgot Password?
+                      </Link>
+                    </p>
+                  </div>
 
-                  <div className="pt-2">
+                  <div className="mt-auto pt-6">
                     <button
                       type="submit"
                       disabled={loading}
@@ -256,7 +258,7 @@ const Vendorlogin = () => {
                   We sent a 6-digit code to <span className="font-medium text-slate-800">{maskedEmail}</span>
                 </p>
 
-                <form className="mt-6 space-y-5" onSubmit={handleVerifyOtp}>
+                <form className="mt-6 flex flex-1 flex-col space-y-5" onSubmit={handleVerifyOtp}>
                   <div>
                     <p className="mb-3 text-sm font-semibold text-slate-700">Verification code</p>
                     <div className="flex justify-center gap-2 sm:gap-3">
@@ -282,27 +284,29 @@ const Vendorlogin = () => {
                     </div>
                   </div>
 
-                  <button
-                    className="w-full cursor-pointer rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={loading}
-                    type="submit"
-                  >
-                    {loading ? 'Verifying…' : 'Verify & continue'}
-                  </button>
+                  <div className="mt-auto space-y-3 pt-6">
+                    <button
+                      className="w-full cursor-pointer rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={loading}
+                      type="submit"
+                    >
+                      {loading ? 'Verifying…' : 'Verify & continue'}
+                    </button>
 
-                  <button
-                    className="w-full cursor-pointer text-sm font-medium text-slate-600 transition hover:text-teal-700"
-                    onClick={handleBackToLogin}
-                    type="button"
-                  >
-                    Back to login
-                  </button>
+                    <button
+                      className="w-full cursor-pointer text-sm font-medium text-slate-600 transition hover:text-teal-700"
+                      onClick={handleBackToLogin}
+                      type="button"
+                    >
+                      Back to login
+                    </button>
+                  </div>
                 </form>
               </>
             )}
           </div>
 
-          <aside className="flex flex-col justify-between bg-teal-700 p-6 text-white md:p-8">
+          <aside className="flex h-full flex-col bg-teal-700 p-6 text-white md:p-8">
             <div>
               <h2 className="text-2xl font-bold">Welcome back!</h2>
               <p className="mt-3 text-sm leading-6 text-teal-50">
@@ -317,12 +321,18 @@ const Vendorlogin = () => {
               <li>• Join seasonal campaigns for pharmacy products</li>
             </ul>
 
-            <button
-              type="button"
-              className="mt-6 w-full cursor-pointer rounded-xl bg-white/20 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30"
-            >
-              Contact Seller Support
-            </button>
+            <div className="mt-auto pt-6">
+              <Link
+                to="/contacts"
+                className="flex w-full cursor-pointer items-center justify-center rounded-lg bg-white/20 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30"
+              >
+                Contact Seller Support
+              </Link>
+            </div>
+
+            <p className="mt-5 text-center text-sm text-transparent select-none" aria-hidden="true">
+              New to MedNexux? Create a vendor account
+            </p>
           </aside>
         </section>
       </main>

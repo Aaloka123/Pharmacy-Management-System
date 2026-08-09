@@ -130,11 +130,15 @@ const VendorSignup = () => {
     <div className="bg-slate-50">
       <Header />
 
-      <main
-        className="bg-cover bg-center bg-no-repeat px-6 py-10 md:px-10"
-        style={{ backgroundImage: `url(${medicineBackground})` }}
-      >
-        <section className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm md:p-8">
+      <main className="relative isolate overflow-hidden px-6 py-10 md:px-10">
+        <img
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover object-center brightness-110 contrast-125 saturate-110"
+          decoding="async"
+          src={medicineBackground}
+        />
+        <section className="relative mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-slate-50/95 p-6 shadow-sm md:p-8">
           <div className="flex flex-col items-start gap-3">
             <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
