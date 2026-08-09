@@ -10,6 +10,7 @@ import {
   canUserCancelOrder,
   fetchMyOrders,
   type ApiOrderStatus,
+  type ApiPaymentMethod,
   type VendorOrderDto,
 } from '../lib/orderApi'
 
@@ -27,6 +28,18 @@ const statusClass: Record<ApiOrderStatus, string> = {
   SHIPPED: 'bg-sky-100 text-sky-800',
   DELIVERED: 'bg-emerald-100 text-emerald-800',
   CANCELED: 'bg-rose-100 text-rose-800',
+}
+
+const paymentBadgeLabel: Record<ApiPaymentMethod, string> = {
+  COD: 'COD',
+  ESEWA: 'e-sewa',
+  KHALTI: 'khalti',
+}
+
+const paymentBadgeClass: Record<ApiPaymentMethod, string> = {
+  COD: 'bg-slate-200 text-slate-800',
+  ESEWA: 'bg-emerald-100 text-emerald-800',
+  KHALTI: 'bg-violet-100 text-violet-800',
 }
 
 const OrderTracking = () => {
@@ -116,9 +129,14 @@ const OrderTracking = () => {
                       <p className="mt-1 text-sm text-slate-600">
                         Qty {order.quantity} · NRP {(Number(order.unitPrice) * order.quantity).toLocaleString()}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Ordered {order.orderDate.slice(0, 10)} · {order.paymentMethod}
-                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <p className="text-xs text-slate-500">Ordered {order.orderDate.slice(0, 10)}</p>
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${paymentBadgeClass[order.paymentMethod]}`}
+                        >
+                          {paymentBadgeLabel[order.paymentMethod]}
+                        </span>
+                      </div>
                       <Link
                         className="mt-2 inline-flex text-xs font-semibold text-teal-700 hover:text-teal-800 hover:underline"
                         to={`/productsdetail?id=${order.productId}`}
